@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>বর্ডার ড্যাশবোর্ড — করতোয়া ছাত্রাবাস</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="center-loading" id="loadingScreen"><div class="loader"></div></div>
+
+<div class="app-shell" id="appShell" style="display:none;">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">করতোয়া</div>
+      <div class="sub">বর্ডার ড্যাশবোর্ড</div>
+    </div>
+    <nav class="side-nav" id="sideNav">
+      <button data-view="home" class="active">আজকের মিল</button>
+      <button data-view="ledger">হিসাব</button>
+      <button data-view="specials">স্পেশাল খাবার</button>
+    </nav>
+    <div class="side-foot">
+      <div class="who"><b id="sideName">—</b><span id="sideMeta"></span></div>
+      <button class="btn btn-ghost btn-sm" id="logoutBtn">লগ আউট</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="eyebrow" id="dateEyebrow">—</div>
+        <h1 id="viewTitle">আজকের মিল</h1>
+      </div>
+    </div>
+
+    <!-- HOME VIEW -->
+    <section id="view-home">
+      <div class="balance-banner" id="balanceBanner">
+        <div>
+          <div class="label">বর্তমান হিসাব</div>
+          <div class="amount" id="balanceAmount">৳০</div>
+          <div class="note" id="balanceNote"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>দুপুরের খাবার</h2><span class="chip" id="lunchStatusChip"></span></div>
+        <div class="meal-picker" id="lunchPicker"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>রাতের খাবার</h2><span class="chip" id="dinnerStatusChip"></span></div>
+        <div class="meal-picker" id="dinnerPicker"></div>
+      </div>
+
+      <div class="card">
+        <h2>আজকের টোকেন</h2>
+        <div style="display:flex; flex-direction:column; gap:14px; margin-top:16px;" id="tokenWrap"></div>
+      </div>
+    </section>
+
+    <!-- LEDGER VIEW -->
+    <section id="view-ledger" style="display:none;">
+      <div class="card">
+        <h2>লেনদেনের হিসাব</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>তারিখ</th><th>বিবরণ</th><th class="num">পরিমাণ</th><th class="num">ব্যালেন্স</th></tr></thead>
+            <tbody id="ledgerBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="ledgerEmpty" style="display:none;">এখনো কোনো লেনদেন নেই</div>
+      </div>
+
+      <div class="card">
+        <h2>মিলের ইতিহাস</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>তারিখ</th><th>বেলা</th><th>ধরন</th><th class="num">মূল্য</th><th>অবস্থা</th></tr></thead>
+            <tbody id="mealHistoryBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="mealHistoryEmpty" style="display:none;">এখনো কোনো মিলের রেকর্ড নেই</div>
+      </div>
+    </section>
+
+    <!-- SPECIALS VIEW -->
+    <section id="view-specials" style="display:none;">
+      <div class="card">
+        <h2>আজকের স্পেশাল খাবার</h2>
+        <div id="specialsWrap" style="display:flex; flex-direction:column; gap:12px; margin-top:14px;"></div>
+        <div class="empty-state" id="specialsEmpty" style="display:none;">আজ কোনো স্পেশাল খাবার নেই</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="mobile-nav" id="mobileNav">
+  <button data-view="home" class="active">আজকের মিল</button>
+  <button data-view="ledger">হিসাব</button>
+  <button data-view="specials">স্পেশাল</button>
+</nav>
+
+<script type="module" src="js/boarder.js"></script>
+</body>
+</html>

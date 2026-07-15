@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // ---------------- users ----------------
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+
+      // registration: a boarder can only create their own profile, role forced to boarder
+      allow create: if isOwner(uid)
+        && request.resource.data.role == 'boarder'
+        && request.resource.data.balance == 0;
+
+      // admin can update anything (deposits, refunds, corrections).
+      // a boarder may only ever touch their own 'balance' field
+      // (used when they turn a meal on/off — see meals rules below).
+      allow update: if isAdmin()
+        || (isOwner(uid)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balance']));
+
+      allow delete: if false;
+    }
+
+    // ---------------- meals ----------------
+    match /meals/{mealId} {
+      // a boarder can only read their own meal docs; admin can read all
+      // (including guest entries, which have uid == null)
+      allow read: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+
+      // a boarder can create a meal doc only for themselves, unchecked, on/off status
+      allow create: if isAdmin()
+        || (isSignedIn()
+            && request.resource.data.uid == request.auth.uid
+            && request.resource.data.checked == false
+            && request.resource.data.status in ['on', 'off']);
+
+      // a boarder may only edit their own doc's mealType/price/status/updatedAt
+      // (never 'checked' — that is admin-only), admin can edit anything
+      allow update: if isAdmin()
+        || (isSignedIn()
+            && resource.data.uid == request.auth.uid
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['mealType', 'price', 'status', 'updatedAt']));
+
+      allow delete: if false;
+    }
+
+    // ---------------- transactions ----------------
+    match /transactions/{txId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+
+      // admin creates deposits/manual adjustments; a boarder may only log a
+      // transaction against their own uid (mirrors the meals write above)
+      allow create: if isAdmin() || (isSignedIn() && request.resource.data.uid == request.auth.uid);
+
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ---------------- specials ----------------
+    match /specials/{specialId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

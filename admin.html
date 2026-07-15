@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>এডমিন ড্যাশবোর্ড — করতোয়া ছাত্রাবাস</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="center-loading" id="loadingScreen"><div class="loader"></div></div>
+
+<div class="app-shell" id="appShell" style="display:none;">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">করতোয়া</div>
+      <div class="sub">এডমিন ড্যাশবোর্ড</div>
+    </div>
+    <nav class="side-nav" id="sideNav">
+      <button data-view="today" class="active">আজকের মিল</button>
+      <button data-view="deposit">টাকা জমা</button>
+      <button data-view="accounts">বোর্ডারদের হিসাব</button>
+      <button data-view="specials">স্পেশাল খাবার</button>
+      <button data-view="reports">রিপোর্ট</button>
+    </nav>
+    <div class="side-foot">
+      <div class="who"><b id="sideName">—</b><span class="tag-role">এডমিন</span></div>
+      <button class="btn btn-ghost btn-sm" id="logoutBtn">লগ আউট</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="eyebrow" id="dateEyebrow">—</div>
+        <h1 id="viewTitle">আজকের মিল</h1>
+      </div>
+    </div>
+
+    <!-- TODAY VIEW -->
+    <section id="view-today">
+      <div class="grid cols-4" id="todayStats"></div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>গেস্ট মিল</h2>
+          <button class="btn btn-gold btn-sm" id="addGuestBtn">গেস্ট মিল যোগ করুন</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>নাম</th><th>বেলা</th><th>ধরন</th><th class="num">মূল্য</th><th>চেক</th></tr></thead>
+            <tbody id="guestBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="guestEmpty" style="display:none;">আজ কোনো গেস্ট মিল যোগ করা হয়নি</div>
+      </div>
+
+      <div id="batchSections"></div>
+    </section>
+
+    <!-- DEPOSIT VIEW -->
+    <section id="view-deposit" style="display:none;">
+      <div class="card" style="max-width:520px;">
+        <h2>টাকা জমা রাখুন</h2>
+        <div class="field" style="margin-top:18px;">
+          <label>বর্ডার খুঁজুন (নাম বা রোল)</label>
+          <input type="text" id="depositSearch" autocomplete="off">
+          <div id="depositResults" style="margin-top:8px; display:flex; flex-direction:column; gap:6px;"></div>
+        </div>
+        <div id="depositSelected" style="display:none;">
+          <div class="divider"></div>
+          <p><b id="depositSelectedName"></b> <span class="muted" id="depositSelectedMeta"></span></p>
+          <p class="muted">বর্তমান হিসাব: <span class="mono" id="depositSelectedBalance"></span></p>
+          <div class="field">
+            <label>জমার পরিমাণ (৳)</label>
+            <input type="number" id="depositAmount" min="1">
+          </div>
+          <button class="btn btn-primary btn-block" id="depositConfirmBtn">জমা নিশ্চিত করুন</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACCOUNTS VIEW -->
+    <section id="view-accounts" style="display:none;">
+      <div class="card">
+        <div class="card-head">
+          <h2>সকল বোর্ডারের হিসাব</h2>
+          <input type="text" id="accountsSearch" style="max-width:240px;" autocomplete="off">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>নাম</th><th>ব্যাচ</th><th>রোল</th><th>রুম</th><th class="num">হিসাব</th></tr></thead>
+            <tbody id="accountsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SPECIALS VIEW -->
+    <section id="view-specials" style="display:none;">
+      <div class="card" style="max-width:520px;">
+        <h2>নতুন স্পেশাল খাবার</h2>
+        <div class="grid cols-2" style="margin-top:14px;">
+          <div class="field">
+            <label>নাম</label>
+            <input type="text" id="specialName">
+          </div>
+          <div class="field">
+            <label>মূল্য (৳)</label>
+            <input type="number" id="specialPrice" min="1">
+          </div>
+        </div>
+        <button class="btn btn-gold btn-block" id="addSpecialBtn">যোগ করুন</button>
+      </div>
+
+      <div class="card" id="specialsListCard">
+        <h2>আজকের স্পেশাল</h2>
+        <div id="specialsList" style="margin-top:14px; display:flex; flex-direction:column; gap:16px;"></div>
+        <div class="empty-state" id="specialsListEmpty" style="display:none;">এখনো কোনো স্পেশাল যোগ করা হয়নি</div>
+      </div>
+    </section>
+
+    <!-- REPORTS VIEW -->
+    <section id="view-reports" style="display:none;">
+      <div class="card">
+        <div class="card-head">
+          <h2>দৈনিক রিপোর্ট</h2>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input type="date" id="reportDate" style="width:auto;">
+            <button class="btn btn-primary btn-sm" id="downloadPdfBtn">PDF ডাউনলোড</button>
+          </div>
+        </div>
+        <div class="grid cols-4" id="reportStats"></div>
+        <div class="divider"></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>নাম</th><th>ব্যাচ</th><th>রোল</th><th>বেলা</th><th>ধরন</th><th class="num">মূল্য</th></tr></thead>
+            <tbody id="reportBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="mobile-nav" id="mobileNav">
+  <button data-view="today" class="active">আজকে</button>
+  <button data-view="deposit">জমা</button>
+  <button data-view="accounts">হিসাব</button>
+  <button data-view="specials">স্পেশাল</button>
+  <button data-view="reports">রিপোর্ট</button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>

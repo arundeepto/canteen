@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>করতোয়া ছাত্রাবাস — মিল ম্যানেজমেন্ট</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="auth-shell">
+  <div style="width:100%; max-width:960px; display:grid; grid-template-columns:1fr 1fr; gap:0; border-radius:28px; overflow:hidden; box-shadow:var(--shadow);">
+
+    <!-- left: brand panel -->
+    <div style="background:var(--ink); color:var(--paper); padding:48px 40px; display:flex; flex-direction:column; justify-content:space-between; gap:40px;">
+      <div>
+        <div style="font-family:var(--font-mono); font-size:.78rem; letter-spacing:.14em; color:var(--gold); text-transform:uppercase;">করতোয়া ছাত্রাবাস</div>
+        <h1 style="margin-top:14px; font-size:2.4rem; line-height:1.2;">মিল ম্যানেজমেন্ট সিস্টেম</h1>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div class="token full" style="transform:rotate(-2deg);">
+          <div class="stub">FULL</div>
+          <div class="body">
+            <div class="kind">ফুল মিল</div>
+            <div class="meta"><span>দুপুর / রাত</span><span>৳৭০</span></div>
+          </div>
+        </div>
+        <div class="token half" style="transform:rotate(1.5deg); margin-left:24px;">
+          <div class="stub">HALF</div>
+          <div class="body">
+            <div class="kind">হাফ মিল</div>
+            <div class="meta"><span>দুপুর / রাত</span><span>৳৫০</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:.85rem; color:rgba(251,247,239,.6);">প্রতিদিন সকাল ১০টার মধ্যে মিল অন রাখতে হবে।</div>
+    </div>
+
+    <!-- right: auth form -->
+    <div style="background:var(--paper-card); padding:48px 40px;">
+      <div class="tabs" id="authTabs">
+        <button class="active" data-tab="login">লগ ইন</button>
+        <button data-tab="register">নতুন নিবন্ধন</button>
+      </div>
+
+      <!-- LOGIN -->
+      <form id="loginForm">
+        <div class="field">
+          <label>ইমেইল</label>
+          <input type="email" id="loginEmail" required autocomplete="username">
+        </div>
+        <div class="field">
+          <label>পাসওয়ার্ড</label>
+          <input type="password" id="loginPassword" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="loginBtn">লগ ইন করুন</button>
+      </form>
+
+      <!-- REGISTER -->
+      <form id="registerForm" style="display:none;">
+        <div class="grid cols-2">
+          <div class="field">
+            <label>ফুল নেম</label>
+            <input type="text" id="regName" required>
+          </div>
+          <div class="field">
+            <label>ব্যাচ</label>
+            <select id="regBatch" required>
+              <option value="3">৩</option>
+              <option value="4">৪</option>
+              <option value="5">৫</option>
+              <option value="6">৬</option>
+              <option value="7">৭</option>
+              <option value="8">৮</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid cols-2">
+          <div class="field">
+            <label>রোল</label>
+            <input type="text" id="regRoll" required>
+          </div>
+          <div class="field">
+            <label>রুম নম্বর</label>
+            <input type="text" id="regRoom" required>
+          </div>
+        </div>
+        <div class="field">
+          <label>ইমেইল</label>
+          <input type="email" id="regEmail" required autocomplete="username">
+        </div>
+        <div class="field">
+          <label>পাসওয়ার্ড</label>
+          <input type="password" id="regPassword" required minlength="6" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block" id="registerBtn">নিবন্ধন করুন</button>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from "./js/firebase-config.js";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  doc, setDoc, getDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { showToast } from "./js/utils.js";
+
+// tabs
+document.querySelectorAll("#authTabs button").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#authTabs button").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const tab = btn.dataset.tab;
+    document.getElementById("loginForm").style.display = tab === "login" ? "block" : "none";
+    document.getElementById("registerForm").style.display = tab === "register" ? "block" : "none";
+  });
+});
+
+async function routeByRole(uid) {
+  const snap = await getDoc(doc(db, "users", uid));
+  if (!snap.exists()) {
+    showToast("ইউজার প্রোফাইল খুঁজে পাওয়া যায়নি", true);
+    return;
+  }
+  const role = snap.data().role;
+  window.location.href = role === "admin" ? "admin.html" : "boarder.html";
+}
+
+document.getElementById("loginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("loginBtn");
+  btn.disabled = true;
+  try {
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    await routeByRole(cred.user.uid);
+  } catch (err) {
+    showToast("লগ ইন ব্যর্থ হয়েছে — ইমেইল অথবা পাসওয়ার্ড ভুল", true);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+document.getElementById("registerForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("registerBtn");
+  btn.disabled = true;
+  try {
+    const fullName = document.getElementById("regName").value.trim();
+    const batch = Number(document.getElementById("regBatch").value);
+    const roll = document.getElementById("regRoll").value.trim();
+    const room = document.getElementById("regRoom").value.trim();
+    const email = document.getElementById("regEmail").value.trim();
+    const password = document.getElementById("regPassword").value;
+
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, "users", cred.user.uid), {
+      fullName, batch, roll, room,
+      role: "boarder",
+      balance: 0,
+      createdAt: serverTimestamp()
+    });
+    window.location.href = "boarder.html";
+  } catch (err) {
+    showToast(err.code === "auth/email-already-in-use" ? "এই ইমেইল দিয়ে আগেই নিবন্ধন করা হয়েছে" : "নিবন্ধন ব্যর্থ হয়েছে", true);
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
