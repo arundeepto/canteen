@@ -100,6 +100,42 @@ button{font-family:inherit;cursor:pointer;}
 .notif-item .time{font-size:11px;color:var(--veil);margin-top:2px;font-family:'JetBrains Mono';}
 .notif-empty{padding:36px 16px;text-align:center;color:var(--veil);font-size:13px;}
 
+/* ============ PRIVATE CHAT ============ */
+.msg-shell{display:grid;grid-template-columns:260px 1fr;gap:0;height:560px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+.msg-threads{border-right:1px solid var(--line);overflow-y:auto;}
+.thread-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;position:relative;}
+.thread-item:hover{background:var(--dawn-1);}
+.thread-item.active{background:var(--dawn-2);}
+.thread-item .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--gold));color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;}
+.thread-item .tmeta{min-width:0;flex:1;}
+.thread-item .tname{font-weight:700;font-size:13.5px;}
+.thread-item .tlast{font-size:12px;color:var(--veil);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.thread-item.unread .tname{color:var(--coral);}
+.thread-item .tdot{width:9px;height:9px;border-radius:50%;background:var(--coral);flex-shrink:0;}
+.msg-active{display:flex;flex-direction:column;min-width:0;}
+.msg-active-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--veil);font-size:13.5px;padding:20px;text-align:center;}
+.msg-thread-open{display:flex;flex-direction:column;height:100%;}
+.msg-thread-head{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);}
+.msg-thread-head .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--gold));color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:12.5px;flex-shrink:0;}
+.msg-thread-head .name{font-weight:700;font-size:14.5px;}
+.msg-back{display:none;background:none;border:none;font-size:19px;padding:0 6px 0 0;}
+.msg-log{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;}
+.msg-bubble-row{display:flex;}
+.msg-bubble-row .bubble{max-width:70%;padding:9px 13px;border-radius:14px 14px 14px 3px;background:var(--dawn-1);font-size:13.5px;line-height:1.4;word-break:break-word;}
+.msg-bubble-row.me{justify-content:flex-end;}
+.msg-bubble-row.me .bubble{background:var(--coral);color:#fff;border-radius:14px 14px 3px 14px;}
+.msg-compose{display:flex;gap:10px;padding:12px 14px;border-top:1px solid var(--line);}
+.msg-compose input{flex:1;border:1.5px solid var(--line);border-radius:12px;padding:10px 13px;font-family:inherit;font-size:13.5px;background:var(--dawn-1);outline:none;}
+.msg-compose input:focus{border-color:var(--coral);}
+.msg-compose button{background:var(--coral);border:none;color:#fff;border-radius:12px;padding:0 18px;font-weight:700;}
+@media (max-width:980px){
+  .msg-shell{height:calc(100vh - 190px);grid-template-columns:1fr;}
+  .msg-active{display:none;}
+  .msg-shell.active-open .msg-threads{display:none;}
+  .msg-shell.active-open .msg-active{display:flex;}
+  .msg-back{display:inline-block;}
+}
+
 /* ============ APP SHELL: 3-column Facebook layout ============ */
 #app{display:none;}
 #app.ready{display:block;padding-top:calc(var(--topbar-h) + 5px);}
@@ -128,7 +164,7 @@ button{font-family:inherit;cursor:pointer;}
 /* Right sidebar - batchmates */
 .rightbar{position:sticky;top:calc(var(--topbar-h) + 18px);}
 .rightbar h4{font-size:13px;color:var(--veil);margin:0 0 10px 6px;text-transform:uppercase;letter-spacing:.03em;}
-.contact{display:flex;align-items:center;gap:10px;padding:7px 6px;border-radius:10px;font-size:13.5px;font-weight:600;}
+.contact{display:flex;align-items:center;gap:10px;padding:7px 6px;border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;}
 .contact:hover{background:#fff;}
 .contact .dot{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--veil),var(--ink));color:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;flex-shrink:0;}
 
@@ -315,6 +351,7 @@ button{font-family:inherit;cursor:pointer;}
   <div class="tb-left"><img src="l.png" alt="logo" onerror="this.style.display='none'"><span>অরুণদীপ্ত</span></div>
   <div class="tb-search">🔍<input type="text" id="searchBox" placeholder="ফিডে খুঁজো..." oninput="filterFeed()"></div>
   <div class="tb-right">
+    <button class="tb-bell" id="tbMsgBtn" onclick="openMessagesView()">💬<span class="tb-badge" id="msgBadge">0</span></button>
     <button class="tb-bell" id="tbBell" onclick="toggleNotifPanel()">🔔<span class="tb-badge" id="notifBadge">0</span></button>
     <div class="notif-panel" id="notifPanel">
       <div class="notif-head">
@@ -338,6 +375,7 @@ button{font-family:inherit;cursor:pointer;}
     <div class="sidebar">
       <button class="navlink active" data-view="feed" onclick="switchView('feed')"><span class="ic">🏠</span> ফিড</button>
       <button class="navlink" data-view="notes" onclick="switchView('notes')"><span class="ic">✏️</span> নোটস</button>
+      <button class="navlink" data-view="messages" onclick="switchView('messages')"><span class="ic">💬</span> বার্তা</button>
       <button class="navlink" data-view="confess" onclick="switchView('confess')"><span class="ic">🎭</span> কনফেশন</button>
       <button class="navlink secret" data-view="secret" onclick="switchView('secret')"><span class="ic">🌙</span> সিক্রেট চ্যাট</button>
       <button class="navlink admin" id="adminNav" data-view="admin" onclick="switchView('admin')" style="display:none;"><span class="ic">🛡️</span> এডমিন প্যানেল</button>
@@ -395,6 +433,29 @@ button{font-family:inherit;cursor:pointer;}
           </div>
         </div>
         <div id="confessList"></div>
+      </div>
+
+      <!-- MESSAGES (private chat) -->
+      <div class="view" id="view-messages">
+        <div class="view-head"><h2>বার্তা</h2><p>ব্যাচমেটদের সাথে সরাসরি, প্রাইভেট চ্যাট করো</p></div>
+        <div class="msg-shell" id="msgShell">
+          <div class="msg-threads" id="msgThreads"><div class="empty" style="padding:30px 10px;">এখনো কোনো চ্যাট নেই — ডান পাশের ব্যাচমেট লিস্ট থেকে কাউকে ট্যাপ করো</div></div>
+          <div class="msg-active">
+            <div class="msg-active-empty" id="msgActiveEmpty">বাম পাশ থেকে একটা চ্যাট বেছে নাও</div>
+            <div class="msg-thread-open" id="msgThreadOpen" style="display:none;">
+              <div class="msg-thread-head">
+                <button class="msg-back" onclick="closeActiveChatMobile()">←</button>
+                <div class="avatar" id="msgHeadAvatar"></div>
+                <div class="name" id="msgHeadName"></div>
+              </div>
+              <div class="msg-log" id="msgLog"></div>
+              <div class="msg-compose">
+                <input type="text" id="msgInput" placeholder="মেসেজ লেখো..." onkeydown="if(event.key==='Enter')sendChatMessage()">
+                <button onclick="sendChatMessage()">পাঠাও</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- SECRET CHAT -->
@@ -472,6 +533,10 @@ const db = firebase.firestore();
 let currentUser = null;
 let currentProfile = null;
 let unsubs = [];
+let activeChatId = null;
+let activeChatOtherUid = null;
+let activeChatUnsub = null;
+let lastChatDocs = [];
 
 /* ============ SIGNUP USERNAME PREVIEW ============ */
 function refreshUsernamePreview(){
@@ -525,6 +590,8 @@ function doLogin(){
 function doLogout(){
   unsubs.forEach(u=>u());
   unsubs=[];
+  if(activeChatUnsub){ activeChatUnsub(); activeChatUnsub=null; }
+  activeChatId=null; activeChatOtherUid=null;
   auth.signOut();
 }
 function toggleMenu(){ document.getElementById('tbMenu').classList.toggle('open'); document.getElementById('notifPanel').classList.remove('open'); }
@@ -923,8 +990,111 @@ function renderContacts(docs){
   if(others.length===0){ el.innerHTML='<div class="empty" style="padding:20px 4px;">কেউ এখনো যোগ দেয়নি</div>'; return; }
   el.innerHTML = others.map(d=>{
     const u=d.data();
-    return `<div class="contact"><div class="dot">${escapeHtml((u.username||'?').charAt(0).toUpperCase())}</div>${escapeHtml(u.username||'')}</div>`;
+    return `<div class="contact" onclick='openChat("${d.id}", ${JSON.stringify(u.username||'')})'><div class="dot">${escapeHtml((u.username||'?').charAt(0).toUpperCase())}</div>${escapeHtml(u.username||'')}</div>`;
   }).join('');
+}
+
+/* ============ PRIVATE CHAT ============ */
+// chats/{chatId}: { participants:[uidA,uidB] (sorted), participantNames:{uid:username},
+//                    lastMessage, lastMessageAt, lastSenderUid, lastRead:{uid:timestamp} }
+// chats/{chatId}/messages/{msgId}: { senderUid, text, createdAt }
+function chatIdFor(otherUid){
+  return [currentUser.uid, otherUid].sort().join('_');
+}
+function openMessagesView(){
+  document.getElementById('tbMenu').classList.remove('open');
+  document.getElementById('notifPanel').classList.remove('open');
+  switchView('messages');
+}
+async function openChat(otherUid, otherUsername){
+  if(!otherUid || otherUid===currentUser.uid) return;
+  openMessagesView();
+  const chatId = chatIdFor(otherUid);
+  activeChatId = chatId;
+  activeChatOtherUid = otherUid;
+
+  document.getElementById('msgShell').classList.add('active-open');
+  document.getElementById('msgActiveEmpty').style.display='none';
+  document.getElementById('msgThreadOpen').style.display='flex';
+  document.getElementById('msgHeadAvatar').textContent = (otherUsername||'?').charAt(0).toUpperCase();
+  document.getElementById('msgHeadName').textContent = otherUsername||'';
+  document.querySelectorAll('.thread-item').forEach(el=>el.classList.toggle('active', el.dataset.chatid===chatId));
+
+  const ref = db.collection('chats').doc(chatId);
+  const snap = await ref.get();
+  if(!snap.exists){
+    await ref.set({
+      participants:[currentUser.uid, otherUid].sort(),
+      participantNames:{ [currentUser.uid]: currentProfile.username, [otherUid]: otherUsername },
+      lastMessage:'', lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+      lastSenderUid:null,
+      lastRead:{ [currentUser.uid]: firebase.firestore.FieldValue.serverTimestamp() }
+    });
+  } else {
+    await ref.set({ lastRead:{ [currentUser.uid]: firebase.firestore.FieldValue.serverTimestamp() } }, {merge:true});
+  }
+
+  if(activeChatUnsub) activeChatUnsub();
+  activeChatUnsub = ref.collection('messages').orderBy('createdAt').limit(200)
+    .onSnapshot(s=>renderChatLog(s.docs));
+}
+function closeActiveChatMobile(){
+  document.getElementById('msgShell').classList.remove('active-open');
+}
+function sendChatMessage(){
+  const input=document.getElementById('msgInput');
+  const text=input.value.trim();
+  if(!text || !activeChatId) return;
+  const ref=db.collection('chats').doc(activeChatId);
+  ref.collection('messages').add({
+    senderUid:currentUser.uid, text, createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  ref.set({
+    lastMessage:text, lastMessageAt:firebase.firestore.FieldValue.serverTimestamp(),
+    lastSenderUid:currentUser.uid,
+    lastRead:{ [currentUser.uid]: firebase.firestore.FieldValue.serverTimestamp() }
+  }, {merge:true});
+  input.value='';
+}
+function renderChatLog(docs){
+  const el=document.getElementById('msgLog');
+  el.innerHTML = docs.map(d=>{
+    const m=d.data(); const mine = m.senderUid===currentUser.uid;
+    return `<div class="msg-bubble-row ${mine?'me':''}"><div class="bubble">${escapeHtml(m.text)}</div></div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+function isChatUnread(c){
+  if(!c.lastSenderUid || c.lastSenderUid===currentUser.uid) return false;
+  const lastRead = c.lastRead && c.lastRead[currentUser.uid];
+  if(!lastRead || !c.lastMessageAt) return true;
+  return c.lastMessageAt.toMillis() > lastRead.toMillis();
+}
+function renderThreads(docs){
+  lastChatDocs = docs;
+  updateMsgBadge(docs);
+  const el=document.getElementById('msgThreads');
+  if(docs.length===0){ el.innerHTML='<div class="empty" style="padding:30px 10px;">এখনো কোনো চ্যাট নেই — ডান পাশের ব্যাচমেট লিস্ট থেকে কাউকে ট্যাপ করো</div>'; return; }
+  el.innerHTML = docs.map(d=>{
+    const c=d.data();
+    const otherUid=(c.participants||[]).find(u=>u!==currentUser.uid);
+    const otherName=(c.participantNames && c.participantNames[otherUid]) || 'ব্যাচমেট';
+    const unread = isChatUnread(c);
+    return `<div class="thread-item ${d.id===activeChatId?'active':''} ${unread?'unread':''}" data-chatid="${d.id}" onclick='openChat("${otherUid}", ${JSON.stringify(otherName)})'>
+      <div class="avatar">${escapeHtml((otherName||'?').charAt(0).toUpperCase())}</div>
+      <div class="tmeta">
+        <div class="tname">${escapeHtml(otherName)}</div>
+        <div class="tlast">${escapeHtml(c.lastMessage||'চ্যাট শুরু করো')}</div>
+      </div>
+      ${unread?'<span class="tdot"></span>':''}
+    </div>`;
+  }).join('');
+}
+function updateMsgBadge(docs){
+  const badge=document.getElementById('msgBadge');
+  const count = docs.filter(d=>isChatUnread(d.data())).length;
+  if(count>0){ badge.textContent = count>99?'99+':count; badge.classList.add('show'); }
+  else badge.classList.remove('show');
 }
 
 /* ============ NOTIFICATIONS ============ */
@@ -990,6 +1160,9 @@ function startListeners(){
   unsubs.push(db.collection('notifications').where('recipientUid','==',currentUser.uid)
     .orderBy('createdAt','desc').limit(30)
     .onSnapshot(s=>renderNotifications(s.docs)));
+  unsubs.push(db.collection('chats').where('participants','array-contains',currentUser.uid)
+    .orderBy('lastMessageAt','desc').limit(30)
+    .onSnapshot(s=>renderThreads(s.docs)));
 
   const cutoff = firebase.firestore.Timestamp.fromMillis(Date.now() - 24*60*60*1000);
   unsubs.push(db.collection('stories').where('createdAt','>',cutoff).orderBy('createdAt','desc').limit(100)
