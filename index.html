@@ -3,179 +3,1000 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>করতোয়া ছাত্রাবাস — মিল ম্যানেজমেন্ট</title>
-<link rel="stylesheet" href="css/style.css">
+<title>অরুণদীপ্ত — ব্যাচ কমিউনিটি</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Firebase (compat SDK, single-file friendly) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --dawn-1:#FFF6EC;      /* soft cream backdrop, "day" surface */
+  --dawn-2:#FFE1C7;      /* pale sunrise peach */
+  --coral:#FF6F4D;       /* sunrise coral - primary accent */
+  --gold:#FFB238;        /* sunrise gold - secondary accent */
+  --ink:#241A2E;         /* near-black plum ink for text */
+  --night-1:#171225;     /* deep indigo night sky - secret chat surface */
+  --night-2:#241C3B;     /* lighter night panel */
+  --veil:#8C7BAE;        /* muted lavender for anonymous/veiled elements */
+  --line: rgba(36,26,46,0.10);
+  --radius: 16px;
+  --shadow: 0 10px 30px -12px rgba(36,26,46,0.18);
+  --topbar-h: 58px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background: var(--dawn-1);
+  color: var(--ink);
+  font-family:'Hind Siliguri',sans-serif;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.brand,.tab-label{font-family:'Baloo Da 2',sans-serif;}
+.mono{font-family:'JetBrains Mono',monospace;}
+::selection{background:var(--gold);color:var(--ink);}
+a{color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+
+.sunrise-bar{height:5px;width:100%;background:linear-gradient(90deg,var(--gold) 0%,var(--coral) 35%,#B15C6B 60%,#4B3566 80%,var(--night-1) 100%);position:fixed;top:0;left:0;z-index:200;}
+
+/* ============ TOP NAVBAR (Facebook-style) ============ */
+.topbar{
+  position:fixed;top:5px;left:0;right:0;height:var(--topbar-h);z-index:150;
+  background:#fff;border-bottom:1px solid var(--line);
+  display:none;align-items:center;justify-content:space-between;
+  padding:0 18px;box-shadow:0 2px 10px rgba(36,26,46,0.05);
+}
+.topbar.ready{display:flex;}
+.tb-left{display:flex;align-items:center;gap:10px;min-width:180px;}
+.tb-left img{width:34px;height:34px;border-radius:10px;object-fit:cover;background:var(--gold);}
+.tb-left span{font-weight:700;font-size:18px;}
+.tb-search{
+  flex:1;max-width:380px;margin:0 20px;
+  background:var(--dawn-1);border-radius:999px;padding:9px 16px;
+  display:flex;align-items:center;gap:8px;border:1px solid var(--line);
+}
+.tb-search input{border:none;background:none;outline:none;font-family:inherit;font-size:13.5px;width:100%;color:var(--ink);}
+.tb-right{display:flex;align-items:center;gap:10px;min-width:180px;justify-content:flex-end;position:relative;}
+.tb-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--gold));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;flex-shrink:0;border:none;}
+.tb-menu{
+  position:absolute;top:48px;right:0;background:#fff;border-radius:14px;box-shadow:var(--shadow);
+  width:200px;padding:10px;display:none;border:1px solid var(--line);
+}
+.tb-menu.open{display:block;}
+.tb-menu .who{padding:8px 10px 10px;border-bottom:1px solid var(--line);margin-bottom:6px;}
+.tb-menu .who .u{font-weight:700;font-size:14px;}
+.tb-menu .who .r{font-size:11.5px;color:var(--veil);}
+.tb-menu button{width:100%;text-align:left;background:none;border:none;padding:9px 10px;border-radius:9px;font-size:13.5px;font-weight:600;color:var(--ink);}
+.tb-menu button:hover{background:var(--dawn-1);}
+
+/* ============ NOTIFICATIONS ============ */
+.tb-bell{position:relative;width:38px;height:38px;border-radius:50%;background:var(--dawn-1);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;transition:.15s;}
+.tb-bell:hover{background:var(--dawn-2);}
+.tb-badge{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--coral);color:#fff;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;border:2px solid #fff;line-height:1;}
+.tb-badge.show{display:flex;}
+.notif-panel{
+  position:absolute;top:48px;right:0;background:#fff;border-radius:14px;box-shadow:var(--shadow);
+  width:320px;max-height:420px;display:none;flex-direction:column;border:1px solid var(--line);overflow:hidden;
+}
+.notif-panel.open{display:flex;}
+.notif-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);}
+.notif-head h4{margin:0;font-size:14.5px;}
+.notif-head button{background:none;border:none;color:var(--coral);font-size:12px;font-weight:700;}
+.notif-head button:disabled{color:var(--veil);cursor:default;}
+.notif-list{overflow-y:auto;flex:1;}
+.notif-item{display:flex;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);align-items:flex-start;}
+.notif-item:last-child{border-bottom:none;}
+.notif-item.unread{background:#FFF3EC;}
+.notif-item .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--gold));color:#fff;font-weight:700;font-size:12.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.notif-item .txt{font-size:13px;line-height:1.4;}
+.notif-item .txt b{font-weight:700;}
+.notif-item .time{font-size:11px;color:var(--veil);margin-top:2px;font-family:'JetBrains Mono';}
+.notif-empty{padding:36px 16px;text-align:center;color:var(--veil);font-size:13px;}
+
+/* ============ APP SHELL: 3-column Facebook layout ============ */
+#app{display:none;}
+#app.ready{display:block;padding-top:calc(var(--topbar-h) + 5px);}
+.columns{
+  max-width:1180px;margin:0 auto;
+  display:grid;grid-template-columns:230px minmax(0,600px) 260px;
+  gap:22px;align-items:start;padding:18px 18px 60px;
+}
+
+/* Left sidebar */
+.sidebar{position:sticky;top:calc(var(--topbar-h) + 18px);display:flex;flex-direction:column;gap:4px;}
+.navlink{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 12px;border-radius:12px;
+  font-size:14.5px;font-weight:600;color:var(--ink);
+  border:1px solid transparent;background:none;text-align:left;width:100%;
+  transition:.15s;
+}
+.navlink .ic{width:20px;text-align:center;font-size:17px;}
+.navlink:hover{background:#fff;box-shadow:var(--shadow);}
+.navlink.active{background:var(--ink);color:var(--dawn-1);}
+.navlink.secret{color:var(--veil);}
+.navlink.secret.active{background:var(--night-1);color:#fff;}
+.navlink.admin{color:var(--coral);}
+
+/* Right sidebar - batchmates */
+.rightbar{position:sticky;top:calc(var(--topbar-h) + 18px);}
+.rightbar h4{font-size:13px;color:var(--veil);margin:0 0 10px 6px;text-transform:uppercase;letter-spacing:.03em;}
+.contact{display:flex;align-items:center;gap:10px;padding:7px 6px;border-radius:10px;font-size:13.5px;font-weight:600;}
+.contact:hover{background:#fff;}
+.contact .dot{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--veil),var(--ink));color:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;flex-shrink:0;}
+
+/* Main column */
+.main{min-width:0;}
+.view{display:none;}
+.view.active{display:block;animation:rise .35s ease;}
+@keyframes rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.view-head{margin-bottom:16px;}
+.view-head h2{margin:0 0 4px;font-size:22px;}
+.view-head p{margin:0;color:var(--veil);font-size:13.5px;}
+
+/* ============ AUTH SCREEN ============ */
+#authScreen{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(1200px 700px at 15% -10%, var(--dawn-2), transparent 60%),
+             radial-gradient(1000px 600px at 110% 10%, #FFD9B0, transparent 55%),
+             var(--dawn-1);
+  padding:20px;
+}
+.auth-card{background:#fff;border-radius:24px;box-shadow:var(--shadow);padding:36px 32px;width:100%;max-width:400px;}
+.auth-card .brand{display:flex;align-items:center;gap:10px;justify-content:center;padding:0 0 20px;}
+.auth-card .brand img{width:38px;height:38px;border-radius:11px;object-fit:cover;background:var(--gold);}
+.auth-card .brand span{font-size:20px;font-weight:700;}
+.auth-card h1{font-size:19px;margin:0 0 4px;text-align:center;}
+.auth-card p.sub{text-align:center;color:var(--veil);font-size:13.5px;margin:0 0 22px;}
+.field{margin-bottom:13px;}
+.field.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field label{display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink);}
+.field input{width:100%;padding:11px 13px;border-radius:12px;border:1.5px solid var(--line);font-family:inherit;font-size:14.5px;background:var(--dawn-1);}
+.field input:focus{outline:none;border-color:var(--coral);}
+.field .hint{font-size:11px;color:var(--veil);margin-top:4px;}
+.btn{width:100%;padding:12px;border-radius:12px;border:none;background:var(--coral);color:#fff;font-weight:700;font-size:15px;margin-top:6px;transition:.15s;}
+.btn:hover{background:#F05A38;}
+.switch-auth{text-align:center;font-size:13px;margin-top:16px;color:var(--veil);}
+.switch-auth button{background:none;border:none;color:var(--coral);font-weight:700;font-size:13px;}
+.auth-error{background:#FDE7E2;color:#B23A1F;font-size:12.5px;padding:9px 11px;border-radius:10px;margin-bottom:12px;display:none;}
+
+/* ============ STORIES ROW (image-only, 24h) ============ */
+.stories-row{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 16px;margin-bottom:6px;}
+.story-add{
+  flex-shrink:0;width:104px;height:170px;border-radius:16px;position:relative;overflow:hidden;
+  background:#fff;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+}
+.story-add .plate{height:65%;background:linear-gradient(160deg,var(--dawn-2),var(--gold));width:100%;}
+.story-add .plus-badge{position:absolute;top:58%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;background:var(--coral);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;border:3px solid #fff;}
+.story-add span.lbl{padding:12px 6px 10px;font-size:12px;font-weight:700;text-align:center;}
+.story-card{
+  flex-shrink:0;width:104px;height:170px;border-radius:16px;position:relative;overflow:hidden;cursor:pointer;
+  box-shadow:var(--shadow);background:var(--night-1);
+}
+.story-card img{width:100%;height:100%;object-fit:cover;opacity:.92;}
+.story-card .ring{position:absolute;top:8px;left:8px;width:34px;height:34px;border-radius:50%;border:3px solid var(--coral);display:flex;align-items:center;justify-content:center;background:var(--ink);color:#fff;font-size:12px;font-weight:700;}
+.story-card .sname{position:absolute;bottom:8px;left:8px;right:8px;color:#fff;font-size:11.5px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.6);}
+
+/* Story viewer overlay */
+#storyViewer{position:fixed;inset:0;background:rgba(10,6,16,.94);z-index:400;display:none;align-items:center;justify-content:center;}
+#storyViewer.open{display:flex;}
+.sv-frame{width:min(94vw,380px);height:min(88vh,660px);position:relative;border-radius:16px;overflow:hidden;background:#000;}
+.sv-frame img{width:100%;height:100%;object-fit:contain;background:#000;}
+.sv-bars{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:5px;z-index:2;}
+.sv-bars .seg{flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.3);overflow:hidden;}
+.sv-bars .seg i{display:block;height:100%;width:0%;background:#fff;}
+.sv-bars .seg.done i{width:100%;transition:none;}
+.sv-bars .seg.active i{width:0%;animation:svfill 4.2s linear forwards;}
+@keyframes svfill{from{width:0%;}to{width:100%;}}
+.sv-head{position:absolute;top:20px;left:12px;right:12px;display:flex;align-items:center;gap:8px;z-index:2;}
+.sv-head .who{color:#fff;font-size:13px;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,.6);}
+.sv-head .t{color:rgba(255,255,255,.75);font-size:11px;margin-left:auto;}
+.sv-close{background:none;border:none;color:#fff;font-size:22px;padding:0 4px;}
+.sv-nav{position:absolute;top:0;bottom:0;width:35%;z-index:1;background:none;border:none;}
+.sv-nav.left{left:0;}
+.sv-nav.right{right:0;}
+
+/* ============ NOTES STRIP (60-char capsules) ============ */
+.notes-strip{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 14px;margin-bottom:18px;border-bottom:1px solid var(--line);}
+.note-add{flex-shrink:0;width:112px;height:112px;border-radius:16px;background:linear-gradient(160deg,var(--dawn-2),var(--dawn-1));border:1.5px dashed var(--coral);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--coral);font-weight:700;font-size:12.5px;}
+.note-add .plus{font-size:22px;line-height:1;}
+.note-card{flex-shrink:0;width:112px;height:112px;border-radius:16px;padding:10px;background:linear-gradient(160deg,var(--ink),#3a2a4a);color:#fff;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;}
+.note-card .txt{font-size:12px;font-weight:500;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;}
+.note-card .who{font-size:10px;font-weight:700;color:var(--gold);}
+
+/* ============ COMPOSER ============ */
+.composer{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:18px;}
+.composer textarea{width:100%;border:none;resize:none;font-family:inherit;font-size:15px;min-height:44px;background:none;outline:none;color:var(--ink);}
+.composer-foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding-top:10px;border-top:1px solid var(--line);}
+.count-hint{font-size:11.5px;color:var(--veil);font-family:'JetBrains Mono';}
+.post-btn{padding:8px 20px;border-radius:999px;border:none;background:var(--coral);color:#fff;font-weight:700;font-size:13.5px;}
+.post-btn:disabled{background:var(--line);color:var(--veil);cursor:not-allowed;}
+.file-btn{font-size:12.5px;font-weight:700;color:var(--veil);background:var(--dawn-1);border:1.5px dashed var(--line);border-radius:10px;padding:8px 12px;}
+
+/* ============ FEED CARDS ============ */
+.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:16px;}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.card-head .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--gold));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;}
+.card-head .name{font-weight:700;font-size:14px;}
+.card-head .time{font-size:11.5px;color:var(--veil);font-family:'JetBrains Mono';}
+.card.confession .card-head .avatar{background:linear-gradient(135deg,var(--veil),var(--ink));}
+.card.confession .card-head .name{color:var(--veil);}
+.card.confession{border:1.5px dashed var(--veil);}
+.badge-mask{font-size:10.5px;background:var(--dawn-2);color:#8A6A00;padding:2px 8px;border-radius:999px;font-weight:700;margin-left:4px;}
+.card-body{font-size:15px;line-height:1.55;margin-bottom:12px;white-space:pre-wrap;}
+.card-actions{display:flex;gap:16px;padding-top:10px;border-top:1px solid var(--line);}
+.card-actions button{background:none;border:none;font-size:13px;font-weight:600;color:var(--veil);display:flex;align-items:center;gap:6px;}
+.card-actions button.liked{color:var(--coral);}
+.empty{text-align:center;padding:50px 20px;color:var(--veil);}
+.empty .ic{font-size:34px;display:block;margin-bottom:10px;}
+
+/* ============ SECRET CHAT ============ */
+#view-secret .main-secret-wrap{background:var(--night-1);color:#fff;border-radius:var(--radius);padding:0;overflow:hidden;box-shadow:var(--shadow);}
+.secret-head{padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:12px;}
+.secret-head .ic{font-size:22px;}
+.secret-head h3{margin:0;font-size:16px;}
+.secret-head p{margin:2px 0 0;font-size:12px;color:var(--veil);}
+.secret-log{height:420px;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:12px;}
+.smsg{max-width:78%;}
+.smsg .who{font-size:11px;font-weight:700;color:var(--gold);margin-bottom:3px;}
+.smsg .bubble{background:var(--night-2);padding:9px 13px;border-radius:14px 14px 14px 3px;font-size:14px;line-height:1.4;}
+.smsg.me{align-self:flex-end;}
+.smsg.me .who{color:var(--coral);text-align:right;}
+.smsg.me .bubble{background:var(--coral);border-radius:14px 14px 3px 14px;}
+.secret-compose{display:flex;gap:10px;padding:14px 16px;border-top:1px solid rgba(255,255,255,.08);}
+.secret-compose input{flex:1;background:var(--night-2);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:11px 14px;color:#fff;font-family:inherit;font-size:14px;}
+.secret-compose input::placeholder{color:var(--veil);}
+.secret-compose button{background:var(--coral);border:none;color:#fff;border-radius:12px;padding:0 18px;font-weight:700;}
+.secret-note{margin-top:12px;font-size:12px;color:var(--veil);text-align:center;}
+
+/* ============ ADMIN VIEW ============ */
+.admin-row{background:#fff;border-radius:14px;padding:13px 15px;margin-bottom:10px;box-shadow:var(--shadow);}
+.admin-row .meta{display:flex;justify-content:space-between;font-size:11.5px;color:var(--veil);margin-bottom:6px;font-family:'JetBrains Mono';}
+.admin-row .reveal{color:var(--coral);font-weight:700;}
+.admin-tag{display:inline-block;font-size:10px;background:var(--night-1);color:#fff;padding:2px 8px;border-radius:999px;margin-bottom:6px;}
+.admin-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.admin-tabs button{padding:8px 16px;border-radius:999px;border:1.5px solid var(--line);background:#fff;font-size:13px;font-weight:600;}
+.admin-tabs button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+.del-btn{font-size:11.5px;color:#B23A1F;background:none;border:none;font-weight:700;}
+
+@media (max-width:980px){
+  .columns{grid-template-columns:1fr;padding:14px 12px 90px;}
+  .rightbar{display:none;}
+  .sidebar{position:fixed;bottom:0;left:0;right:0;top:auto;flex-direction:row;justify-content:space-around;
+    background:#fff;padding:8px 4px;z-index:150;border-top:1px solid var(--line);gap:2px;}
+  .navlink{flex-direction:column;font-size:9.5px;padding:6px 6px;gap:3px;border-radius:10px;}
+  .navlink .ic{font-size:18px;}
+  .main{padding-bottom:70px;}
+}
+</style>
 </head>
 <body>
 
-<div class="auth-shell">
-  <div style="width:100%; max-width:960px; display:grid; grid-template-columns:1fr 1fr; gap:0; border-radius:28px; overflow:hidden; box-shadow:var(--shadow);">
+<div class="sunrise-bar"></div>
 
-    <!-- left: brand panel -->
-    <div style="background:var(--ink); color:var(--paper); padding:48px 40px; display:flex; flex-direction:column; justify-content:space-between; gap:40px;">
-      <div>
-        <div style="font-family:var(--font-mono); font-size:.78rem; letter-spacing:.14em; color:var(--gold); text-transform:uppercase;">করতোয়া ছাত্রাবাস</div>
-        <h1 style="margin-top:14px; font-size:2.4rem; line-height:1.2;">মিল ম্যানেজমেন্ট সিস্টেম</h1>
-      </div>
+<!-- ============ AUTH SCREEN ============ -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="brand"><img src="l.jpg" alt="logo" onerror="this.style.display='none'"><span>অরুণদীপ্ত</span></div>
+    <h1 id="authTitle">ব্যাচে স্বাগতম</h1>
+    <p class="sub" id="authSub">তোমার পরিচয় দিয়ে ঢুকে পড়ো ফিডে</p>
+    <div class="auth-error" id="authError"></div>
 
-      <div style="display:flex; flex-direction:column; gap:14px;">
-        <div class="token full" style="transform:rotate(-2deg);">
-          <div class="stub">FULL</div>
-          <div class="body">
-            <div class="kind">ফুল মিল</div>
-            <div class="meta"><span>দুপুর / রাত</span><span>৳৭০</span></div>
-          </div>
-        </div>
-        <div class="token half" style="transform:rotate(1.5deg); margin-left:24px;">
-          <div class="stub">HALF</div>
-          <div class="body">
-            <div class="kind">হাফ মিল</div>
-            <div class="meta"><span>দুপুর / রাত</span><span>৳৫০</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div style="font-size:.85rem; color:rgba(251,247,239,.6);">প্রতিদিন সকাল ১০টার মধ্যে মিল অন রাখতে হবে।</div>
+    <div id="loginForm">
+      <div class="field"><label>ইমেইল</label><input type="email" id="li-email" placeholder="you@example.com"></div>
+      <div class="field"><label>পাসওয়ার্ড</label><input type="password" id="li-pass" placeholder="••••••••"></div>
+      <button class="btn" onclick="doLogin()">লগইন করো</button>
+      <p class="switch-auth">অ্যাকাউন্ট নেই? <button onclick="toggleAuth('signup')">নতুন অ্যাকাউন্ট বানাও</button></p>
     </div>
 
-    <!-- right: auth form -->
-    <div style="background:var(--paper-card); padding:48px 40px;">
-      <div class="tabs" id="authTabs">
-        <button class="active" data-tab="login">লগ ইন</button>
-        <button data-tab="register">নতুন নিবন্ধন</button>
+    <div id="signupForm" style="display:none;">
+      <div class="field two">
+        <div><label>নিকনেম</label><input type="text" id="su-nick" placeholder=""></div>
+        <div><label>রোল নং</label><input type="text" id="su-roll" placeholder=""></div>
       </div>
-
-      <!-- LOGIN -->
-      <form id="loginForm">
-        <div class="field">
-          <label>ইমেইল</label>
-          <input type="email" id="loginEmail" required autocomplete="username">
-        </div>
-        <div class="field">
-          <label>পাসওয়ার্ড</label>
-          <input type="password" id="loginPassword" required autocomplete="current-password">
-        </div>
-        <button type="submit" class="btn btn-primary btn-block" id="loginBtn">লগ ইন করুন</button>
-      </form>
-
-      <!-- REGISTER -->
-      <form id="registerForm" style="display:none;">
-        <div class="grid cols-2">
-          <div class="field">
-            <label>ফুল নেম</label>
-            <input type="text" id="regName" required>
-          </div>
-          <div class="field">
-            <label>ব্যাচ</label>
-            <select id="regBatch" required>
-              <option value="3">৩</option>
-              <option value="4">৪</option>
-              <option value="5">৫</option>
-              <option value="6">৬</option>
-              <option value="7">৭</option>
-              <option value="8">৮</option>
-            </select>
-          </div>
-        </div>
-        <div class="grid cols-2">
-          <div class="field">
-            <label>রোল</label>
-            <input type="text" id="regRoll" required>
-          </div>
-          <div class="field">
-            <label>রুম নম্বর</label>
-            <input type="text" id="regRoom" required>
-          </div>
-        </div>
-        <div class="field">
-          <label>ইমেইল</label>
-          <input type="email" id="regEmail" required autocomplete="username">
-        </div>
-        <div class="field">
-          <label>পাসওয়ার্ড</label>
-          <input type="password" id="regPassword" required minlength="6" autocomplete="new-password">
-        </div>
-        <button type="submit" class="btn btn-primary btn-block" id="registerBtn">নিবন্ধন করুন</button>
-      </form>
-
+      <div class="field"><label>ইউজারনেম প্রিভিউ</label><input type="text" id="su-preview" disabled placeholder="nickname_roll"></div>
+      <div class="field"><label>ইমেইল</label><input type="email" id="su-email" placeholder="you@example.com"></div>
+      <div class="field"><label>পাসওয়ার্ড</label><input type="password" id="su-pass" placeholder="কমপক্ষে ৬ ক্যারেক্টার"></div>
+      <button class="btn" onclick="doSignup()">অ্যাকাউন্ট বানাও</button>
+      <p class="switch-auth">আগে থেকেই অ্যাকাউন্ট আছে? <button onclick="toggleAuth('login')">লগইন করো</button></p>
     </div>
   </div>
 </div>
 
-<script type="module">
-import { auth, db } from "./js/firebase-config.js";
-import {
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-  doc, setDoc, getDoc, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { showToast } from "./js/utils.js";
+<!-- ============ TOP NAVBAR ============ -->
+<div class="topbar" id="topbar">
+  <div class="tb-left"><img src="l.png" alt="logo" onerror="this.style.display='none'"><span>অরুণদীপ্ত</span></div>
+  <div class="tb-search">🔍<input type="text" id="searchBox" placeholder="ফিডে খুঁজো..." oninput="filterFeed()"></div>
+  <div class="tb-right">
+    <button class="tb-bell" id="tbBell" onclick="toggleNotifPanel()">🔔<span class="tb-badge" id="notifBadge">0</span></button>
+    <div class="notif-panel" id="notifPanel">
+      <div class="notif-head">
+        <h4>নোটিফিকেশন</h4>
+        <button id="markAllReadBtn" onclick="markAllNotificationsRead()">সব পড়া হয়েছে</button>
+      </div>
+      <div class="notif-list" id="notifList"><div class="notif-empty">কোনো নোটিফিকেশন নেই</div></div>
+    </div>
+    <button class="tb-avatar" id="tbAvatar" onclick="toggleMenu()">?</button>
+    <div class="tb-menu" id="tbMenu">
+      <div class="who"><div class="u" id="menuUsername">—</div><div class="r" id="menuRole">সদস্য</div></div>
+      <button onclick="doLogout()">লগ আউট</button>
+    </div>
+  </div>
+</div>
 
-// tabs
-document.querySelectorAll("#authTabs button").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll("#authTabs button").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    const tab = btn.dataset.tab;
-    document.getElementById("loginForm").style.display = tab === "login" ? "block" : "none";
-    document.getElementById("registerForm").style.display = tab === "register" ? "block" : "none";
-  });
+<!-- ============ MAIN APP ============ -->
+<div id="app">
+  <div class="columns">
+
+    <div class="sidebar">
+      <button class="navlink active" data-view="feed" onclick="switchView('feed')"><span class="ic">🏠</span> ফিড</button>
+      <button class="navlink" data-view="notes" onclick="switchView('notes')"><span class="ic">✏️</span> নোটস</button>
+      <button class="navlink" data-view="confess" onclick="switchView('confess')"><span class="ic">🎭</span> কনফেশন</button>
+      <button class="navlink secret" data-view="secret" onclick="switchView('secret')"><span class="ic">🌙</span> সিক্রেট চ্যাট</button>
+      <button class="navlink admin" id="adminNav" data-view="admin" onclick="switchView('admin')" style="display:none;"><span class="ic">🛡️</span> এডমিন প্যানেল</button>
+    </div>
+
+    <div class="main">
+
+      <!-- FEED -->
+      <div class="view active" id="view-feed">
+        <div class="view-head"><h2>নিউজ ফিড</h2><p>ব্যাচের সবার আপডেট এক জায়গায়</p></div>
+
+        <div class="stories-row" id="storiesRow">
+          <div class="story-add" onclick="document.getElementById('storyFile').click()">
+            <div class="plate"></div><div class="plus-badge">+</div><span class="lbl">স্টোরি দাও</span>
+          </div>
+        </div>
+        <input type="file" id="storyFile" accept="image/*" style="display:none;" onchange="createStory(this.files[0])">
+
+        <div class="notes-strip" id="notesStrip">
+          <div class="note-add" onclick="switchView('notes')"><span class="plus">+</span>নোট লেখো</div>
+        </div>
+
+        <div class="composer">
+          <textarea id="postText" placeholder="মনে কী চলছে, লেখো..." rows="2"></textarea>
+          <div class="composer-foot">
+            <span class="count-hint">পাবলিক পোস্ট</span>
+            <button class="post-btn" onclick="createPost()">পোস্ট করো</button>
+          </div>
+        </div>
+
+        <div id="feedList"></div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="view" id="view-notes">
+        <div class="view-head"><h2>৬০-অক্ষরের নোট</h2><p>ছোট্ট একটা লাইন শেয়ার করো — ৬০ অক্ষরের মধ্যে</p></div>
+        <div class="composer">
+          <textarea id="noteText" maxlength="60" placeholder="৬০ অক্ষরের মধ্যে মনের কথা..." rows="2" oninput="updateNoteCount()"></textarea>
+          <div class="composer-foot">
+            <span class="count-hint"><span id="noteCount">60</span> অক্ষর বাকি</span>
+            <button class="post-btn" onclick="createNote()">শেয়ার করো</button>
+          </div>
+        </div>
+        <div id="notesList"></div>
+      </div>
+
+      <!-- CONFESSIONS -->
+      <div class="view" id="view-confess">
+        <div class="view-head"><h2>অ্যানোনিমাস কনফেশন</h2><p>নাম গোপন থাকবে — যা মন চায় লেখো</p></div>
+        <div class="composer">
+          <textarea id="confText" placeholder="তোমার পরিচয় কেউ জানবে না... নির্দ্বিধায় লেখো" rows="3"></textarea>
+          <div class="composer-foot">
+            <span class="count-hint">🎭 সম্পূর্ণ অ্যানোনিমাস পোস্ট</span>
+            <button class="post-btn" onclick="createConfession()">পোস্ট করো</button>
+          </div>
+        </div>
+        <div id="confessList"></div>
+      </div>
+
+      <!-- SECRET CHAT -->
+      <div class="view" id="view-secret">
+        <div class="view-head"><h2>সিক্রেট চ্যাট</h2><p>এখানে সবার পরিচয় হাইড থাকে — নির্ভয়ে কথা বলো</p></div>
+        <div class="main-secret-wrap">
+          <div class="secret-head">
+            <span class="ic">🌙</span>
+            <div><h3>Anonymous Room</h3><p>তুমি এখানে "<span id="myAnonName">Anonymous</span>" নামে পরিচিত</p></div>
+          </div>
+          <div class="secret-log" id="secretLog"></div>
+          <div class="secret-compose">
+            <input type="text" id="secretInput" placeholder="অ্যানোনিমাসলি মেসেজ লেখো..." onkeydown="if(event.key==='Enter')sendSecret()">
+            <button onclick="sendSecret()">পাঠাও</button>
+          </div>
+        </div>
+        <p class="secret-note">কাউকে আঘাত করে কিছু লিখলে ওটা ডিলেট করে দেওয়া হতে পরে।</p>
+      </div>
+
+      <!-- ADMIN -->
+      <div class="view" id="view-admin">
+        <div class="view-head"><h2></h2><p></p></div>
+        <div class="admin-tabs">
+          <button class="active" data-atab="secret" onclick="adminTab('secret')">সিক্রেট চ্যাট</button>
+          <button data-atab="confess" onclick="adminTab('confess')">কনফেশন</button>
+        </div>
+        <div id="adminList"></div>
+      </div>
+
+    </div>
+
+    <div class="rightbar">
+      <h4>ব্যাচমেটস</h4>
+      <div id="contactsList"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============ STORY VIEWER ============ -->
+<div id="storyViewer">
+  <div class="sv-frame">
+    <div class="sv-bars" id="svBars"></div>
+    <div class="sv-head"><span class="who" id="svWho"></span><span class="t" id="svTime"></span>
+      <button class="sv-close" onclick="closeStoryViewer()">✕</button></div>
+    <img id="svImage" src="">
+    <button class="sv-nav left" onclick="svPrev()"></button>
+    <button class="sv-nav right" onclick="svNext()"></button>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   FIREBASE CONFIG
+   বন্ধু — এখানে তোমার নিজের Firebase project-এর config বসাও।
+   Firebase Console -> Project settings -> General -> Your apps -> SDK config
+   Storage ব্যবহারের জন্য Firebase Console -> Storage -> Get Started করে নিও (স্টোরির ছবির জন্য দরকার)।
+   ========================================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyCk9aRSl9jpqshmuU0P9yOxvu17MFkJUKY",
+  authDomain: "arundeepto-71230.firebaseapp.com",
+  projectId: "arundeepto-71230",
+  storageBucket: "arundeepto-71230.firebasestorage.app",
+  messagingSenderId: "307584623252",
+  appId: "1:307584623252:web:7ee993390350d9cd61ca81"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+// No Firebase Storage used (that needs the paid Blaze plan). Story images are
+// resized + compressed client-side and saved as base64 straight into
+// Firestore, which stays fully on the free Spark plan.
+
+let currentUser = null;
+let currentProfile = null;
+let unsubs = [];
+
+/* ============ SIGNUP USERNAME PREVIEW ============ */
+function refreshUsernamePreview(){
+  const nick=document.getElementById('su-nick').value.trim();
+  const roll=document.getElementById('su-roll').value.trim();
+  document.getElementById('su-preview').value = (nick||roll) ? `${nick||'nickname'}_${roll||'roll'}` : '';
+}
+document.addEventListener('input', e=>{
+  if(e.target && (e.target.id==='su-nick' || e.target.id==='su-roll')) refreshUsernamePreview();
 });
 
-async function routeByRole(uid) {
-  const snap = await getDoc(doc(db, "users", uid));
-  if (!snap.exists()) {
-    showToast("ইউজার প্রোফাইল খুঁজে পাওয়া যায়নি", true);
-    return;
+/* ============ AUTH UI ============ */
+function toggleAuth(mode){
+  document.getElementById('authError').style.display='none';
+  if(mode==='signup'){
+    document.getElementById('loginForm').style.display='none';
+    document.getElementById('signupForm').style.display='block';
+    document.getElementById('authTitle').textContent='নতুন অ্যাকাউন্ট';
+    document.getElementById('authSub').textContent='ব্যাচের সবার সাথে যুক্ত হও';
+  } else {
+    document.getElementById('signupForm').style.display='none';
+    document.getElementById('loginForm').style.display='block';
+    document.getElementById('authTitle').textContent='ব্যাচে স্বাগতম';
+    document.getElementById('authSub').textContent='তোমার পরিচয় দিয়ে ঢুকে পড়ো ফিডে';
   }
-  const role = snap.data().role;
-  window.location.href = role === "admin" ? "admin.html" : "boarder.html";
+}
+function showAuthError(msg){
+  const el=document.getElementById('authError');
+  el.textContent=msg; el.style.display='block';
+}
+function doSignup(){
+  const nick=document.getElementById('su-nick').value.trim();
+  const roll=document.getElementById('su-roll').value.trim();
+  const email=document.getElementById('su-email').value.trim();
+  const pass=document.getElementById('su-pass').value;
+  if(!nick||!roll||!email||!pass) return showAuthError('সব ঘর পূরণ করো');
+  const username = `${nick}_${roll}`;
+  auth.createUserWithEmailAndPassword(email,pass).then(cred=>{
+    return db.collection('users').doc(cred.user.uid).set({
+      nickname:nick, roll, username, email, isAdmin:false,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }).catch(err=>showAuthError(err.message));
+}
+function doLogin(){
+  const email=document.getElementById('li-email').value.trim();
+  const pass=document.getElementById('li-pass').value;
+  if(!email||!pass) return showAuthError('ইমেইল ও পাসওয়ার্ড দাও');
+  auth.signInWithEmailAndPassword(email,pass).catch(err=>showAuthError(err.message));
+}
+function doLogout(){
+  unsubs.forEach(u=>u());
+  unsubs=[];
+  auth.signOut();
+}
+function toggleMenu(){ document.getElementById('tbMenu').classList.toggle('open'); document.getElementById('notifPanel').classList.remove('open'); }
+function toggleNotifPanel(){ document.getElementById('notifPanel').classList.toggle('open'); document.getElementById('tbMenu').classList.remove('open'); }
+document.addEventListener('click', e=>{
+  const menu=document.getElementById('tbMenu');
+  if(menu && menu.classList.contains('open') && !e.target.closest('.tb-right')) menu.classList.remove('open');
+  const notif=document.getElementById('notifPanel');
+  if(notif && notif.classList.contains('open') && !e.target.closest('.tb-right')) notif.classList.remove('open');
+});
+
+/* ============ AUTH STATE ============ */
+auth.onAuthStateChanged(async user=>{
+  if(user){
+    currentUser=user;
+    const snap = await db.collection('users').doc(user.uid).get();
+    currentProfile = snap.exists ? snap.data() : {username:user.email,isAdmin:false};
+    document.getElementById('authScreen').style.display='none';
+    document.getElementById('app').classList.add('ready');
+    document.getElementById('topbar').classList.add('ready');
+    const initial=(currentProfile.nickname||currentProfile.username||'?').charAt(0).toUpperCase();
+    document.getElementById('tbAvatar').textContent=initial;
+    document.getElementById('menuUsername').textContent=currentProfile.username||'সদস্য';
+    await ensureAnonIdentity();
+    document.getElementById('myAnonName').textContent=myAnonName;
+    if(currentProfile.isAdmin){
+      document.getElementById('adminNav').style.display='flex';
+      document.getElementById('menuRole').textContent='এডমিন';
+    }
+    startListeners();
+  } else {
+    currentUser=null; currentProfile=null;
+    document.getElementById('app').classList.remove('ready');
+    document.getElementById('topbar').classList.remove('ready');
+    document.getElementById('authScreen').style.display='flex';
+  }
+});
+
+/* ============ VIEW SWITCHING ============ */
+function switchView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.navlink').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelector(`.navlink[data-view="${v}"]`).classList.add('active');
+  if(v==='secret') setTimeout(()=>{const l=document.getElementById('secretLog'); l.scrollTop=l.scrollHeight;},50);
 }
 
-document.getElementById("loginForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const btn = document.getElementById("loginBtn");
-  btn.disabled = true;
-  try {
-    const email = document.getElementById("loginEmail").value.trim();
-    const password = document.getElementById("loginPassword").value;
-    const cred = await signInWithEmailAndPassword(auth, email, password);
-    await routeByRole(cred.user.uid);
-  } catch (err) {
-    showToast("লগ ইন ব্যর্থ হয়েছে — ইমেইল অথবা পাসওয়ার্ড ভুল", true);
-  } finally {
-    btn.disabled = false;
+/* ============ HELPERS ============ */
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function timeAgo(ts){
+  if(!ts) return 'এখন';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const diff = Math.floor((Date.now()-d.getTime())/1000);
+  if(diff<60) return 'এইমাত্র';
+  if(diff<3600) return Math.floor(diff/60)+' মিনিট আগে';
+  if(diff<86400) return Math.floor(diff/3600)+' ঘণ্টা আগে';
+  return Math.floor(diff/86400)+' দিন আগে';
+}
+const ANIMALS=['Fox','Owl','Wolf','Falcon','Otter','Lynx','Heron','Panther','Sparrow','Tiger'];
+function randomAnonName(){
+  const n = ANIMALS[Math.floor(Math.random()*ANIMALS.length)];
+  const num = Math.floor(Math.random()*900)+100;
+  return 'Anonymous '+n+num;
+}
+let myAnonName = null;
+// Each user gets ONE random pseudonym, generated client-side and stored in
+// secretIdentities/{uid}. It is NOT derived from the uid (so it can't be
+// brute-forced from the public batchmate list) — only the user themself and
+// an admin can read that mapping, and Firestore rules enforce that.
+async function ensureAnonIdentity(){
+  const ref = db.collection('secretIdentities').doc(currentUser.uid);
+  const snap = await ref.get();
+  if(snap.exists){
+    myAnonName = snap.data().anonName;
+  } else {
+    myAnonName = randomAnonName();
+    await ref.set({anonName:myAnonName, createdAt:firebase.firestore.FieldValue.serverTimestamp()});
   }
-});
+}
 
-document.getElementById("registerForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const btn = document.getElementById("registerBtn");
-  btn.disabled = true;
-  try {
-    const fullName = document.getElementById("regName").value.trim();
-    const batch = Number(document.getElementById("regBatch").value);
-    const roll = document.getElementById("regRoll").value.trim();
-    const room = document.getElementById("regRoom").value.trim();
-    const email = document.getElementById("regEmail").value.trim();
-    const password = document.getElementById("regPassword").value;
+/* ============ FEED ============ */
+function createPost(){
+  const text=document.getElementById('postText').value.trim();
+  if(!text) return;
+  db.collection('posts').add({
+    uid:currentUser.uid, username:currentProfile.username, text,
+    likes:[], createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById('postText').value='';
+}
+function toggleLike(id, likes, ownerUid){
+  const ref=db.collection('posts').doc(id);
+  if(likes.includes(currentUser.uid)){
+    ref.update({likes:firebase.firestore.FieldValue.arrayRemove(currentUser.uid)});
+  } else {
+    ref.update({likes:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)});
+    sendNotification(ownerUid, 'like', id);
+  }
+}
+let lastFeedDocs=[];
+function renderFeed(docs){
+  lastFeedDocs=docs;
+  const el=document.getElementById('feedList');
+  if(docs.length===0){ el.innerHTML='<div class="empty"><span class="ic">📭</span>এখনো কোনো পোস্ট নেই — প্রথম পোস্টটা তুমিই করো!</div>'; return; }
+  el.innerHTML = docs.map(d=>{
+    const p=d.data(); const liked=(p.likes||[]).includes(currentUser.uid);
+    return `<div class="card" data-text="${escapeHtml(p.text).toLowerCase()}">
+      <div class="card-head">
+        <div class="avatar">${escapeHtml((p.username||'?').charAt(0).toUpperCase())}</div>
+        <div><div class="name">${escapeHtml(p.username||'অজানা')}</div><div class="time">${timeAgo(p.createdAt)}</div></div>
+      </div>
+      <div class="card-body">${escapeHtml(p.text)}</div>
+      <div class="card-actions">
+        <button class="${liked?'liked':''}" onclick='toggleLike("${d.id}", ${JSON.stringify(p.likes||[])}, "${p.uid}")'>👍 ${(p.likes||[]).length} লাইক</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function filterFeed(){
+  const q=document.getElementById('searchBox').value.trim().toLowerCase();
+  document.querySelectorAll('#feedList .card').forEach(c=>{
+    c.style.display = (!q || (c.dataset.text||'').includes(q)) ? '' : 'none';
+  });
+}
 
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    await setDoc(doc(db, "users", cred.user.uid), {
-      fullName, batch, roll, room,
-      role: "boarder",
-      balance: 0,
-      createdAt: serverTimestamp()
+/* ============ NOTES ============ */
+function updateNoteCount(){
+  const t=document.getElementById('noteText').value;
+  document.getElementById('noteCount').textContent = 60-t.length;
+}
+function createNote(){
+  const text=document.getElementById('noteText').value.trim();
+  if(!text||text.length>60) return;
+  db.collection('notes').add({
+    uid:currentUser.uid, username:currentProfile.username, text,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById('noteText').value='';
+  updateNoteCount();
+}
+function renderNotes(docs){
+  const strip=document.getElementById('notesStrip');
+  const list=document.getElementById('notesList');
+  const cards = docs.map(d=>{
+    const n=d.data();
+    return `<div class="note-card"><div class="txt">${escapeHtml(n.text)}</div><div class="who">${escapeHtml(n.username||'')}</div></div>`;
+  }).join('');
+  strip.innerHTML = `<div class="note-add" onclick="switchView('notes')"><span class="plus">+</span>নোট লেখো</div>` + cards;
+  if(docs.length===0){ list.innerHTML='<div class="empty"><span class="ic">✏️</span>এখনো কোনো নোট নেই</div>'; return; }
+  list.innerHTML = docs.map(d=>{
+    const n=d.data();
+    return `<div class="card"><div class="card-head">
+      <div class="avatar">${escapeHtml((n.username||'?').charAt(0).toUpperCase())}</div>
+      <div><div class="name">${escapeHtml(n.username||'')}</div><div class="time">${timeAgo(n.createdAt)}</div></div>
+    </div><div class="card-body">${escapeHtml(n.text)}</div></div>`;
+  }).join('');
+}
+
+/* ============ CONFESSIONS ============ */
+function createConfession(){
+  const text=document.getElementById('confText').value.trim();
+  if(!text) return;
+  // Confession text lives in a public doc with NO identity field.
+  // The author link lives in a separate doc (same ID) that Firestore rules
+  // only let admins read — this is enforced server-side, not just hidden in the UI.
+  const ref = db.collection('confessions').doc();
+  const batch = db.batch();
+  batch.set(ref, { text, likes:[], createdAt:firebase.firestore.FieldValue.serverTimestamp() });
+  batch.set(db.collection('confessionAuthors').doc(ref.id), {
+    authorUid:currentUser.uid, createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  batch.commit();
+  document.getElementById('confText').value='';
+}
+function renderConfessions(docs){
+  const el=document.getElementById('confessList');
+  if(docs.length===0){ el.innerHTML='<div class="empty"><span class="ic">🎭</span>এখনো কোনো কনফেশন নেই</div>'; return; }
+  el.innerHTML = docs.map(d=>{
+    const c=d.data(); const liked=(c.likes||[]).includes(currentUser.uid);
+    return `<div class="card confession">
+      <div class="card-head">
+        <div class="avatar">🎭</div>
+        <div><div class="name">অজানা সদস্য <span class="badge-mask">অ্যানোনিমাস</span></div><div class="time">${timeAgo(c.createdAt)}</div></div>
+      </div>
+      <div class="card-body">${escapeHtml(c.text)}</div>
+      <div class="card-actions">
+        <button class="${liked?'liked':''}" onclick='toggleConfLike("${d.id}", ${JSON.stringify(c.likes||[])})'>👍 ${(c.likes||[]).length} লাইক</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleConfLike(id, likes){
+  const ref=db.collection('confessions').doc(id);
+  if(likes.includes(currentUser.uid)){
+    ref.update({likes:firebase.firestore.FieldValue.arrayRemove(currentUser.uid)});
+  } else {
+    ref.update({likes:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)});
+  }
+}
+
+/* ============ STORIES (image-only, 24h, FREE — stored as compressed base64 in Firestore) ============ */
+function resizeImageToDataURL(file, maxDim, quality){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e => { img.src = e.target.result; };
+    reader.onerror = reject;
+    img.onload = () => {
+      let {width, height} = img;
+      if(width > height && width > maxDim){ height = Math.round(height*maxDim/width); width = maxDim; }
+      else if(height > maxDim){ width = Math.round(width*maxDim/height); height = maxDim; }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function createStory(file){
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ alert('শুধু ছবি আপলোড করা যাবে'); return; }
+  let dataUrl;
+  try{
+    dataUrl = await resizeImageToDataURL(file, 900, 0.6);
+    // Firestore documents cap at 1MB — if it's still too big, compress harder.
+    if(dataUrl.length > 850000) dataUrl = await resizeImageToDataURL(file, 640, 0.45);
+    if(dataUrl.length > 850000){ alert('ছবিটা এখনো অনেক বড় — একটু ছোট সাইজের ছবি ব্যবহার করো'); return; }
+  }catch(e){ alert('ছবি প্রসেস করতে সমস্যা হয়েছে, আবার চেষ্টা করো'); return; }
+  await db.collection('stories').add({
+    uid:currentUser.uid, username:currentProfile.username, imageData:dataUrl,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById('storyFile').value='';
+}
+let storyGroups=[]; // grouped by user, most-recent-first
+function renderStories(docs){
+  // docs already filtered to last 24h, ordered desc by createdAt
+  const byUser={};
+  docs.forEach(d=>{
+    const s=d.data();
+    if(!byUser[s.uid]) byUser[s.uid]={uid:s.uid, username:s.username, items:[]};
+    byUser[s.uid].items.push({id:d.id, ...s});
+  });
+  // each user's items currently newest-first (since source query is desc); reverse for chronological viewing
+  storyGroups = Object.values(byUser).map(g=>({...g, items:g.items.slice().reverse()}));
+
+  const row=document.getElementById('storiesRow');
+  const cards = storyGroups.map((g,idx)=>{
+    const latest=g.items[g.items.length-1];
+    return `<div class="story-card" onclick="openStoryViewer(${idx})">
+      <img src="${latest.imageData}">
+      <div class="ring">${escapeHtml((g.username||'?').charAt(0).toUpperCase())}</div>
+      <div class="sname">${escapeHtml(g.username||'')}${g.items.length>1?' · '+g.items.length:''}</div>
+    </div>`;
+  }).join('');
+  row.innerHTML = `<div class="story-add" onclick="document.getElementById('storyFile').click()">
+      <div class="plate"></div><div class="plus-badge">+</div><span class="lbl">স্টোরি দাও</span>
+    </div>` + cards;
+}
+
+let svGroupIdx=0, svItemIdx=0, svTimer=null;
+function openStoryViewer(groupIdx){
+  svGroupIdx=groupIdx; svItemIdx=0;
+  document.getElementById('storyViewer').classList.add('open');
+  svRenderCurrent();
+}
+function closeStoryViewer(){
+  document.getElementById('storyViewer').classList.remove('open');
+  clearTimeout(svTimer);
+}
+function svRenderCurrent(){
+  clearTimeout(svTimer);
+  const group = storyGroups[svGroupIdx];
+  if(!group) return closeStoryViewer();
+  const item = group.items[svItemIdx];
+  document.getElementById('svImage').src = item.imageData;
+  document.getElementById('svWho').textContent = group.username;
+  document.getElementById('svTime').textContent = timeAgo(item.createdAt);
+  const bars = document.getElementById('svBars');
+  bars.innerHTML = group.items.map((_,i)=>{
+    const cls = i<svItemIdx?'seg done':(i===svItemIdx?'seg active':'seg');
+    return `<div class="${cls}"><i></i></div>`;
+  }).join('');
+  svTimer = setTimeout(svNext, 4200);
+}
+function svNext(){
+  const group = storyGroups[svGroupIdx];
+  if(svItemIdx < group.items.length-1){ svItemIdx++; svRenderCurrent(); }
+  else if(svGroupIdx < storyGroups.length-1){ svGroupIdx++; svItemIdx=0; svRenderCurrent(); }
+  else closeStoryViewer();
+}
+function svPrev(){
+  if(svItemIdx>0){ svItemIdx--; svRenderCurrent(); }
+  else if(svGroupIdx>0){ svGroupIdx--; svItemIdx=storyGroups[svGroupIdx].items.length-1; svRenderCurrent(); }
+}
+
+/* ============ SECRET CHAT ============ */
+function sendSecret(){
+  const input=document.getElementById('secretInput');
+  const text=input.value.trim();
+  if(!text) return;
+  db.collection('secretChat').add({
+    anonName:myAnonName, // no uid stored on the message at all
+    text, createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  input.value='';
+}
+function renderSecret(docs){
+  const el=document.getElementById('secretLog');
+  el.innerHTML = docs.map(d=>{
+    const m=d.data(); const mine = m.anonName===myAnonName;
+    return `<div class="smsg ${mine?'me':''}">
+      <div class="who">${escapeHtml(m.anonName||'Anonymous')}</div>
+      <div class="bubble">${escapeHtml(m.text)}</div>
+    </div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+/* ============ ADMIN ============ */
+let currentAdminTab='secret';
+function adminTab(t){
+  currentAdminTab=t;
+  document.querySelectorAll('[data-atab]').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`[data-atab="${t}"]`).classList.add('active');
+  loadAdminData();
+}
+async function loadAdminData(){
+  if(!currentProfile || !currentProfile.isAdmin) return;
+  const el=document.getElementById('adminList');
+  el.innerHTML='<div class="empty">লোড হচ্ছে...</div>';
+  const userCache={};
+  async function nameFor(uid){
+    if(userCache[uid]) return userCache[uid];
+    const snap = await db.collection('users').doc(uid).get();
+    const nm = snap.exists ? snap.data().username : 'অজানা ইউজার';
+    userCache[uid]=nm; return nm;
+  }
+  if(currentAdminTab==='secret'){
+    const snap = await db.collection('secretChat').orderBy('createdAt','desc').limit(100).get();
+    let rows='';
+    for(const d of snap.docs){
+      const m=d.data();
+      let real='অজানা';
+      try{
+        const idSnap = await db.collection('secretIdentities').where('anonName','==',m.anonName).limit(1).get();
+        if(!idSnap.empty) real = await nameFor(idSnap.docs[0].id);
+      }catch(e){ real='(এডমিন রুলস চেক করো)'; }
+      rows += `<div class="admin-row">
+        <span class="admin-tag">সিক্রেট চ্যাট</span>
+        <div class="meta"><span>${timeAgo(m.createdAt)}</span>
+          <span class="reveal">আসল ইউজারনেম: ${escapeHtml(real)}</span></div>
+        <div>${escapeHtml(m.text)} <span style="color:#8C7BAE;font-size:12px;">(${escapeHtml(m.anonName)})</span></div>
+        <button class="del-btn" onclick="adminDelete('secretChat','${d.id}')">মুছে ফেলো</button>
+      </div>`;
+    }
+    el.innerHTML = rows || '<div class="empty">কোনো মেসেজ নেই</div>';
+  } else {
+    const snap = await db.collection('confessions').orderBy('createdAt','desc').limit(100).get();
+    let rows='';
+    for(const d of snap.docs){
+      const c=d.data();
+      let real='অজানা';
+      try{
+        const authSnap = await db.collection('confessionAuthors').doc(d.id).get();
+        if(authSnap.exists) real = await nameFor(authSnap.data().authorUid);
+      }catch(e){ real='(এডমিন রুলস চেক করো)'; }
+      rows += `<div class="admin-row">
+        <span class="admin-tag">কনফেশন</span>
+        <div class="meta"><span>${timeAgo(c.createdAt)}</span>
+          <span class="reveal">আসল ইউজারনেম: ${escapeHtml(real)}</span></div>
+        <div>${escapeHtml(c.text)}</div>
+        <button class="del-btn" onclick="adminDelete('confessions','${d.id}')">মুছে ফেলো</button>
+      </div>`;
+    }
+    el.innerHTML = rows || '<div class="empty">কোনো কনফেশন নেই</div>';
+  }
+}
+function adminDelete(col,id){
+  if(confirm('এই কনটেন্টটা ডিলিট করবে?')){
+    db.collection(col).doc(id).delete().then(()=>{
+      if(col==='confessions') db.collection('confessionAuthors').doc(id).delete().catch(()=>{});
+      loadAdminData();
     });
-    window.location.href = "boarder.html";
-  } catch (err) {
-    showToast(err.code === "auth/email-already-in-use" ? "এই ইমেইল দিয়ে আগেই নিবন্ধন করা হয়েছে" : "নিবন্ধন ব্যর্থ হয়েছে", true);
-  } finally {
-    btn.disabled = false;
   }
-});
+}
+
+/* ============ CONTACTS (right sidebar) ============ */
+function renderContacts(docs){
+  const el=document.getElementById('contactsList');
+  const others = docs.filter(d=>d.id!==currentUser.uid);
+  if(others.length===0){ el.innerHTML='<div class="empty" style="padding:20px 4px;">কেউ এখনো যোগ দেয়নি</div>'; return; }
+  el.innerHTML = others.map(d=>{
+    const u=d.data();
+    return `<div class="contact"><div class="dot">${escapeHtml((u.username||'?').charAt(0).toUpperCase())}</div>${escapeHtml(u.username||'')}</div>`;
+  }).join('');
+}
+
+/* ============ NOTIFICATIONS ============ */
+// notifications/{id}: { recipientUid, senderUsername, type ("like"|"comment"), postId, isRead, createdAt }
+function sendNotification(recipientUid, type, postId){
+  if(!recipientUid || recipientUid===currentUser.uid) return; // don't notify yourself
+  db.collection('notifications').add({
+    recipientUid, senderUsername: currentProfile.username||'কেউ একজন',
+    type, postId: postId||null, isRead:false,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+// Hook for future comment feature — call this wherever a comment gets created:
+// sendNotification(postOwnerUid, 'comment', postId);
+
+let lastNotifDocs=[];
+function renderNotifications(docs){
+  lastNotifDocs=docs;
+  const list=document.getElementById('notifList');
+  const badge=document.getElementById('notifBadge');
+  const markBtn=document.getElementById('markAllReadBtn');
+  const unreadCount = docs.filter(d=>!d.data().isRead).length;
+
+  if(unreadCount>0){ badge.textContent = unreadCount>99?'99+':unreadCount; badge.classList.add('show'); }
+  else { badge.classList.remove('show'); }
+  markBtn.disabled = unreadCount===0;
+
+  if(docs.length===0){ list.innerHTML='<div class="notif-empty">কোনো নোটিফিকেশন নেই</div>'; return; }
+
+  const typeText = {like:'তোমার পোস্টে লাইক দিয়েছে', comment:'তোমার পোস্টে কমেন্ট করেছে'};
+  list.innerHTML = docs.map(d=>{
+    const n=d.data();
+    const label = typeText[n.type] || 'একটা নোটিফিকেশন পাঠিয়েছে';
+    return `<div class="notif-item ${n.isRead?'':'unread'}">
+      <div class="avatar">${escapeHtml((n.senderUsername||'?').charAt(0).toUpperCase())}</div>
+      <div>
+        <div class="txt"><b>${escapeHtml(n.senderUsername||'কেউ একজন')}</b> ${label}</div>
+        <div class="time">${timeAgo(n.createdAt)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function markAllNotificationsRead(){
+  const unread = lastNotifDocs.filter(d=>!d.data().isRead);
+  if(unread.length===0) return;
+  const batch=db.batch();
+  unread.forEach(d=>batch.update(d.ref, {isRead:true}));
+  batch.commit();
+}
+
+/* ============ REALTIME LISTENERS ============ */
+function startListeners(){
+  unsubs.push(db.collection('posts').orderBy('createdAt','desc').limit(50)
+    .onSnapshot(s=>renderFeed(s.docs)));
+  unsubs.push(db.collection('notes').orderBy('createdAt','desc').limit(30)
+    .onSnapshot(s=>renderNotes(s.docs)));
+  unsubs.push(db.collection('confessions').orderBy('createdAt','desc').limit(50)
+    .onSnapshot(s=>renderConfessions(s.docs)));
+  unsubs.push(db.collection('secretChat').orderBy('createdAt','desc').limit(80)
+    .onSnapshot(s=>renderSecret(s.docs.slice().reverse())));
+  unsubs.push(db.collection('users').orderBy('createdAt','desc').limit(50)
+    .onSnapshot(s=>renderContacts(s.docs)));
+  unsubs.push(db.collection('notifications').where('recipientUid','==',currentUser.uid)
+    .orderBy('createdAt','desc').limit(30)
+    .onSnapshot(s=>renderNotifications(s.docs)));
+
+  const cutoff = firebase.firestore.Timestamp.fromMillis(Date.now() - 24*60*60*1000);
+  unsubs.push(db.collection('stories').where('createdAt','>',cutoff).orderBy('createdAt','desc').limit(100)
+    .onSnapshot(s=>renderStories(s.docs)));
+
+  if(currentProfile.isAdmin) loadAdminData();
+}
 </script>
 </body>
 </html>
