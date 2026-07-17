@@ -285,9 +285,36 @@ button{font-family:inherit;cursor:pointer;}
 .card.confession{border:1.5px dashed var(--veil);}
 .badge-mask{font-size:10.5px;background:var(--dawn-2);color:#8A6A00;padding:2px 8px;border-radius:999px;font-weight:700;margin-left:4px;}
 .card-body{font-size:15px;line-height:1.55;margin-bottom:12px;white-space:pre-wrap;}
-.card-actions{display:flex;gap:16px;padding-top:10px;border-top:1px solid var(--line);}
-.card-actions button{background:none;border:none;font-size:13px;font-weight:600;color:var(--veil);display:flex;align-items:center;gap:6px;}
+.card-actions{display:flex;gap:16px;padding-top:10px;border-top:1px solid var(--line);position:relative;}
+.card-actions button{background:none;border:none;font-size:13px;font-weight:600;color:var(--veil);display:flex;align-items:center;gap:6px;padding:4px 2px;}
 .card-actions button.liked{color:var(--coral);}
+.card-tally{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--veil);padding:2px 2px 6px;}
+.card-tally .tally-reactions{display:flex;align-items:center;gap:2px;}
+.card-tally .tally-comments{cursor:pointer;}
+.card-tally .tally-comments:hover{color:var(--coral);}
+.react-wrap{position:relative;}
+.react-popover{
+  position:absolute;bottom:calc(100% + 8px);left:0;
+  background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);
+  border-radius:999px;padding:6px 8px;display:none;gap:4px;z-index:20;
+  white-space:nowrap;
+}
+.react-popover.open{display:flex;}
+.react-opt{font-size:20px;background:none;border:none;padding:3px 5px;border-radius:50%;transition:.12s;line-height:1;}
+.react-opt:hover{transform:scale(1.25);background:var(--dawn-1);}
+.react-opt.active{background:var(--dawn-2);}
+.comment-section{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);}
+.comment-section.open{display:block;}
+.comment-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;max-height:260px;overflow-y:auto;}
+.comment-item{display:flex;gap:8px;align-items:flex-start;}
+.comment-item .c-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--coral),var(--gold));color:#fff;font-weight:700;font-size:11.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.comment-item .c-bubble{background:var(--dawn-1);border-radius:12px 12px 12px 3px;padding:7px 11px;font-size:13px;line-height:1.4;word-break:break-word;}
+.comment-item .c-bubble b{display:block;font-size:12px;font-weight:700;margin-bottom:1px;}
+.comment-empty{font-size:12.5px;color:var(--veil);padding:4px 2px 8px;}
+.comment-compose{display:flex;gap:8px;}
+.comment-compose input{flex:1;border:1.5px solid var(--line);border-radius:999px;padding:8px 13px;font-family:inherit;font-size:13px;background:var(--dawn-1);outline:none;}
+.comment-compose input:focus{border-color:var(--coral);}
+.comment-compose button{background:var(--coral);border:none;color:#fff;border-radius:999px;padding:0 15px;font-weight:700;font-size:12.5px;}
 .empty{text-align:center;padding:50px 20px;color:var(--veil);}
 .empty .ic{font-size:34px;display:block;margin-bottom:10px;}
 
@@ -319,6 +346,30 @@ button{font-family:inherit;cursor:pointer;}
 .admin-tabs button{padding:8px 16px;border-radius:999px;border:1.5px solid var(--line);background:#fff;font-size:13px;font-weight:600;}
 .admin-tabs button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
 .del-btn{font-size:11.5px;color:#B23A1F;background:none;border:none;font-weight:700;}
+
+/* ============ BIRTHDAY BANNER ============ */
+.bday-banner{position:relative;overflow:hidden;border-radius:var(--radius);padding:20px 22px;margin-bottom:18px;
+  background:linear-gradient(120deg,#FFD6E8,#FFE8B0,#FFD6E8);background-size:200% 200%;
+  animation:bdayGradient 6s ease infinite;box-shadow:var(--shadow);border:2px solid var(--gold);}
+@keyframes bdayGradient{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+.bday-confetti-bg{position:absolute;top:6px;right:14px;font-size:22px;opacity:.55;letter-spacing:4px;pointer-events:none;}
+.bday-content{position:relative;z-index:1;}
+.bday-title{font-size:17px;font-weight:800;margin-bottom:10px;color:#7A3E00;}
+.bday-self{font-size:14px;font-weight:700;color:#7A3E00;}
+.bday-actions{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+.bday-cake-btn{background:var(--coral);color:#fff;border:none;border-radius:999px;padding:9px 16px;font-weight:700;font-size:13.5px;}
+.bday-cake-btn:hover{background:#F05A38;}
+.bday-cake-btn:disabled{background:#C9BFAF;cursor:default;opacity:.85;}
+.bday-cake-count{font-weight:700;font-size:13.5px;color:#7A3E00;}
+.bday-wish-row{display:flex;gap:8px;margin-bottom:10px;}
+.bday-wish-row input{flex:1;border:1.5px solid rgba(0,0,0,.12);border-radius:10px;padding:8px 12px;font-family:inherit;font-size:13px;background:#fff;}
+.bday-wish-row input:focus{outline:none;border-color:var(--coral);}
+.bday-wish-row input:disabled{background:#F1EDE4;color:var(--veil);}
+.bday-wish-row button{background:var(--ink);color:#fff;border:none;border-radius:10px;padding:0 14px;font-weight:700;font-size:12.5px;flex-shrink:0;}
+.bday-wish-row button:disabled{background:#C9BFAF;}
+.bday-marquee{overflow:hidden;white-space:nowrap;background:rgba(255,255,255,.55);border-radius:10px;padding:7px 0;}
+.bday-marquee-track{display:inline-block;padding-left:100%;animation:bdayMarquee 22s linear infinite;font-size:12.5px;font-weight:600;color:var(--ink);}
+@keyframes bdayMarquee{from{transform:translateX(0);}to{transform:translateX(-100%);}}
 
 @media (max-width:980px){
   .columns{grid-template-columns:1fr;padding:14px 12px 90px;}
@@ -363,6 +414,7 @@ button{font-family:inherit;cursor:pointer;}
         <div><label>রোল নং</label><input type="text" id="su-roll" placeholder=""></div>
       </div>
       <div class="field"><label>ইউজারনেম প্রিভিউ</label><input type="text" id="su-preview" disabled placeholder="nickname_roll"></div>
+      <div class="field"><label>আপনার জন্মদিন সিলেক্ট করুন:</label><input type="date" id="signupBirthdate" class="form-control" required></div>
       <div class="field"><label>ইমেইল</label><input type="email" id="su-email" placeholder="you@example.com"></div>
       <div class="field"><label>পাসওয়ার্ড</label><input type="password" id="su-pass" placeholder="কমপক্ষে ৬ ক্যারেক্টার"></div>
       <button class="btn" onclick="doSignup()">অ্যাকাউন্ট বানাও</button>
@@ -413,6 +465,8 @@ button{font-family:inherit;cursor:pointer;}
       <!-- FEED -->
       <div class="view active" id="view-feed">
         <div class="view-head"><h2>নিউজ ফিড</h2><p>ব্যাচের সবার আপডেট এক জায়গায়</p></div>
+
+        <div id="birthdayBannerContainer"></div>
 
         <div class="stories-row" id="storiesRow">
           <div class="story-add" onclick="document.getElementById('storyFile').click()">
@@ -582,6 +636,14 @@ let activeChatSentUnsub = null;
 let activeChatRecvUnsub = null;
 let dmSentDocs = [];
 let dmRecvDocs = [];
+// Full uid -> {username, nickname} map built from an UNCAPPED users listener.
+// The sidebar contacts list is intentionally capped (limit 50, newest first)
+// for performance, but that cap must never decide who you can message or see
+// in your thread list — otherwise anyone outside the newest-50 window quietly
+// disappears from private messaging even if you already have a conversation
+// with them. This map is the single source of truth for resolving a uid to a
+// display name anywhere in the messaging UI.
+let allUsersMap = {};
 
 /* ============ SIGNUP USERNAME PREVIEW ============ */
 function refreshUsernamePreview(){
@@ -615,13 +677,15 @@ function showAuthError(msg){
 function doSignup(){
   const nick=document.getElementById('su-nick').value.trim();
   const roll=document.getElementById('su-roll').value.trim();
+  const birthdate=document.getElementById('signupBirthdate').value; // YYYY-MM-DD
   const email=document.getElementById('su-email').value.trim();
   const pass=document.getElementById('su-pass').value;
   if(!nick||!roll||!email||!pass) return showAuthError('সব ঘর পূরণ করো');
+  if(!birthdate) return showAuthError('আপনার জন্মদিন সিলেক্ট করুন');
   const username = `${nick}_${roll}`;
   auth.createUserWithEmailAndPassword(email,pass).then(cred=>{
     return db.collection('users').doc(cred.user.uid).set({
-      nickname:nick, roll, username, email, isAdmin:false,
+      nickname:nick, roll, username, email, birthdate, isAdmin:false, cakesReceived:0,
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     });
   }).catch(err=>showAuthError(err.message));
@@ -639,6 +703,12 @@ function doLogout(){
   if(activeChatRecvUnsub){ activeChatRecvUnsub(); activeChatRecvUnsub=null; }
   activeChatOtherUid=null;
   dmSentDocs=[]; dmRecvDocs=[];
+  allUsersMap={};
+  birthdayWishUnsubs.forEach(u=>u());
+  birthdayWishUnsubs=[];
+  currentBirthdayUids=[];
+  const bEl = document.getElementById('birthdayBannerContainer');
+  if(bEl) bEl.innerHTML='';
   auth.signOut();
 }
 function toggleMenu(){ document.getElementById('tbMenu').classList.toggle('open'); document.getElementById('notifPanel').classList.remove('open'); }
@@ -648,6 +718,10 @@ document.addEventListener('click', e=>{
   if(menu && menu.classList.contains('open') && !e.target.closest('.tb-right')) menu.classList.remove('open');
   const notif=document.getElementById('notifPanel');
   if(notif && notif.classList.contains('open') && !e.target.closest('.tb-right')) notif.classList.remove('open');
+  if(openReactionPicker && !e.target.closest('.react-wrap')){
+    openReactionPicker = null;
+    renderFeed(lastFeedDocs);
+  }
 });
 
 /* ============ AUTH STATE ============ */
@@ -752,6 +826,226 @@ async function saveProfile(){
   window._pfMsgTimer = setTimeout(()=>{ msg.style.display='none'; }, 2500);
 }
 
+/* ============ BIRTHDAY DETECTION & WISH SYSTEM ============ */
+// users/{uid} gains: birthdate ("YYYY-MM-DD"), cakesReceived (number)
+// birthday_cakes/{birthdayUid_senderUid_YYYY-MM-DD}: { birthdayUid, senderUid, date, createdAt }  -> one-per-day dedupe marker
+// birthday_wishes/{birthdayUid_senderUid_YYYY-MM-DD}: { birthdayUid, senderUid, senderUsername, text, date, createdAt }
+function todayDateStr(){
+  const d = new Date();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+function todayMonthDay(){ return todayDateStr().slice(5); } // 'MM-DD'
+
+let currentBirthdayUids = [];
+let birthdayWishUnsubs = [];
+
+function checkBirthdays(docs){
+  const md = todayMonthDay();
+  const people = docs
+    .filter(d=>{
+      const bd = d.data().birthdate;
+      return bd && bd.length>=10 && bd.slice(5,10)===md;
+    })
+    .map(d=>({ uid:d.id, username: d.data().nickname || d.data().username || 'ব্যাচমেট', cakesReceived: d.data().cakesReceived||0 }));
+
+  const newKey = people.map(p=>p.uid).sort().join(',');
+  const oldKey = currentBirthdayUids.slice().sort().join(',');
+  if(newKey === oldKey){
+    // same people as before — just refresh the live cake counters, no DOM rebuild (avoids wiping typed wishes)
+    people.forEach(p=>{
+      const el = document.getElementById(`cakeCount_${p.uid}`);
+      if(el) el.textContent = p.cakesReceived;
+    });
+    return;
+  }
+  currentBirthdayUids = people.map(p=>p.uid);
+  renderBirthdayBanners(people);
+}
+
+function renderBirthdayBanners(people){
+  birthdayWishUnsubs.forEach(u=>u());
+  birthdayWishUnsubs = [];
+
+  const el = document.getElementById('birthdayBannerContainer');
+  if(!el) return;
+  if(people.length===0){ el.innerHTML=''; return; }
+
+  el.innerHTML = people.map(p=>{
+    const isMe = currentUser && p.uid===currentUser.uid;
+    return `<div class="bday-banner" id="bdayBanner_${p.uid}">
+      <div class="bday-confetti-bg">🎈🎉🎂✨🎁</div>
+      <div class="bday-content">
+        <div class="bday-title">আজকে <b>${escapeHtml(p.username)}</b>-এর জন্মদিন! 🎂🎉</div>
+        ${isMe ? `<div class="bday-self">সবাই তোমাকে শুভেচ্ছা জানাচ্ছে — শুভ জন্মদিন! 🎉</div>` : `
+        <div class="bday-actions">
+          <button class="bday-cake-btn" id="cakeBtn_${p.uid}" onclick='sendVirtualCake("${p.uid}", ${JSON.stringify(p.username)})'>🎂 ভার্চুয়াল কেক পাঠাও</button>
+          <span class="bday-cake-count">🎂 x<span id="cakeCount_${p.uid}">${p.cakesReceived}</span></span>
+        </div>
+        <div class="bday-wish-row">
+          <input type="text" id="wishInput_${p.uid}" maxlength="80" placeholder="একটা শুভেচ্ছা লেখো..." onkeydown="if(event.key==='Enter') sendBirthdayWish('${p.uid}', ${JSON.stringify(p.username)})">
+          <button id="wishBtn_${p.uid}" onclick='sendBirthdayWish("${p.uid}", ${JSON.stringify(p.username)})'>শুভেচ্ছা পাঠাও</button>
+        </div>`}
+        <div class="bday-marquee" id="bdayMarquee_${p.uid}"><div class="bday-marquee-track">এখনো কোনো শুভেচ্ছা আসেনি — প্রথম শুভেচ্ছাটা তুমিই পাঠাও!</div></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  people.forEach(p=>{
+    const unsub = db.collection('birthday_wishes')
+      .where('birthdayUid','==', p.uid)
+      .where('date','==', todayDateStr())
+      .onSnapshot(s=>renderBirthdayMarquee(p.uid, s.docs));
+    birthdayWishUnsubs.push(unsub);
+
+    if(!currentUser || p.uid===currentUser.uid) return;
+    refreshCakeButtonState(p.uid);
+    refreshWishState(p.uid);
+  });
+}
+
+function renderBirthdayMarquee(birthdayUid, docs){
+  const el = document.getElementById(`bdayMarquee_${birthdayUid}`);
+  if(!el) return;
+  if(docs.length===0){
+    el.innerHTML = '<div class="bday-marquee-track">এখনো কোনো শুভেচ্ছা আসেনি — প্রথম শুভেচ্ছাটা তুমিই পাঠাও!</div>';
+    return;
+  }
+  const sorted = docs.slice().sort((a,b)=>{
+    const ta = a.data().createdAt ? a.data().createdAt.toMillis() : 0;
+    const tb = b.data().createdAt ? b.data().createdAt.toMillis() : 0;
+    return ta-tb;
+  });
+  const text = sorted.map(d=>{
+    const w = d.data();
+    return `🎉 ${escapeHtml(w.senderUsername||'কেউ একজন')}: ${escapeHtml(w.text||'')}`;
+  }).join('   •   ');
+  el.innerHTML = `<div class="bday-marquee-track">${text}&nbsp;&nbsp;•&nbsp;&nbsp;${text}</div>`;
+}
+
+async function refreshCakeButtonState(birthdayUid){
+  if(!currentUser) return;
+  try{
+    const ref = db.collection('birthday_cakes').doc(`${birthdayUid}_${currentUser.uid}_${todayDateStr()}`);
+    const snap = await ref.get();
+    if(snap.exists) markCakeButtonSent(birthdayUid);
+  }catch(e){ /* rules may block read if not participant — safe to ignore */ }
+}
+function markCakeButtonSent(birthdayUid){
+  const btn = document.getElementById(`cakeBtn_${birthdayUid}`);
+  if(btn){ btn.disabled = true; btn.textContent = '🎂 কেক পাঠানো হয়েছে ✓'; }
+}
+async function sendVirtualCake(birthdayUid, birthdayName){
+  if(!currentUser || birthdayUid===currentUser.uid) return;
+  const todayStr = todayDateStr();
+  const markerRef = db.collection('birthday_cakes').doc(`${birthdayUid}_${currentUser.uid}_${todayStr}`);
+  try{
+    await db.runTransaction(async tx=>{
+      const snap = await tx.get(markerRef);
+      if(snap.exists) throw new Error('ALREADY_SENT');
+      tx.set(markerRef, {
+        birthdayUid, senderUid: currentUser.uid, date: todayStr,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      tx.update(db.collection('users').doc(birthdayUid), {
+        cakesReceived: firebase.firestore.FieldValue.increment(1)
+      });
+    });
+    fireConfetti();
+    markCakeButtonSent(birthdayUid);
+  }catch(e){
+    if(e.message==='ALREADY_SENT'){
+      alert(`তুমি আজ ${birthdayName}-কে আগেই একটা ভার্চুয়াল কেক পাঠিয়েছ! 🎂`);
+      markCakeButtonSent(birthdayUid);
+    } else {
+      console.error(e);
+      alert('কেক পাঠাতে সমস্যা হয়েছে, আবার চেষ্টা করো।');
+    }
+  }
+}
+
+async function refreshWishState(birthdayUid){
+  if(!currentUser) return;
+  try{
+    const ref = db.collection('birthday_wishes').doc(`${birthdayUid}_${currentUser.uid}_${todayDateStr()}`);
+    const snap = await ref.get();
+    if(snap.exists) markWishSent(birthdayUid);
+  }catch(e){ /* ignore */ }
+}
+function markWishSent(birthdayUid){
+  const input = document.getElementById(`wishInput_${birthdayUid}`);
+  const btn = document.getElementById(`wishBtn_${birthdayUid}`);
+  if(input){ input.disabled = true; input.value=''; input.placeholder = 'তুমি আজ শুভেচ্ছা পাঠিয়েছ ✓'; }
+  if(btn){ btn.disabled = true; }
+}
+async function sendBirthdayWish(birthdayUid, birthdayName){
+  if(!currentUser || birthdayUid===currentUser.uid) return;
+  const input = document.getElementById(`wishInput_${birthdayUid}`);
+  const text = input ? input.value.trim() : '';
+  if(!text) return;
+  const todayStr = todayDateStr();
+  const wishRef = db.collection('birthday_wishes').doc(`${birthdayUid}_${currentUser.uid}_${todayStr}`);
+  try{
+    const snap = await wishRef.get();
+    if(snap.exists){
+      alert(`তুমি আজ ${birthdayName}-কে আগেই শুভেচ্ছা পাঠিয়েছ!`);
+      markWishSent(birthdayUid);
+      return;
+    }
+    await wishRef.set({
+      birthdayUid, senderUid: currentUser.uid,
+      senderUsername: currentProfile.nickname || currentProfile.username || 'কেউ একজন',
+      text, date: todayStr, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    markWishSent(birthdayUid);
+  }catch(e){
+    console.error(e);
+    alert('শুভেচ্ছা পাঠাতে সমস্যা হয়েছে, আবার চেষ্টা করো।');
+  }
+}
+
+/* ============ CONFETTI (lightweight, no external library) ============ */
+function fireConfetti(){
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;inset:0;z-index:9999;pointer-events:none;';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const colors = ['#FF6F4D','#FFB238','#8C7BAE','#241A2E','#4B3566','#B15C6B'];
+  const pieces = Array.from({length:150}, ()=>({
+    x: Math.random()*canvas.width,
+    y: -20 - Math.random()*canvas.height*0.4,
+    r: 4+Math.random()*5,
+    color: colors[Math.floor(Math.random()*colors.length)],
+    vy: 2+Math.random()*3,
+    vx: -2+Math.random()*4,
+    rot: Math.random()*360,
+    vr: -6+Math.random()*12,
+    shape: Math.random()<0.5 ? 'rect' : 'circle'
+  }));
+  let frame=0;
+  const maxFrames=220;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+      ctx.save();
+      ctx.translate(p.x,p.y);
+      ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color;
+      if(p.shape==='rect') ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r);
+      else { ctx.beginPath(); ctx.arc(0,0,p.r,0,2*Math.PI); ctx.fill(); }
+      ctx.restore();
+    });
+    frame++;
+    if(frame<maxFrames && document.body.contains(canvas)) requestAnimationFrame(draw);
+    else canvas.remove();
+  }
+  draw();
+}
+
 /* ============ FEED ============ */
 function createPost(){
   const text=document.getElementById('postText').value.trim();
@@ -762,33 +1056,114 @@ function createPost(){
   });
   document.getElementById('postText').value='';
 }
-function toggleLike(id, likes, ownerUid){
-  const ref=db.collection('posts').doc(id);
-  if(likes.includes(currentUser.uid)){
-    ref.update({likes:firebase.firestore.FieldValue.arrayRemove(currentUser.uid)});
-  } else {
-    ref.update({likes:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)});
-    sendNotification(ownerUid, 'like', id);
-  }
-}
 let lastFeedDocs=[];
 function renderFeed(docs){
   lastFeedDocs=docs;
   const el=document.getElementById('feedList');
   if(docs.length===0){ el.innerHTML='<div class="empty"><span class="ic">📭</span>এখনো কোনো পোস্ট নেই — প্রথম পোস্টটা তুমিই করো!</div>'; return; }
   el.innerHTML = docs.map(d=>{
-    const p=d.data(); const liked=(p.likes||[]).includes(currentUser.uid);
+    const p=d.data();
+    const reactions = reactionsFor(p);
+    const mine = reactions[currentUser.uid];
+    const counts = {};
+    Object.values(reactions).forEach(e=>{ counts[e]=(counts[e]||0)+1; });
+    const total = Object.values(counts).reduce((a,b)=>a+b,0);
+    const summaryHtml = Object.entries(counts).map(([e,c])=>`${e}${c>1?' '+c:''}`).join(' ');
+    const pickerOpen = openReactionPicker===d.id;
+    const comments = commentsByPost[d.id]||[];
+    const commentsOpen = expandedComments.has(d.id);
+    const mineLabel = mine ? ((REACTIONS.find(r=>r.emoji===mine)||{}).label||'রিয়েক্ট') : 'রিয়েক্ট';
+
     return `<div class="card" data-text="${escapeHtml(p.text).toLowerCase()}">
       <div class="card-head">
         <div class="avatar">${escapeHtml((p.username||'?').charAt(0).toUpperCase())}</div>
         <div><div class="name">${escapeHtml(p.username||'অজানা')}</div><div class="time">${timeAgo(p.createdAt)}</div></div>
       </div>
       <div class="card-body">${escapeHtml(p.text)}</div>
+      ${(total>0 || comments.length>0) ? `<div class="card-tally">
+        <span class="tally-reactions">${total>0?summaryHtml+' '+total:''}</span>
+        ${comments.length>0?`<span class="tally-comments" onclick="toggleComments('${d.id}')">${comments.length}টা মন্তব্য</span>`:'<span></span>'}
+      </div>` : ''}
       <div class="card-actions">
-        <button class="${liked?'liked':''}" onclick='toggleLike("${d.id}", ${JSON.stringify(p.likes||[])}, "${p.uid}")'>👍 ${(p.likes||[]).length} লাইক</button>
+        <div class="react-wrap">
+          <button class="react-btn ${mine?'liked':''}" onclick="toggleReactionPicker('${d.id}')">${mine||'👍'} ${mineLabel}</button>
+          <div class="react-popover ${pickerOpen?'open':''}">
+            ${REACTIONS.map(r=>`<button class="react-opt ${mine===r.emoji?'active':''}" onclick='setReaction("${d.id}","${r.emoji}","${p.uid}")' title="${r.label}">${r.emoji}</button>`).join('')}
+          </div>
+        </div>
+        <button class="comment-btn" onclick="toggleComments('${d.id}')">💬 মন্তব্য</button>
+      </div>
+      <div class="comment-section ${commentsOpen?'open':''}">
+        <div class="comment-list">
+          ${comments.length ? comments.map(c=>`<div class="comment-item">
+            <div class="c-avatar">${escapeHtml((c.username||'?').charAt(0).toUpperCase())}</div>
+            <div class="c-bubble"><b>${escapeHtml(c.username||'কেউ একজন')}</b><div>${escapeHtml(c.text)}</div></div>
+          </div>`).join('') : '<div class="comment-empty">প্রথম মন্তব্যটা তুমিই করো</div>'}
+        </div>
+        <div class="comment-compose">
+          <input id="commentInput_${d.id}" placeholder="মন্তব্য লেখো..." onkeydown="if(event.key==='Enter'){addComment('${d.id}','${p.uid}')}">
+          <button onclick="addComment('${d.id}','${p.uid}')">পাঠাও</button>
+        </div>
       </div>
     </div>`;
   }).join('');
+}
+// ---- Reactions ----
+const REACTIONS = [
+  {emoji:'👍', label:'লাইক'},
+  {emoji:'❤️', label:'ভালোবাসা'},
+  {emoji:'😂', label:'হাহা'},
+  {emoji:'😮', label:'বাহ'},
+  {emoji:'😢', label:'মন খারাপ'}
+];
+let openReactionPicker = null; // postId whose emoji popover is showing, or null
+function reactionsFor(p){
+  if(p.reactions) return p.reactions;
+  // Legacy posts only have a `likes` array of uids (no reactions map yet).
+  // Treat every existing like as a 👍 reaction so old posts keep their counts.
+  const r={};
+  (p.likes||[]).forEach(uid=>{ r[uid]='👍'; });
+  return r;
+}
+function toggleReactionPicker(postId){
+  openReactionPicker = (openReactionPicker===postId) ? null : postId;
+  renderFeed(lastFeedDocs);
+}
+function setReaction(postId, emoji, ownerUid){
+  const doc = lastFeedDocs.find(d=>d.id===postId);
+  const reactions = doc ? reactionsFor(doc.data()) : {};
+  const mine = reactions[currentUser.uid];
+  const field = `reactions.${currentUser.uid}`;
+  const ref = db.collection('posts').doc(postId);
+  if(mine === emoji){
+    ref.update({[field]: firebase.firestore.FieldValue.delete()});
+  } else {
+    ref.update({[field]: emoji});
+    if(!mine) sendNotification(ownerUid, 'like', postId);
+  }
+  openReactionPicker = null;
+  renderFeed(lastFeedDocs);
+}
+// ---- Comments ----
+// postComments/{id}: { postId, uid, username, text, createdAt }
+let commentsByPost = {};
+let expandedComments = new Set();
+function toggleComments(postId){
+  if(expandedComments.has(postId)) expandedComments.delete(postId);
+  else expandedComments.add(postId);
+  renderFeed(lastFeedDocs);
+}
+function addComment(postId, ownerUid){
+  const input = document.getElementById('commentInput_'+postId);
+  if(!input) return;
+  const text = input.value.trim();
+  if(!text) return;
+  db.collection('postComments').add({
+    postId, uid: currentUser.uid, username: currentProfile.username, text,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  sendNotification(ownerUid, 'comment', postId);
+  input.value='';
 }
 function filterFeed(){
   const q=document.getElementById('searchBox').value.trim().toLowerCase();
@@ -1071,7 +1446,8 @@ function renderContacts(docs){
   else {
     el.innerHTML = others.map(d=>{
       const u=d.data();
-      return `<div class="contact" onclick='openChat("${d.id}", ${JSON.stringify(u.username||'')})'><div class="dot">${escapeHtml((u.username||'?').charAt(0).toUpperCase())}</div>${escapeHtml(u.username||'')}</div>`;
+      const uname = u.username || u.nickname || 'ব্যাচমেট';
+      return `<div class="contact" onclick='openChat("${d.id}", ${JSON.stringify(uname)})'><div class="dot">${escapeHtml((uname).charAt(0).toUpperCase())}</div>${escapeHtml(uname)}</div>`;
     }).join('');
   }
   renderMessagesPanel();
@@ -1108,21 +1484,38 @@ function buildDmSummaries(){
   dmRecvDocs.forEach(d=>consider(d, m=>m.senderUid));
   return map;
 }
+function nameForUid(uid, fallbackUsername){
+  const u = allUsersMap[uid];
+  if(u) return u.username || u.nickname || fallbackUsername || 'ব্যাচমেট';
+  return fallbackUsername || 'ব্যাচমেট';
+}
 function renderMessagesPanel(){
   const el = document.getElementById('msgThreads');
   if(!el) return;
-  const others = (lastContactDocs||[]).filter(d=>d.id!==currentUser.uid);
-  if(others.length===0){
+  const summaries = buildDmSummaries();
+  // Union of: everyone in the (perf-capped) contacts sidebar, PLUS every uid
+  // that actually has message history with us. The second part is what makes
+  // sure a batchmate never vanishes from your thread list just because they
+  // fell outside the newest-50 contacts window — their name is resolved from
+  // the uncapped allUsersMap instead.
+  const uidSet = new Set();
+  (lastContactDocs||[]).forEach(d=>{ if(d.id!==currentUser.uid) uidSet.add(d.id); });
+  Object.keys(summaries).forEach(uid=>{ if(uid!==currentUser.uid) uidSet.add(uid); });
+
+  if(uidSet.size===0){
     el.innerHTML = '<div class="empty" style="padding:30px 10px;">এখনো কোনো ব্যাচমেট যোগ দেয়নি</div>';
     updateMsgBadge(0);
     return;
   }
-  const summaries = buildDmSummaries();
-  const rows = others.map(d=>{
-    const u = d.data();
-    const s = summaries[d.id];
-    const unread = !!(s && s.lastSenderUid!==currentUser.uid && s.time > getDmLastRead(d.id));
-    return { id:d.id, username:u.username||'ব্যাচমেট', summary:s, unread };
+  const contactMap = {};
+  (lastContactDocs||[]).forEach(d=>{ contactMap[d.id]=d.data(); });
+
+  const rows = Array.from(uidSet).map(uid=>{
+    const contactUsername = contactMap[uid] ? contactMap[uid].username : null;
+    const username = nameForUid(uid, contactUsername);
+    const s = summaries[uid];
+    const unread = !!(s && s.lastSenderUid!==currentUser.uid && s.time > getDmLastRead(uid));
+    return { id:uid, username, summary:s, unread };
   });
   rows.sort((a,b)=>{
     const at = a.summary ? a.summary.time : -1, bt = b.summary ? b.summary.time : -1;
@@ -1146,6 +1539,7 @@ function updateMsgBadge(count){
 }
 async function openChat(otherUid, otherUsername){
   if(!otherUid || otherUid===currentUser.uid) return;
+  otherUsername = nameForUid(otherUid, otherUsername);
   openMessagesView();
   activeChatOtherUid = otherUid;
 
@@ -1258,6 +1652,17 @@ function markAllNotificationsRead(){
 function startListeners(){
   unsubs.push(db.collection('posts').orderBy('createdAt','desc').limit(50)
     .onSnapshot(s=>renderFeed(s.docs)));
+  unsubs.push(db.collection('postComments').orderBy('createdAt','asc').limit(1000)
+    .onSnapshot(s=>{
+      const map={};
+      s.docs.forEach(d=>{
+        const c=d.data();
+        if(!map[c.postId]) map[c.postId]=[];
+        map[c.postId].push({id:d.id, ...c});
+      });
+      commentsByPost=map;
+      renderFeed(lastFeedDocs);
+    }));
   unsubs.push(db.collection('notes').orderBy('createdAt','desc').limit(30)
     .onSnapshot(s=>renderNotes(s.docs)));
   unsubs.push(db.collection('confessions').orderBy('createdAt','desc').limit(50)
@@ -1266,6 +1671,17 @@ function startListeners(){
     .onSnapshot(s=>renderSecret(s.docs.slice().reverse())));
   unsubs.push(db.collection('users').orderBy('createdAt','desc').limit(50)
     .onSnapshot(s=>renderContacts(s.docs)));
+  // Separate, uncapped listener so birthday detection AND private messaging
+  // cover every user even if the batch grows past the 50-most-recent window
+  // used for the (perf-capped) contacts sidebar list.
+  unsubs.push(db.collection('users')
+    .onSnapshot(s=>{
+      checkBirthdays(s.docs);
+      const map={};
+      s.docs.forEach(d=>{ map[d.id]=d.data(); });
+      allUsersMap=map;
+      renderMessagesPanel();
+    }));
   unsubs.push(db.collection('notifications').where('recipientUid','==',currentUser.uid)
     .orderBy('createdAt','desc').limit(30)
     .onSnapshot(s=>renderNotifications(s.docs)));
