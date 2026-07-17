@@ -213,6 +213,8 @@ button{font-family:inherit;cursor:pointer;}
 .field.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .field label{display:block;font-size:12.5px;font-weight:600;margin-bottom:5px;color:var(--ink);}
 .field input{width:100%;padding:11px 13px;border-radius:12px;border:1.5px solid var(--line);font-family:inherit;font-size:14.5px;background:var(--dawn-1);}
+.field select{width:100%;padding:11px 13px;border-radius:12px;border:1.5px solid var(--line);font-family:inherit;font-size:14.5px;background:var(--dawn-1);color:var(--ink);}
+.field select:focus{outline:none;border-color:var(--coral);}
 .field input:focus{outline:none;border-color:var(--coral);}
 .field .hint{font-size:11px;color:var(--veil);margin-top:4px;}
 .btn{width:100%;padding:12px;border-radius:12px;border:none;background:var(--coral);color:#fff;font-weight:700;font-size:15px;margin-top:6px;transition:.15s;}
@@ -315,6 +317,40 @@ button{font-family:inherit;cursor:pointer;}
 .comment-compose input{flex:1;border:1.5px solid var(--line);border-radius:999px;padding:8px 13px;font-family:inherit;font-size:13px;background:var(--dawn-1);outline:none;}
 .comment-compose input:focus{border-color:var(--coral);}
 .comment-compose button{background:var(--coral);border:none;color:#fff;border-radius:999px;padding:0 15px;font-weight:700;font-size:12.5px;}
+
+/* ============ EVENTS / CALENDAR ============ */
+.event-form-row{display:flex;gap:12px;}
+.event-form-row .field{flex:1;}
+.event-admin-note{background:var(--dawn-2);color:var(--ink);font-size:12.5px;font-weight:600;padding:10px 14px;border-radius:12px;margin-bottom:16px;}
+.event-card{display:flex;gap:14px;background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 16px;margin-bottom:14px;}
+.event-card.birthday{border:1.5px dashed var(--gold);}
+.event-datebox{flex-shrink:0;width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--coral),var(--gold));color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;}
+.event-datebox .d{font-size:19px;font-weight:800;font-family:'Baloo Da 2';}
+.event-datebox .m{font-size:11px;font-weight:700;text-transform:uppercase;}
+.event-card.birthday .event-datebox{background:linear-gradient(135deg,var(--veil),var(--ink));}
+.event-body{flex:1;min-width:0;}
+.event-title{font-weight:700;font-size:15px;margin-bottom:2px;}
+.event-sub{font-size:12px;color:var(--veil);margin-bottom:6px;}
+.event-desc{font-size:13.5px;line-height:1.45;margin-bottom:8px;white-space:pre-wrap;}
+.event-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.rsvp-btn{background:var(--dawn-1);border:1.5px solid var(--line);color:var(--ink);border-radius:999px;padding:6px 14px;font-size:12.5px;font-weight:700;}
+.rsvp-btn.going{background:var(--coral);border-color:var(--coral);color:#fff;}
+.event-going-count{font-size:12px;color:var(--veil);font-weight:600;}
+.event-del-btn{margin-left:auto;background:none;border:none;color:var(--veil);font-size:12px;font-weight:700;}
+.event-del-btn:hover{color:var(--coral);}
+
+/* ============ না বলা কথা / UNSPOKEN LETTERS ============ */
+.letter-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px;}
+.letter-sealed{display:flex;align-items:center;gap:14px;}
+.letter-sealed .env{font-size:26px;flex-shrink:0;}
+.letter-sealed .meta{flex:1;min-width:0;}
+.letter-sealed .meta .t1{font-weight:700;font-size:14.5px;margin-bottom:2px;}
+.letter-sealed .meta .t2{font-size:12px;color:var(--veil);}
+.letter-open-btn{background:var(--night-1);color:#fff;border:none;border-radius:999px;padding:8px 16px;font-size:12.5px;font-weight:700;flex-shrink:0;}
+.letter-revealed .letter-text{font-size:15px;line-height:1.6;white-space:pre-wrap;background:var(--dawn-1);border-radius:12px;padding:14px 16px;margin:6px 0 12px;}
+.letter-revealed .letter-note{font-size:11.5px;color:var(--veil);margin-bottom:10px;}
+.letter-close-btn{background:var(--coral);color:#fff;border:none;border-radius:999px;padding:8px 18px;font-size:12.5px;font-weight:700;}
+.tb-bell.letter-bell{font-size:17px;}
 .empty{text-align:center;padding:50px 20px;color:var(--veil);}
 .empty .ic{font-size:34px;display:block;margin-bottom:10px;}
 
@@ -429,6 +465,7 @@ button{font-family:inherit;cursor:pointer;}
   <div class="tb-search">🔍<input type="text" id="searchBox" placeholder="ফিডে খুঁজো..." oninput="filterFeed()"></div>
   <div class="tb-right">
     <button class="tb-bell" id="tbMsgBtn" onclick="openMessagesView()">💬<span class="tb-badge" id="msgBadge">0</span></button>
+    <button class="tb-bell letter-bell" id="tbLetterBtn" onclick="switchView('unspoken')">💌<span class="tb-badge" id="letterBadge">0</span></button>
     <button class="tb-bell" id="tbBell" onclick="toggleNotifPanel()">🔔<span class="tb-badge" id="notifBadge">0</span></button>
     <div class="notif-panel" id="notifPanel">
       <div class="notif-head">
@@ -453,6 +490,8 @@ button{font-family:inherit;cursor:pointer;}
     <div class="sidebar">
       <button class="navlink active" data-view="feed" onclick="switchView('feed')"><span class="ic">🏠</span> ফিড</button>
       <button class="navlink" data-view="notes" onclick="switchView('notes')"><span class="ic">✏️</span> নোটস</button>
+      <button class="navlink" data-view="events" onclick="switchView('events')"><span class="ic">📅</span> ক্যালেন্ডার</button>
+      <button class="navlink" data-view="unspoken" onclick="switchView('unspoken')"><span class="ic">💌</span> না বলা কথা</button>
       <button class="navlink" data-view="messages" onclick="switchView('messages')"><span class="ic">💬</span> বার্তা</button>
       <button class="navlink" data-view="profile" onclick="switchView('profile')"><span class="ic">👤</span> প্রোফাইল</button>
       <button class="navlink" data-view="confess" onclick="switchView('confess')"><span class="ic">🎭</span> কনফেশন</button>
@@ -502,6 +541,50 @@ button{font-family:inherit;cursor:pointer;}
         </div>
         <div id="notesList"></div>
       </div>
+
+      <!-- EVENTS / CALENDAR -->
+      <div class="view" id="view-events">
+        <div class="view-head"><h2>ইভেন্ট ক্যালেন্ডার</h2><p>আপকামিং ইভেন্ট আর সবার জন্মদিন — এক জায়গায়</p></div>
+
+        <div class="composer" id="eventComposer" style="display:none;">
+          <div class="field"><label>শিরোনাম</label><input type="text" id="ev-title" placeholder="যেমন: ব্যাচ রিইউনিয়ন" maxlength="80"></div>
+          <div class="event-form-row">
+            <div class="field"><label>তারিখ</label><input type="date" id="ev-date"></div>
+            <div class="field"><label>সময় (ঐচ্ছিক)</label><input type="time" id="ev-time"></div>
+          </div>
+          <div class="field"><label>স্থান (ঐচ্ছিক)</label><input type="text" id="ev-location" placeholder="যেমন: ক্যাম্পাস অডিটোরিয়াম" maxlength="120"></div>
+          <div class="field"><label>বিবরণ (ঐচ্ছিক)</label><textarea id="ev-desc" rows="2" placeholder="ইভেন্ট নিয়ে বিস্তারিত..." maxlength="300"></textarea></div>
+          <div class="composer-foot">
+            <span class="count-hint">📅 সবাই দেখতে পাবে</span>
+            <button class="post-btn" onclick="createEvent()">ইভেন্ট তৈরি করো</button>
+          </div>
+        </div>
+        <div class="event-admin-note" id="eventAdminNote" style="display:none;">শুধু এডমিনরা নতুন ইভেন্ট তৈরি করতে পারে।</div>
+
+        <div id="eventsList"></div>
+      </div>
+
+      <!-- UNSPOKEN LETTERS -->
+      <div class="view" id="view-unspoken">
+        <div class="view-head"><h2>না বলা কথা</h2><p>কাউকে অ্যানোনিমাসলি মনের কথা বলো — ও একবারই পড়তে পারবে, তারপর হারিয়ে যাবে</p></div>
+
+        <div class="composer">
+          <div class="field">
+            <label>কাকে পাঠাবে</label>
+            <select id="unspoken-recipient"><option value="">বেছে নাও...</option></select>
+          </div>
+          <textarea id="unspoken-text" rows="4" maxlength="600" placeholder="যা বলতে চাও, নির্দ্বিধায় লেখো... ও জানবে না এটা কে পাঠিয়েছে"></textarea>
+          <div class="composer-foot">
+            <span class="count-hint">💌 সম্পূর্ণ অ্যানোনিমাস, একবারই পড়া যাবে</span>
+            <button class="post-btn" onclick="sendUnspokenLetter()">পাঠাও</button>
+          </div>
+        </div>
+
+        <div class="view-head" style="margin-top:24px;"><h2 style="font-size:17px;">তোমার জন্য অপেক্ষা করছে</h2></div>
+        <div id="unspokenInbox"></div>
+      </div>
+
+
 
       <!-- CONFESSIONS -->
       <div class="view" id="view-confess">
@@ -704,6 +787,9 @@ function doLogout(){
   activeChatOtherUid=null;
   dmSentDocs=[]; dmRecvDocs=[];
   allUsersMap={};
+  lastEventDocs=[];
+  lastUnspokenDocs=[];
+  revealedLetters=new Set();
   birthdayWishUnsubs.forEach(u=>u());
   birthdayWishUnsubs=[];
   currentBirthdayUids=[];
@@ -761,6 +847,8 @@ function switchView(v){
   if(v==='secret') setTimeout(()=>{const l=document.getElementById('secretLog'); l.scrollTop=l.scrollHeight;},50);
   if(v==='profile') populateProfileForm();
   if(v==='messages') renderMessagesPanel();
+  if(v==='events') renderEvents();
+  if(v==='unspoken'){ populateUnspokenRecipients(); renderUnspokenInbox(); }
 }
 
 /* ============ HELPERS ============ */
@@ -1202,6 +1290,205 @@ function renderNotes(docs){
       <div class="avatar">${escapeHtml((n.username||'?').charAt(0).toUpperCase())}</div>
       <div><div class="name">${escapeHtml(n.username||'')}</div><div class="time">${timeAgo(n.createdAt)}</div></div>
     </div><div class="card-body">${escapeHtml(n.text)}</div></div>`;
+  }).join('');
+}
+
+/* ============ EVENTS / CALENDAR ============ */
+// events/{id}: { title, description, date ("YYYY-MM-DD"), time ("HH:MM" or ""),
+//                location, createdBy (uid), createdByName, attendees: [uid...], createdAt }
+// Real events come from Firestore. Birthdays are NOT stored here — they're derived
+// live from each user's `birthdate` field (already in allUsersMap) and merged into
+// the same sorted list, so the calendar always reflects the latest roster.
+let lastEventDocs=[];
+function nextBirthdayOccurrence(birthdateStr){
+  // birthdateStr is "YYYY-MM-DD"; we only care about the MM-DD part, projected
+  // onto the next upcoming occurrence (this year if not passed yet, else next year).
+  if(!birthdateStr || birthdateStr.length<10) return null;
+  const monthDay = birthdateStr.slice(5); // "MM-DD"
+  const todayStr = todayDateStr();
+  const thisYear = todayStr.slice(0,4);
+  let candidate = `${thisYear}-${monthDay}`;
+  if(candidate < todayStr) candidate = `${parseInt(thisYear,10)+1}-${monthDay}`;
+  return candidate;
+}
+function buildBirthdayEvents(){
+  return Object.keys(allUsersMap).map(uid=>{
+    const u = allUsersMap[uid];
+    const date = nextBirthdayOccurrence(u.birthdate);
+    if(!date) return null;
+    return { isBirthday:true, uid, username:u.username||u.nickname||'ব্যাচমেট', date };
+  }).filter(Boolean);
+}
+function createEvent(){
+  if(!currentProfile || !currentProfile.isAdmin){ alert('শুধু এডমিনরা ইভেন্ট তৈরি করতে পারে।'); return; }
+  const title = document.getElementById('ev-title').value.trim();
+  const date = document.getElementById('ev-date').value; // YYYY-MM-DD
+  const time = document.getElementById('ev-time').value; // HH:MM or ''
+  const location = document.getElementById('ev-location').value.trim();
+  const description = document.getElementById('ev-desc').value.trim();
+  if(!title){ alert('ইভেন্টের শিরোনাম দাও'); return; }
+  if(!date){ alert('ইভেন্টের তারিখ বেছে নাও'); return; }
+  db.collection('events').add({
+    title, description, date, time, location,
+    createdBy: currentUser.uid, createdByName: currentProfile.username||'এডমিন',
+    attendees: [], createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  document.getElementById('ev-title').value='';
+  document.getElementById('ev-date').value='';
+  document.getElementById('ev-time').value='';
+  document.getElementById('ev-location').value='';
+  document.getElementById('ev-desc').value='';
+}
+function toggleRSVP(id, attendees){
+  const ref = db.collection('events').doc(id);
+  if(attendees.includes(currentUser.uid)){
+    ref.update({attendees: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)});
+  } else {
+    ref.update({attendees: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)});
+  }
+}
+function deleteEvent(id){
+  if(!currentProfile || !currentProfile.isAdmin) return;
+  if(confirm('এই ইভেন্টটা মুছে ফেলবে?')) db.collection('events').doc(id).delete();
+}
+function eventDateBadge(dateStr){
+  const MONTHS=['জানু','ফেব্রু','মার্চ','এপ্রি','মে','জুন','জুলাই','আগ','সেপ্টে','অক্টো','নভে','ডিসে'];
+  const [y,m,d] = dateStr.split('-').map(Number);
+  return `<div class="d">${d}</div><div class="m">${MONTHS[m-1]}</div>`;
+}
+function renderEvents(){
+  const composer = document.getElementById('eventComposer');
+  const note = document.getElementById('eventAdminNote');
+  const isAdmin = !!(currentProfile && currentProfile.isAdmin);
+  if(composer) composer.style.display = isAdmin ? 'flex' : 'none';
+  if(note) note.style.display = isAdmin ? 'none' : 'block';
+
+  const el = document.getElementById('eventsList');
+  if(!el) return;
+  const todayStr = todayDateStr();
+
+  const realEvents = lastEventDocs
+    .map(d=>({ id:d.id, isBirthday:false, ...d.data() }))
+    .filter(e=>e.date >= todayStr);
+  const birthdayEvents = buildBirthdayEvents();
+  const all = realEvents.concat(birthdayEvents).sort((a,b)=>{
+    if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+    // same day: timed real events first (by time), then birthdays
+    if(a.isBirthday !== b.isBirthday) return a.isBirthday ? 1 : -1;
+    return (a.time||'').localeCompare(b.time||'');
+  });
+
+  if(all.length===0){ el.innerHTML='<div class="empty"><span class="ic">📅</span>এখনো কোনো আপকামিং ইভেন্ট নেই</div>'; return; }
+
+  el.innerHTML = all.map(e=>{
+    if(e.isBirthday){
+      const isMe = currentUser && e.uid===currentUser.uid;
+      return `<div class="event-card birthday">
+        <div class="event-datebox">${eventDateBadge(e.date)}</div>
+        <div class="event-body">
+          <div class="event-title">🎂 ${escapeHtml(e.username)}${isMe?' (তুমি)':''}-এর জন্মদিন</div>
+          <div class="event-sub">${e.date===todayStr?'আজকে!':''}</div>
+          ${!isMe?`<div class="event-actions"><button class="rsvp-btn" onclick="switchView('feed')">🎉 শুভেচ্ছা জানাতে ফিডে যাও</button></div>`:''}
+        </div>
+      </div>`;
+    }
+    const attendees = e.attendees||[];
+    const going = attendees.includes(currentUser.uid);
+    return `<div class="event-card">
+      <div class="event-datebox">${eventDateBadge(e.date)}</div>
+      <div class="event-body">
+        <div class="event-title">${escapeHtml(e.title)}</div>
+        <div class="event-sub">${e.time?`⏰ ${escapeHtml(e.time)} · `:''}${e.location?`📍 ${escapeHtml(e.location)} · `:''}আয়োজক: ${escapeHtml(e.createdByName||'এডমিন')}</div>
+        ${e.description?`<div class="event-desc">${escapeHtml(e.description)}</div>`:''}
+        <div class="event-actions">
+          <button class="rsvp-btn ${going?'going':''}" onclick='toggleRSVP("${e.id}", ${JSON.stringify(attendees)})'>${going?'✓ যাচ্ছি':'✋ যাব'}</button>
+          <span class="event-going-count">${attendees.length} জন যাচ্ছে</span>
+          ${currentProfile && currentProfile.isAdmin ? `<button class="event-del-btn" onclick="deleteEvent('${e.id}')">মুছে ফেলো</button>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ============ না বলা কথা / UNSPOKEN LETTERS ============ */
+// unspokenLetters/{id}: { recipientUid, senderUid, text, createdAt }
+// The sender identity is stored ONLY for abuse moderation — it is never shown
+// in the UI, never queryable by the recipient (rules block it), and the
+// document is permanently deleted the moment the recipient dismisses it after
+// reading, so a letter can truly only ever be opened once.
+let lastUnspokenDocs = [];
+let revealedLetters = new Set(); // ids currently expanded/shown to the recipient (not yet dismissed)
+
+function populateUnspokenRecipients(){
+  const sel = document.getElementById('unspoken-recipient');
+  if(!sel) return;
+  const current = sel.value;
+  const people = Object.keys(allUsersMap)
+    .filter(uid=>uid!==currentUser.uid)
+    .map(uid=>({ uid, name: allUsersMap[uid].username || allUsersMap[uid].nickname || 'ব্যাচমেট' }))
+    .sort((a,b)=>a.name.localeCompare(b.name));
+  sel.innerHTML = '<option value="">বেছে নাও...</option>' +
+    people.map(p=>`<option value="${p.uid}">${escapeHtml(p.name)}</option>`).join('');
+  if(current && people.some(p=>p.uid===current)) sel.value = current;
+}
+function sendUnspokenLetter(){
+  const sel = document.getElementById('unspoken-recipient');
+  const textEl = document.getElementById('unspoken-text');
+  const recipientUid = sel.value;
+  const text = textEl.value.trim();
+  if(!recipientUid){ alert('কাকে পাঠাবে সেটা বেছে নাও'); return; }
+  if(!text){ alert('কিছু একটা লেখো'); return; }
+  if(recipientUid === currentUser.uid){ alert('নিজেকে চিঠি পাঠানো যায় না 🙂'); return; }
+  db.collection('unspokenLetters').add({
+    recipientUid, senderUid: currentUser.uid, text,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  textEl.value='';
+  sel.value='';
+  alert('চিঠিটা পাঠানো হয়েছে — সম্পূর্ণ অ্যানোনিমাসভাবে।');
+}
+function revealLetter(id){
+  revealedLetters.add(id);
+  renderUnspokenInbox();
+}
+function closeLetter(id){
+  revealedLetters.delete(id);
+  db.collection('unspokenLetters').doc(id).delete();
+}
+function updateLetterBadge(count){
+  const badge = document.getElementById('letterBadge');
+  if(!badge) return;
+  if(count>0){ badge.textContent = count>99?'99+':count; badge.classList.add('show'); }
+  else badge.classList.remove('show');
+}
+function renderUnspokenInbox(){
+  const el = document.getElementById('unspokenInbox');
+  if(!el) return;
+  const unopenedCount = lastUnspokenDocs.filter(d=>!revealedLetters.has(d.id)).length;
+  updateLetterBadge(unopenedCount);
+  if(lastUnspokenDocs.length===0){
+    el.innerHTML = '<div class="empty"><span class="ic">💌</span>এখনো কোনো চিঠি আসেনি</div>';
+    return;
+  }
+  el.innerHTML = lastUnspokenDocs.map(d=>{
+    const l = d.data();
+    if(revealedLetters.has(d.id)){
+      return `<div class="letter-card letter-revealed">
+        <div class="letter-note">💌 অ্যানোনিমাস চিঠি</div>
+        <div class="letter-text">${escapeHtml(l.text)}</div>
+        <button class="letter-close-btn" onclick="closeLetter('${d.id}')">পড়া শেষ — চিঠিটা এখন হারিয়ে যাক</button>
+      </div>`;
+    }
+    return `<div class="letter-card">
+      <div class="letter-sealed">
+        <span class="env">✉️</span>
+        <div class="meta">
+          <div class="t1">একটা অজানা চিঠি এসেছে</div>
+          <div class="t2">${timeAgo(l.createdAt)} · একবারই খোলা যাবে</div>
+        </div>
+        <button class="letter-open-btn" onclick="revealLetter('${d.id}')">খোলো</button>
+      </div>
+    </div>`;
   }).join('');
 }
 
@@ -1665,6 +1952,11 @@ function startListeners(){
     }));
   unsubs.push(db.collection('notes').orderBy('createdAt','desc').limit(30)
     .onSnapshot(s=>renderNotes(s.docs)));
+  unsubs.push(db.collection('events').orderBy('date','asc').limit(200)
+    .onSnapshot(s=>{ lastEventDocs=s.docs; renderEvents(); }));
+  unsubs.push(db.collection('unspokenLetters').where('recipientUid','==',currentUser.uid)
+    .orderBy('createdAt','desc').limit(100)
+    .onSnapshot(s=>{ lastUnspokenDocs=s.docs; renderUnspokenInbox(); }));
   unsubs.push(db.collection('confessions').orderBy('createdAt','desc').limit(50)
     .onSnapshot(s=>renderConfessions(s.docs)));
   unsubs.push(db.collection('secretChat').orderBy('createdAt','desc').limit(80)
@@ -1681,6 +1973,8 @@ function startListeners(){
       s.docs.forEach(d=>{ map[d.id]=d.data(); });
       allUsersMap=map;
       renderMessagesPanel();
+      renderEvents();
+      populateUnspokenRecipients();
     }));
   unsubs.push(db.collection('notifications').where('recipientUid','==',currentUser.uid)
     .orderBy('createdAt','desc').limit(30)
