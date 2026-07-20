@@ -988,6 +988,7 @@ function startListeners() {
     renderStudents();        // sheet cost is now part of personal charge
     renderSubscriberPanel();
     renderGirlsAdminPanel();
+    renderSummary();         // sheet cost must also count toward the admin's Total Expense/Balance cards
   });
 }
 
@@ -1215,7 +1216,8 @@ function renderSubscriberPanel() {
 function renderSummary() {
   const totalCollection = students.reduce((a, s) => a + ((collectionsData[s.roll] || {}).amount || 0), 0);
   const totalDonation = donationsData.reduce((a, d) => a + (d.amount || 0), 0);
-  const totalExpense = expensesData.reduce((a, e) => a + (e.amount || 0), 0);
+  const totalSheetCharges = sheetOrdersData.reduce((a, o) => a + (o.price || 0), 0);
+  const totalExpense = expensesData.reduce((a, e) => a + (e.amount || 0), 0) + totalSheetCharges;
   const balance = totalCollection + totalDonation - totalExpense;
   document.getElementById('sum-collection').textContent = "৳" + totalCollection.toFixed(2);
   document.getElementById('sum-donation').textContent = "৳" + totalDonation.toFixed(2);
@@ -2092,7 +2094,8 @@ window.downloadFullReport = () => {
   const avgEqualShare = getEqualShare();
   const totalCollection = students.reduce((a, s) => a + ((collectionsData[s.roll] || {}).amount || 0), 0);
   const totalDonation = donationsData.reduce((a, d) => a + (d.amount || 0), 0);
-  const totalExpense = expensesData.reduce((a, e) => a + (e.amount || 0), 0);
+  const totalSheetCharges = sheetOrdersData.reduce((a, o) => a + (o.price || 0), 0);
+  const totalExpense = expensesData.reduce((a, e) => a + (e.amount || 0), 0) + totalSheetCharges;
   const balance = totalCollection + totalDonation - totalExpense;
   const now = new Date();
 
