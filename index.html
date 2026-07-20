@@ -379,6 +379,19 @@
     <div class="sum-card"><div class="label">Balance in Hand</div><div class="val num" id="sum-balance">৳0</div></div>
   </div>
 
+  <!-- gender-wise (boys / girls) summary — treasurer only -->
+  <div class="panel treasurer-only" data-tab="dashboard">
+    <h2>জেন্ডার অনুযায়ী হিসাব</h2>
+    <div class="summary-grid" style="margin-bottom:0;">
+      <div class="sum-card"><div class="label">ছেলে সাবস্ক্রাইবার</div><div class="val num" id="boys-count-admin">0</div></div>
+      <div class="sum-card green"><div class="label">ছেলেদের মোট জমা</div><div class="val num" id="boys-collected-admin">৳0</div></div>
+      <div class="sum-card"><div class="label">ছেলেদের সম্মিলিত ব্যালেন্স</div><div class="val num" id="boys-balance-admin">৳0</div></div>
+      <div class="sum-card"><div class="label">মেয়ে সাবস্ক্রাইবার</div><div class="val num" id="girls-count-admin">0</div></div>
+      <div class="sum-card green"><div class="label">মেয়েদের মোট জমা</div><div class="val num" id="girls-collected-admin">৳0</div></div>
+      <div class="sum-card"><div class="label">মেয়েদের সম্মিলিত ব্যালেন্স</div><div class="val num" id="girls-balance-admin">৳0</div></div>
+    </div>
+  </div>
+
   <!-- report buttons -->
   <div class="panel treasurer-only" data-tab="dashboard">
     <h2>Reports & Vouchers</h2>
@@ -473,12 +486,17 @@
           <select id="expense-charge-type" onchange="onExpenseChargeTypeChange()" style="width:100%;padding:9px 11px;border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-family:inherit;font-size:.92rem;color:var(--ink);">
             <option value="all">সবার সমান ভাগে (Equal split — all subscribers)</option>
             <option value="individual">নির্দিষ্ট একজন সাবস্ক্রাইবারের ব্যক্তিগত হিসাব থেকে</option>
+            <option value="multiple">একাধিক সাবস্ক্রাইবারের প্রত্যেকের হিসাব থেকে সমান পরিমাণ (একসাথে)</option>
           </select>
         </div>
         <div class="field hidden" id="expense-target-wrap">
           <label>সাবস্ক্রাইবার নির্বাচন করুন</label>
           <select id="expense-target-roll" style="width:100%;padding:9px 11px;border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-family:inherit;font-size:.92rem;color:var(--ink);"></select>
         </div>
+      </div>
+      <div class="field hidden" id="expense-target-multi-wrap" style="margin-top:10px;">
+        <label>একাধিক সাবস্ক্রাইবার বাছাই করুন — উপরে দেওয়া Amount টি প্রত্যেকের হিসাব থেকে আলাদাভাবে কাটা হবে (ভাগ হবে না)</label>
+        <div id="expense-multi-target-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--line-strong);border-radius:8px;padding:10px 12px;background:#fff;"></div>
       </div>
       <div class="btn-row"><button class="btn btn-primary" onclick="saveExpense()">Save Expense</button></div>
     <div class="table-scroll" style="margin-top:16px;">
@@ -539,6 +557,9 @@
 
     <h2 style="margin-top:20px;">প্রাপ্তি স্বীকার (Received) চেকলিস্ট — সব ব্যাচ</h2>
     <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">প্রিন্ট সম্পন্ন হওয়া সব অর্ডার এখানে তারিখ ও শিটের নাম অনুযায়ী সাজানো (উপরের ব্যাচ-ফিল্টার এখানে প্রযোজ্য নয়)। সাবস্ক্রাইবার শিট বুঝে পেলে এখানে টিক দিন। ছেলে ও মেয়ে — উভয় গ্রুপের শিটের জন্যই ট্রেজারার এখান থেকে টিক দিতে পারবেন।</p>
+    <div class="btn-row" style="margin-top:0;margin-bottom:12px;">
+      <button class="btn btn-outline" onclick="downloadReceiversPDF()">📄 কে কোন সিট রিসিভ করবে — PDF (ছেলে/মেয়ে আলাদা)</button>
+    </div>
     <div class="table-scroll">
       <table class="ledger">
         <thead><tr><th></th><th>সাবস্ক্রাইবার</th><th>জেন্ডার</th><th>প্রাপ্তি তথ্য</th></tr></thead>
@@ -909,6 +930,7 @@ function startListeners() {
     snap.forEach(d => students.push({ id: d.id, ...d.data() }));
     renderStudentRows();
     renderExpenseTargetOptions();
+    renderExpenseMultiTargetOptions();
     renderNewUserRollOptions();
     recomputeCollections();
     renderExpenses();
@@ -1142,6 +1164,23 @@ function getPersonalCharge(roll) {
   return individualExpenses + sheetCharges;
 }
 
+// ============ DUE LIMIT: a subscriber who owes more than this many taka can't place new
+// sheet orders until they pay down their balance. ============
+const DUE_ORDER_BLOCK_LIMIT = 70;
+
+// Positive = credit, negative = due. Same formula used everywhere the subscriber's balance is shown.
+function getSubscriberRemaining(roll) {
+  const equalShare = getEqualShareForStudent(roll);
+  const rec = collectionsData[roll];
+  const amount = rec ? (rec.amount || 0) : 0;
+  const personalCharge = getPersonalCharge(roll);
+  return amount - equalShare - personalCharge;
+}
+
+function isOrderBlockedByDue(roll) {
+  return getSubscriberRemaining(roll) < -DUE_ORDER_BLOCK_LIMIT;
+}
+
 function renderStudents() {
   students.forEach(s => {
     const equalShare = getEqualShareForStudent(s.roll);
@@ -1223,6 +1262,34 @@ function renderSummary() {
   document.getElementById('sum-donation').textContent = "৳" + totalDonation.toFixed(2);
   document.getElementById('sum-expense').textContent = "৳" + totalExpense.toFixed(2);
   document.getElementById('sum-balance').textContent = "৳" + balance.toFixed(2);
+  renderGenderSummary();
+}
+
+// Admin dashboard: total accounts broken down by ছেলে (boys) / মেয়ে (girls) — subscriber count,
+// total collected, and their combined running balance (credit/due).
+function getGenderTotals(gender) {
+  const list = students.filter(s => s.gender === gender);
+  const totalCollected = list.reduce((a, s) => a + ((collectionsData[s.roll] || {}).amount || 0), 0);
+  const totalBalance = list.reduce((a, s) => a + getSubscriberRemaining(s.roll), 0);
+  return { count: list.length, totalCollected, totalBalance };
+}
+
+function renderGenderSummary() {
+  const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  const setBalance = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = (val >= 0 ? "৳" : "-৳") + Math.abs(val).toFixed(2);
+    el.style.color = val >= 0 ? 'var(--green)' : 'var(--red)';
+  };
+  const boys = getGenderTotals('male');
+  const girls = getGenderTotals('female');
+  setText('boys-count-admin', boys.count);
+  setText('boys-collected-admin', "৳" + boys.totalCollected.toFixed(2));
+  setBalance('boys-balance-admin', boys.totalBalance);
+  setText('girls-count-admin', girls.count);
+  setText('girls-collected-admin', "৳" + girls.totalCollected.toFixed(2));
+  setBalance('girls-balance-admin', girls.totalBalance);
 }
 
 function renderDonations() {
@@ -1296,17 +1363,31 @@ function renderSheetCatalogSubscriber() {
   if (!box || currentUserRole !== 'subscriber') return;
   const myOrderedIds = new Set(sheetOrdersData.filter(o => o.roll === currentSubscriberRoll).map(o => o.sheetId));
   const windowOpen = isWithinOrderWindow();
+  const dueBlocked = isOrderBlockedByDue(currentSubscriberRoll);
+  const canOrder = windowOpen && !dueBlocked;
 
   const notice = document.getElementById('order-window-notice');
   if (notice) {
-    notice.classList.toggle('hidden', windowOpen);
-    if (!windowOpen) notice.textContent = '⏰ ' + orderWindowMessage();
+    if (dueBlocked) {
+      const remaining = getSubscriberRemaining(currentSubscriberRoll);
+      notice.classList.remove('hidden');
+      notice.style.background = 'var(--red-bg)';
+      notice.style.color = 'var(--red)';
+      notice.style.borderColor = 'var(--red)';
+      notice.textContent = `⛔ আপনার বাকি ৳${Math.abs(remaining).toFixed(2)}, যা ৳${DUE_ORDER_BLOCK_LIMIT} টাকার বেশি — তাই এখন নতুন শিট অর্ডার করা যাচ্ছে না। আগে বকেয়া পরিশোধ করুন।`;
+    } else {
+      notice.style.background = '';
+      notice.style.color = '';
+      notice.style.borderColor = '';
+      notice.classList.toggle('hidden', windowOpen);
+      if (!windowOpen) notice.textContent = '⏰ ' + orderWindowMessage();
+    }
   }
   const confirmBtn = document.getElementById('confirm-sheet-order-btn');
   if (confirmBtn) {
-    confirmBtn.disabled = !windowOpen;
-    confirmBtn.style.opacity = windowOpen ? '1' : '.55';
-    confirmBtn.style.cursor = windowOpen ? 'pointer' : 'not-allowed';
+    confirmBtn.disabled = !canOrder;
+    confirmBtn.style.opacity = canOrder ? '1' : '.55';
+    confirmBtn.style.cursor = canOrder ? 'pointer' : 'not-allowed';
   }
 
   if (!sheetsData.length) {
@@ -1315,9 +1396,9 @@ function renderSheetCatalogSubscriber() {
   }
   box.innerHTML = sheetsData.map(s => {
     const ordered = myOrderedIds.has(s.id);
-    const disabled = ordered || !windowOpen;
+    const disabled = ordered || !canOrder;
     return `
-      <label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:.9rem;${!windowOpen && !ordered ? 'opacity:.55;' : ''}">
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:.9rem;${!canOrder && !ordered ? 'opacity:.55;' : ''}">
         <input type="checkbox" class="sheet-check" value="${s.id}" ${ordered ? 'checked' : ''} ${disabled ? 'disabled' : ''} style="width:16px;height:16px;">
         <span style="flex:1;">${s.title}</span>
         <span class="num" style="color:var(--ink-soft);">৳${(s.price || 0).toFixed(2)}</span>
@@ -1729,6 +1810,65 @@ window.downloadOrdersPDF = (businessDate) => {
   doc.save(`Sheet_Orders_${businessDate}.pdf`);
 };
 
+// ============ RECEIVERS PDF (who receives which sheet — boys & girls listed separately) ============
+// Covers every order that has been printed (across all batches), split into a Boys table and a
+// Girls table, each grouped by batch date then sheet name, with received/pending status —
+// mirrors the on-screen "প্রাপ্তি স্বীকার" checklist but as a standalone, printable PDF.
+window.downloadReceiversPDF = () => {
+  const printedOrders = sheetOrdersData.filter(o => o.printed && (o.gender === 'male' || o.gender === 'female'));
+  if (!printedOrders.length) { alert("এখনো কোনো অর্ডার প্রিন্ট সম্পন্ন হয়নি — রিসিভ তালিকা তৈরি করার কিছু নেই।"); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const now = new Date();
+
+  doc.setFontSize(16); doc.setTextColor(30, 41, 59);
+  doc.text("Sheet Receivers List", 14, 18);
+  doc.setFontSize(9); doc.setTextColor(100, 116, 139);
+  doc.text(`Treasurer: ${currentTreasurerName}   |   Generated: ${now.toLocaleString()}`, 14, 24);
+
+  function buildRows(list) {
+    const sorted = [...list].sort((a, b) => {
+      const dcmp = (b.businessDate || '').localeCompare(a.businessDate || '');
+      if (dcmp !== 0) return dcmp;
+      const scmp = (a.sheetTitle || '').localeCompare(b.sheetTitle || '');
+      if (scmp !== 0) return scmp;
+      return (a.studentName || '').localeCompare(b.studentName || '');
+    });
+    return sorted.map(o => [
+      o.businessDate ? formatBusinessDateLabel(o.businessDate) : '-',
+      o.sheetTitle || '-',
+      o.studentName || 'Unknown',
+      o.roll != null ? String(o.roll) : '-',
+      o.received ? 'Received' : 'Pending'
+    ]);
+  }
+
+  const boys = printedOrders.filter(o => o.gender === 'male');
+  const girls = printedOrders.filter(o => o.gender === 'female');
+
+  doc.setFontSize(12); doc.setTextColor(11, 132, 218);
+  doc.text(`Boys (${boys.length})`, 14, 34);
+  doc.autoTable({
+    startY: 38,
+    head: [["Batch Date", "Sheet", "Name", "Roll", "Status"]],
+    body: boys.length ? buildRows(boys) : [["-", "-", "No orders", "-", "-"]],
+    theme: "grid", headStyles: { fillColor: [11, 132, 218] }, styles: { fontSize: 8 }
+  });
+
+  const afterBoysY = doc.lastAutoTable.finalY + 12;
+  doc.setFontSize(12); doc.setTextColor(217, 119, 6);
+  doc.text(`Girls (${girls.length})`, 14, afterBoysY);
+  doc.autoTable({
+    startY: afterBoysY + 4,
+    head: [["Batch Date", "Sheet", "Name", "Roll", "Status"]],
+    body: girls.length ? buildRows(girls) : [["-", "-", "No orders", "-", "-"]],
+    theme: "grid", headStyles: { fillColor: [217, 119, 6] }, styles: { fontSize: 8 }
+  });
+
+  doc.save(`Sheet_Receivers_${now.toISOString().slice(0,10)}.pdf`);
+};
+
 // Subscriber: "কোন খাতে খরচ হচ্ছে" — everything currently counted in their due/credit,
 // broken down by purpose (their slice of each shared expense, any personal charges, sheet orders)
 function renderSubscriberExpenseBreakdown() {
@@ -1774,9 +1914,25 @@ function renderExpenseTargetOptions() {
   if (prev && students.some(s => String(s.roll) === prev)) sel.value = prev;
 }
 
+// Checkbox list for the "একাধিক সাবস্ক্রাইবার" bulk-charge option — keeps whichever boxes were
+// already checked when the student list re-renders (e.g. a new subscriber gets added mid-entry).
+function renderExpenseMultiTargetOptions() {
+  const box = document.getElementById('expense-multi-target-list');
+  if (!box) return;
+  const prevChecked = new Set(Array.from(document.querySelectorAll('.expense-multi-check:checked')).map(cb => cb.value));
+  box.innerHTML = students.map(s => `
+    <label style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:.86rem;">
+      <input type="checkbox" class="expense-multi-check" value="${s.roll}" ${prevChecked.has(String(s.roll)) ? 'checked' : ''} style="width:15px;height:15px;">
+      <span>${s.name} (Roll ${s.roll})</span>
+    </label>
+  `).join('') || `<div class="activity-meta">কোনো সাবস্ক্রাইবার নেই।</div>`;
+}
+
 window.onExpenseChargeTypeChange = () => {
   const type = document.getElementById('expense-charge-type').value;
   document.getElementById('expense-target-wrap').classList.toggle('hidden', type !== 'individual');
+  document.getElementById('expense-target-multi-wrap').classList.toggle('hidden', type !== 'multiple');
+  if (type === 'multiple') renderExpenseMultiTargetOptions();
 };
 
 // ============ LOGIN ACCOUNTS (treasurer creates/manages users directly from the app) ============
@@ -1970,28 +2126,53 @@ window.saveExpense = async () => {
   const amount = parseFloat(document.getElementById('expense-amount').value);
   if (!desc || !amount || amount <= 0) { alert("Please enter a description and a valid amount."); return; }
 
-  const chargeType = document.getElementById('expense-charge-type').value; // 'all' | 'individual'
-  let targetRoll = null, targetName = null;
-  if (chargeType === 'individual') {
-    const rawRoll = document.getElementById('expense-target-roll').value;
-    targetRoll = rawRoll ? parseInt(rawRoll) : null;
-    const student = students.find(s => s.roll === targetRoll);
-    if (!targetRoll || !student) { alert("অনুগ্রহ করে একজন সাবস্ক্রাইবার নির্বাচন করুন।"); return; }
-    targetName = student.name;
+  const chargeType = document.getElementById('expense-charge-type').value; // 'all' | 'individual' | 'multiple'
+  const date = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  // "multiple" — same amount charged separately to each selected subscriber (not split/divided).
+  // Each subscriber gets their own "individual" expense doc, so it shows up on their personal
+  // ledger and breakdown exactly like a normal individual charge would.
+  if (chargeType === 'multiple') {
+    const checkedRolls = Array.from(document.querySelectorAll('.expense-multi-check:checked')).map(cb => parseInt(cb.value));
+    if (!checkedRolls.length) { alert("অনুগ্রহ করে অন্তত একজন সাবস্ক্রাইবার নির্বাচন করুন।"); return; }
+    const targets = checkedRolls.map(roll => students.find(s => s.roll === roll)).filter(Boolean);
+    if (!confirm(`${targets.length} জন সাবস্ক্রাইবারের প্রত্যেকের হিসাব থেকে ৳${amount.toFixed(2)} করে (সর্বমোট ৳${(amount * targets.length).toFixed(2)}) কাটা হবে — "${desc}"।\n\n${targets.map(t => t.name).join(', ')}\n\nনিশ্চিত করবেন?`)) return;
+    try {
+      await Promise.all(targets.map(t => addDoc(collection(db, "expenses"), {
+        description: desc, amount, date, addedBy: currentTreasurerName, addedAt: serverTimestamp(),
+        chargeType: 'individual', targetRoll: t.roll, targetName: t.name
+      })));
+      await addDoc(collection(db, "activity"), {
+        type: "expense", actor: currentTreasurerName,
+        detail: `৳${amount.toFixed(2)} করে "${desc}" — ${targets.length} জন সাবস্ক্রাইবারের প্রত্যেকের হিসাব থেকে একসাথে কাটা হয়েছে (${targets.map(t => t.name).join(', ')})`,
+        amount: amount * targets.length, createdAt: serverTimestamp()
+      });
+    } catch (e) {
+      alert("খরচ যোগ করা যায়নি। কারণ: " + (e && e.message ? e.message : e));
+      return;
+    }
+  } else {
+    let targetRoll = null, targetName = null;
+    if (chargeType === 'individual') {
+      const rawRoll = document.getElementById('expense-target-roll').value;
+      targetRoll = rawRoll ? parseInt(rawRoll) : null;
+      const student = students.find(s => s.roll === targetRoll);
+      if (!targetRoll || !student) { alert("অনুগ্রহ করে একজন সাবস্ক্রাইবার নির্বাচন করুন।"); return; }
+      targetName = student.name;
+    }
+    await addDoc(collection(db, "expenses"), {
+      description: desc, amount, date, addedBy: currentTreasurerName, addedAt: serverTimestamp(),
+      chargeType, targetRoll, targetName
+    });
+    await addDoc(collection(db, "activity"), {
+      type: "expense", actor: currentTreasurerName,
+      detail: chargeType === 'individual'
+        ? `ব্যক্তিগত খরচ ৳${amount.toFixed(2)} "${desc}" — শুধু ${targetName} (Roll ${targetRoll}) এর হিসাব থেকে কাটা হয়েছে`
+        : `Expense of ৳${amount.toFixed(2)} added for "${desc}" (সবার মধ্যে সমান ভাগ)`,
+      amount, createdAt: serverTimestamp()
+    });
   }
 
-  const date = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
-  await addDoc(collection(db, "expenses"), {
-    description: desc, amount, date, addedBy: currentTreasurerName, addedAt: serverTimestamp(),
-    chargeType, targetRoll, targetName
-  });
-  await addDoc(collection(db, "activity"), {
-    type: "expense", actor: currentTreasurerName,
-    detail: chargeType === 'individual'
-      ? `ব্যক্তিগত খরচ ৳${amount.toFixed(2)} "${desc}" — শুধু ${targetName} (Roll ${targetRoll}) এর হিসাব থেকে কাটা হয়েছে`
-      : `Expense of ৳${amount.toFixed(2)} added for "${desc}" (সবার মধ্যে সমান ভাগ)`,
-    amount, createdAt: serverTimestamp()
-  });
   document.getElementById('expense-desc').value = "";
   document.getElementById('expense-amount').value = "";
   document.getElementById('expense-charge-type').value = "all";
@@ -2029,6 +2210,11 @@ window.deleteSheet = async (id) => {
 window.confirmSheetOrders = async () => {
   if (currentUserRole !== 'subscriber' || !currentSubscriberRoll) return;
   if (!isWithinOrderWindow()) { alert('⏰ ' + orderWindowMessage()); renderSheetCatalogSubscriber(); return; }
+  if (isOrderBlockedByDue(currentSubscriberRoll)) {
+    alert(`⛔ আপনার বাকি ৳${DUE_ORDER_BLOCK_LIMIT} টাকার বেশি হয়ে গেছে — তাই এখন নতুন শিট অর্ডার করা যাচ্ছে না। আগে বকেয়া পরিশোধ করুন।`);
+    renderSheetCatalogSubscriber();
+    return;
+  }
   const alreadyOrderedIds = new Set(sheetOrdersData.filter(o => o.roll === currentSubscriberRoll).map(o => o.sheetId));
   const checked = Array.from(document.querySelectorAll('.sheet-check:checked'))
     .map(cb => cb.value)
