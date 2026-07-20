@@ -333,7 +333,17 @@
     </div>
 
     <h2 style="margin-top:20px;">প্রাপ্তি স্বীকার (Received) চেকলিস্ট — মেয়েদের শিট</h2>
-    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">ট্রেজারার প্রিন্ট সম্পন্ন করার পর এখানে মেয়েদের শিট দেখা যাবে — তারিখ ও শিটের নাম অনুযায়ী সাজানো। যে সাবস্ক্রাইবার শিট বুঝে পেয়েছে, তার পাশে টিক দিন — এটাই রিসিভের রেকর্ড হিসেবে থেকে যাবে।</p>
+    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">ট্রেজারার প্রিন্ট সম্পন্ন করার পর এখানে মেয়েদের শিট দেখা যাবে। নিচে তারিখ ও শিটের নাম বেছে নিয়ে শুধু সেই তালিকাটাই দেখুন — চাইলে "সব তারিখ" / "সব শিট" রেখে সম্পূর্ণ তালিকাও দেখা যাবে। যে সাবস্ক্রাইবার শিট বুঝে পেয়েছে, তার পাশে টিক দিন — এটাই রিসিভের রেকর্ড হিসেবে থেকে যাবে।</p>
+    <div class="field-row" style="align-items:flex-end;margin-bottom:12px;">
+      <div class="field" style="max-width:240px;">
+        <label>তারিখ বাছাই করুন</label>
+        <select id="girls-received-date-select" onchange="onGirlsReceivedDateFilterChange()" style="width:100%;padding:9px 11px;border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-family:inherit;font-size:.92rem;color:var(--ink);"></select>
+      </div>
+      <div class="field" style="max-width:240px;">
+        <label>শিট বাছাই করুন</label>
+        <select id="girls-received-sheet-select" onchange="onGirlsReceivedSheetFilterChange()" style="width:100%;padding:9px 11px;border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-family:inherit;font-size:.92rem;color:var(--ink);"></select>
+      </div>
+    </div>
     <div class="table-scroll">
       <table class="ledger">
         <thead><tr><th></th><th>সাবস্ক্রাইবার</th><th>প্রাপ্তি তথ্য</th></tr></thead>
@@ -555,10 +565,20 @@
       </table>
     </div>
 
-    <h2 style="margin-top:20px;">প্রাপ্তি স্বীকার (Received) চেকলিস্ট — সব ব্যাচ</h2>
-    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">প্রিন্ট সম্পন্ন হওয়া সব অর্ডার এখানে তারিখ ও শিটের নাম অনুযায়ী সাজানো (উপরের ব্যাচ-ফিল্টার এখানে প্রযোজ্য নয়)। সাবস্ক্রাইবার শিট বুঝে পেলে এখানে টিক দিন। ছেলে ও মেয়ে — উভয় গ্রুপের শিটের জন্যই ট্রেজারার এখান থেকে টিক দিতে পারবেন।</p>
-    <div class="btn-row" style="margin-top:0;margin-bottom:12px;">
-      <button class="btn btn-outline" onclick="downloadReceiversPDF()">📄 কে কোন সিট রিসিভ করবে — PDF (ছেলে/মেয়ে আলাদা)</button>
+    <h2 style="margin-top:20px;">প্রাপ্তি স্বীকার (Received) চেকলিস্ট</h2>
+    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">নিচে তারিখ ও শিটের নাম বেছে নিয়ে শুধু সেই তালিকাটাই দেখুন — চাইলে "সব তারিখ" / "সব শিট" রেখে সম্পূর্ণ তালিকাও দেখা যাবে। সাবস্ক্রাইবার শিট বুঝে পেলে এখানে টিক দিন। ছেলে ও মেয়ে — উভয় গ্রুপের শিটের জন্যই ট্রেজারার এখান থেকে টিক দিতে পারবেন।</p>
+    <div class="field-row" style="align-items:flex-end;margin-bottom:12px;">
+      <div class="field" style="max-width:240px;">
+        <label>তারিখ বাছাই করুন</label>
+        <select id="received-date-select" onchange="onReceivedDateFilterChange()" style="width:100%;padding:9px 11px;border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-family:inherit;font-size:.92rem;color:var(--ink);"></select>
+      </div>
+      <div class="field" style="max-width:240px;">
+        <label>শিট বাছাই করুন</label>
+        <select id="received-sheet-select" onchange="onReceivedSheetFilterChange()" style="width:100%;padding:9px 11px;border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-family:inherit;font-size:.92rem;color:var(--ink);"></select>
+      </div>
+      <div class="btn-row" style="margin-top:0;">
+        <button class="btn btn-outline" onclick="downloadReceiversPDF()">📄 কে কোন সিট রিসিভ করবে — PDF (ছেলে/মেয়ে আলাদা)</button>
+      </div>
     </div>
     <div class="table-scroll">
       <table class="ledger">
@@ -655,6 +675,12 @@ let currentUserRole = "treasurer";   // 'treasurer' | 'subscriber' | 'girls_admi
 let currentSubscriberRoll = null;    // set when currentUserRole === 'subscriber'
 let currentOrderDateFilter = null;   // businessDate key currently selected in the treasurer's order panel
 let currentActiveTab = null;         // which nav-bar tab is currently open
+// "প্রাপ্তি স্বীকার" (received) checklist filters — 'all' means no filter on that dimension.
+// Kept separate for the treasurer's (all-genders) checklist and the girls-admin's (female-only) one.
+let currentReceivedDateFilter = 'all';
+let currentReceivedSheetFilter = 'all';
+let currentGirlsReceivedDateFilter = 'all';
+let currentGirlsReceivedSheetFilter = 'all';
 
 // ============ ORDER CUTOFF: daily orders are taken until 3:00 PM (15:00) local time ============
 // Anything ordered after the cutoff is bucketed into the NEXT day's order batch.
@@ -671,6 +697,12 @@ function isPastCutoffNow() { return new Date().getHours() >= ORDER_CUTOFF_HOUR; 
 function formatBusinessDateLabel(key) {
   const [y, m, d] = key.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+// Local (not UTC) Y-M-D key — used for "which calendar day is this" comparisons, as opposed to
+// businessDateKeyOf() which additionally rolls forward past the 3PM cutoff.
+function localDateKey(d) {
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 // ============ ORDER WINDOW: subscribers/girls-admin may only PLACE orders between 10:00 AM
@@ -694,6 +726,7 @@ function orderWindowMessage() {
 setInterval(() => {
   renderSheetCatalogSubscriber();
   renderGirlsAdminSheetCatalog();
+  window.maybeAutoDownloadReceiversPDF();
 }, 60000);
 
 // ============ AUTH ============
@@ -1011,6 +1044,7 @@ function startListeners() {
     renderSubscriberPanel();
     renderGirlsAdminPanel();
     renderSummary();         // sheet cost must also count toward the admin's Total Expense/Balance cards
+    window.maybeAutoDownloadReceiversPDF();
   });
 }
 
@@ -1439,6 +1473,37 @@ function orderRollTag(o) {
   return o.personal ? '(এডমিন - ব্যক্তিগত)' : `(Roll ${o.roll})`;
 }
 
+// Populates a "প্রাপ্তি স্বীকার" checklist's date & sheet <select> filters from the given order
+// pool, and returns the subset of orders matching whatever ends up selected. Replaces the old
+// "dump everything at once" behaviour — the treasurer/girls-admin now picks a date (and,
+// optionally, a specific sheet within that date) before seeing rows, instead of scrolling through
+// every batch and every sheet at once. Passing dateFilter/sheetFilter in (rather than reading
+// state directly) keeps this a pure function of its inputs; the caller is responsible for saving
+// the returned effective values back into its own state variable.
+function applyReceivedFilters(orders, dateSelectEl, sheetSelectEl, dateFilter, sheetFilter) {
+  const dateKeys = Array.from(new Set(orders.map(o => o.businessDate).filter(Boolean))).sort().reverse();
+  if (dateSelectEl) {
+    const prev = dateFilter;
+    dateSelectEl.innerHTML = `<option value="all">সব তারিখ</option>` +
+      dateKeys.map(d => `<option value="${d}">📅 ${formatBusinessDateLabel(d)}</option>`).join('');
+    dateSelectEl.value = (prev === 'all' || dateKeys.includes(prev)) ? prev : 'all';
+  }
+  const effectiveDateFilter = dateSelectEl ? dateSelectEl.value : dateFilter;
+
+  const dateScoped = effectiveDateFilter === 'all' ? orders : orders.filter(o => o.businessDate === effectiveDateFilter);
+  const sheetTitles = Array.from(new Set(dateScoped.map(o => o.sheetTitle).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'bn'));
+  if (sheetSelectEl) {
+    const prevSheet = sheetFilter;
+    sheetSelectEl.innerHTML = `<option value="all">সব শিট</option>` +
+      sheetTitles.map(t => `<option value="${t}">📄 ${t}</option>`).join('');
+    sheetSelectEl.value = (prevSheet === 'all' || sheetTitles.includes(prevSheet)) ? prevSheet : 'all';
+  }
+  const effectiveSheetFilter = sheetSelectEl ? sheetSelectEl.value : sheetFilter;
+
+  const filtered = dateScoped.filter(o => effectiveSheetFilter === 'all' || o.sheetTitle === effectiveSheetFilter);
+  return { filtered, effectiveDateFilter, effectiveSheetFilter };
+}
+
 // Shared "received" checklist renderer — used by both the treasurer's panel (all genders) and
 // the girls-admin panel (female only). Grouped by batch date, then by sheet name.
 // IMPORTANT: the sort key never depends on o.received — earlier this list re-sorted "pending
@@ -1450,7 +1515,7 @@ function renderGroupedReceivedChecklist(orders, tbodyId, showGenderCol) {
   if (!tbody) return;
   const colspan = showGenderCol ? 4 : 3;
   if (!orders.length) {
-    tbody.innerHTML = `<tr><td colspan="${colspan}" class="activity-meta">এখনো কোনো অর্ডার প্রিন্ট সম্পন্ন হয়নি।</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${colspan}" class="activity-meta">এই তারিখ/শিটের জন্য কোনো প্রিন্ট-সম্পন্ন অর্ডার পাওয়া যায়নি — অন্য তারিখ বা শিট বেছে নিন, অথবা "সব তারিখ" / "সব শিট" রাখুন।</td></tr>`;
     return;
   }
   const sorted = [...orders].sort((a, b) => {
@@ -1490,6 +1555,18 @@ function renderGroupedReceivedChecklist(orders, tbodyId, showGenderCol) {
 window.onOrderDateFilterChange = () => {
   const sel = document.getElementById('order-date-select');
   currentOrderDateFilter = sel ? sel.value : null;
+  renderSheetOrdersTreasurer();
+};
+
+window.onReceivedDateFilterChange = () => {
+  const sel = document.getElementById('received-date-select');
+  currentReceivedDateFilter = sel ? sel.value : 'all';
+  currentReceivedSheetFilter = 'all'; // sheet list depends on date — reset so an old pick doesn't linger
+  renderSheetOrdersTreasurer();
+};
+window.onReceivedSheetFilterChange = () => {
+  const sel = document.getElementById('received-sheet-select');
+  currentReceivedSheetFilter = sel ? sel.value : 'all';
   renderSheetOrdersTreasurer();
 };
 
@@ -1559,10 +1636,19 @@ function renderSheetOrdersTreasurer() {
     markBtn.textContent = pendingPrintCount === 0 ? '✓ এই ব্যাচ প্রিন্ট সম্পন্ন' : `✓ প্রিন্ট সম্পন্ন চিহ্নিত করুন (${pendingPrintCount})`;
   }
 
-  // received checklist — every printed order across ALL batches, both genders, grouped by
+  // received checklist — printed orders, both genders, narrowed to the date/sheet chosen in the
+  // filter selects above (see applyReceivedFilters); grouping within that subset still goes by
   // date then sheet name (see renderGroupedReceivedChecklist for why it never resorts by
   // received status)
-  renderGroupedReceivedChecklist(sheetOrdersData.filter(o => o.printed), 'order-received-body', true);
+  const receivedDateSel = document.getElementById('received-date-select');
+  const receivedSheetSel = document.getElementById('received-sheet-select');
+  const { filtered: receivedFiltered, effectiveDateFilter, effectiveSheetFilter } = applyReceivedFilters(
+    sheetOrdersData.filter(o => o.printed), receivedDateSel, receivedSheetSel,
+    currentReceivedDateFilter, currentReceivedSheetFilter
+  );
+  currentReceivedDateFilter = effectiveDateFilter;
+  currentReceivedSheetFilter = effectiveSheetFilter;
+  renderGroupedReceivedChecklist(receivedFiltered, 'order-received-body', true);
 }
 
 // Wrappers so inline onclick (which runs outside module scope) can reach the
@@ -1762,8 +1848,28 @@ function renderGirlsAdminPanel() {
   renderGirlsAdminMyOrders();
 
   const printedGirlsOrders = sheetOrdersData.filter(o => o.gender === 'female' && o.printed);
-  renderGroupedReceivedChecklist(printedGirlsOrders, 'girls-received-body', false);
+  const girlsDateSel = document.getElementById('girls-received-date-select');
+  const girlsSheetSel = document.getElementById('girls-received-sheet-select');
+  const { filtered: girlsReceivedFiltered, effectiveDateFilter: gDateF, effectiveSheetFilter: gSheetF } = applyReceivedFilters(
+    printedGirlsOrders, girlsDateSel, girlsSheetSel,
+    currentGirlsReceivedDateFilter, currentGirlsReceivedSheetFilter
+  );
+  currentGirlsReceivedDateFilter = gDateF;
+  currentGirlsReceivedSheetFilter = gSheetF;
+  renderGroupedReceivedChecklist(girlsReceivedFiltered, 'girls-received-body', false);
 }
+
+window.onGirlsReceivedDateFilterChange = () => {
+  const sel = document.getElementById('girls-received-date-select');
+  currentGirlsReceivedDateFilter = sel ? sel.value : 'all';
+  currentGirlsReceivedSheetFilter = 'all';
+  renderGirlsAdminPanel();
+};
+window.onGirlsReceivedSheetFilterChange = () => {
+  const sel = document.getElementById('girls-received-sheet-select');
+  currentGirlsReceivedSheetFilter = sel ? sel.value : 'all';
+  renderGirlsAdminPanel();
+};
 
 // ============ ORDERS PDF (treasurer) ============
 // Printing-floor summary only: no subscriber names. Per sheet — total copies needed, plus a
@@ -1811,19 +1917,18 @@ window.downloadOrdersPDF = (businessDate) => {
 };
 
 // ============ RECEIVERS PDF (who receives which sheet — boys & girls listed separately) ============
-// Covers every order that has been printed (across all batches), split into a Boys table and a
-// Girls table, each grouped by batch date then sheet name, with received/pending status —
-// mirrors the on-screen "প্রাপ্তি স্বীকার" checklist but as a standalone, printable PDF.
-window.downloadReceiversPDF = () => {
-  const printedOrders = sheetOrdersData.filter(o => o.printed && (o.gender === 'male' || o.gender === 'female'));
-  if (!printedOrders.length) { alert("এখনো কোনো অর্ডার প্রিন্ট সম্পন্ন হয়নি — রিসিভ তালিকা তৈরি করার কিছু নেই।"); return; }
-
+// Shared builder — split into a Boys table and a Girls table, each grouped by batch date then
+// sheet name, with received/pending status. Used both by the manual "কে কোন সিট রিসিভ করবে" button
+// (downloadReceiversPDF, below) and by the automatic end-of-order-window PDF
+// (maybeAutoDownloadReceiversPDF, further down) — mirrors the on-screen "প্রাপ্তি স্বীকার" checklist
+// but as a standalone, printable PDF.
+function buildReceiversPDF(orders, titleText, filenameSuffix) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const now = new Date();
 
   doc.setFontSize(16); doc.setTextColor(30, 41, 59);
-  doc.text("Sheet Receivers List", 14, 18);
+  doc.text(titleText, 14, 18);
   doc.setFontSize(9); doc.setTextColor(100, 116, 139);
   doc.text(`Treasurer: ${currentTreasurerName}   |   Generated: ${now.toLocaleString()}`, 14, 24);
 
@@ -1844,8 +1949,8 @@ window.downloadReceiversPDF = () => {
     ]);
   }
 
-  const boys = printedOrders.filter(o => o.gender === 'male');
-  const girls = printedOrders.filter(o => o.gender === 'female');
+  const boys = orders.filter(o => o.gender === 'male');
+  const girls = orders.filter(o => o.gender === 'female');
 
   doc.setFontSize(12); doc.setTextColor(11, 132, 218);
   doc.text(`Boys (${boys.length})`, 14, 34);
@@ -1866,7 +1971,50 @@ window.downloadReceiversPDF = () => {
     theme: "grid", headStyles: { fillColor: [217, 119, 6] }, styles: { fontSize: 8 }
   });
 
-  doc.save(`Sheet_Receivers_${now.toISOString().slice(0,10)}.pdf`);
+  doc.save(`Sheet_Receivers_${filenameSuffix}.pdf`);
+}
+
+window.downloadReceiversPDF = () => {
+  const printedOrders = sheetOrdersData.filter(o => o.printed && (o.gender === 'male' || o.gender === 'female'));
+  if (!printedOrders.length) { alert("এখনো কোনো অর্ডার প্রিন্ট সম্পন্ন হয়নি — রিসিভ তালিকা তৈরি করার কিছু নেই।"); return; }
+  buildReceiversPDF(printedOrders, "Sheet Receivers List", localDateKey(new Date()));
+};
+
+// ============ AUTO RECEIVERS PDF — fires once per day, right after the order window closes ============
+// Subscribers can only place orders between 10 AM and 5 PM (ORDER_WINDOW_END_HOUR) daily. The
+// moment the treasurer's browser is open at/after 5 PM, we automatically build & download the
+// receivers list (boys & girls, sheet-by-sheet, across today's orders — printed or not) so the
+// treasurer doesn't have to remember to click the button. Guarded by localStorage so it only
+// fires once per calendar day per browser, and only while logged in as treasurer (the role
+// responsible for organizing pickup). Checked every 60s (see the setInterval above) and also
+// every time fresh order data arrives (see the sheetOrders onSnapshot listener).
+window.maybeAutoDownloadReceiversPDF = () => {
+  if (currentUserRole !== 'treasurer') return;
+  const now = new Date();
+  if (now.getHours() < ORDER_WINDOW_END_HOUR) return; // order window still open — nothing to do yet
+  const todayKey = localDateKey(now);
+  const storageKey = `autoReceiversPDF_${todayKey}`;
+  try {
+    if (localStorage.getItem(storageKey)) return; // already auto-generated today on this browser
+  } catch (e) { /* localStorage unavailable (e.g. private mode) — fall through and try anyway */ }
+
+  const todaysOrders = sheetOrdersData.filter(o => {
+    if (o.gender !== 'male' && o.gender !== 'female') return false;
+    const t = tsToDate(o.orderedAt);
+    return t && localDateKey(t) === todayKey;
+  });
+  if (!todaysOrders.length) return; // no orders came in today — nothing to generate
+
+  try {
+    buildReceiversPDF(
+      todaysOrders,
+      `Sheet Receivers List — Order Window Closed (${formatBusinessDateLabel(todayKey)})`,
+      `AutoClose_${todayKey}`
+    );
+    try { localStorage.setItem(storageKey, '1'); } catch (e) { /* ignore */ }
+  } catch (e) {
+    console.error("Auto receivers PDF generation failed:", e);
+  }
 };
 
 // Subscriber: "কোন খাতে খরচ হচ্ছে" — everything currently counted in their due/credit,
