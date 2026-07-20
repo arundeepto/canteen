@@ -578,6 +578,7 @@
       </div>
       <div class="btn-row" style="margin-top:0;">
         <button class="btn btn-outline" onclick="downloadReceiversPDF()">📄 কে কোন সিট রিসিভ করবে — PDF (ছেলে/মেয়ে আলাদা)</button>
+        <button class="btn btn-outline" onclick="downloadTodayReceiversPDF()">🔄 আজকের রিসিভার লিস্ট (আবার) ডাউনলোড করুন</button>
       </div>
     </div>
     <div class="table-scroll">
@@ -1980,41 +1981,57 @@ window.downloadReceiversPDF = () => {
   buildReceiversPDF(printedOrders, "Sheet Receivers List", localDateKey(new Date()));
 };
 
-// ============ AUTO RECEIVERS PDF — fires once per day, right after the order window closes ============
-// Subscribers can only place orders between 10 AM and 5 PM (ORDER_WINDOW_END_HOUR) daily. The
-// moment the treasurer's browser is open at/after 5 PM, we automatically build & download the
-// receivers list (boys & girls, sheet-by-sheet, across today's orders — printed or not) so the
-// treasurer doesn't have to remember to click the button. Guarded by localStorage so it only
-// fires once per calendar day per browser, and only while logged in as treasurer (the role
-// responsible for organizing pickup). Checked every 60s (see the setInterval above) and also
-// every time fresh order data arrives (see the sheetOrders onSnapshot listener).
-window.maybeAutoDownloadReceiversPDF = () => {
-  if (currentUserRole !== 'treasurer') return;
-  const now = new Date();
-  if (now.getHours() < ORDER_WINDOW_END_HOUR) return; // order window still open — nothing to do yet
-  const todayKey = localDateKey(now);
-  const storageKey = `autoReceiversPDF_${todayKey}`;
-  try {
-    if (localStorage.getItem(storageKey)) return; // already auto-generated today on this browser
-  } catch (e) { /* localStorage unavailable (e.g. private mode) — fall through and try anyway */ }
-
+// ============ TODAY'S RECEIVERS PDF — reusable across the automatic trigger and a manual button ============
+// Builds the boys/girls receivers PDF for TODAY's orders specifically (regardless of printed
+// status), since at order-close time most of the day's orders won't be marked "printed" yet.
+// Used both by maybeAutoDownloadReceiversPDF (automatic) and downloadTodayReceiversPDF (manual —
+// there are two treasurers, and either of them may need this same list several times a day, so
+// this always runs fresh on demand with no dedup/guard of its own).
+function generateTodayReceiversPDF() {
+  const todayKey = localDateKey(new Date());
   const todaysOrders = sheetOrdersData.filter(o => {
     if (o.gender !== 'male' && o.gender !== 'female') return false;
     const t = tsToDate(o.orderedAt);
     return t && localDateKey(t) === todayKey;
   });
-  if (!todaysOrders.length) return; // no orders came in today — nothing to generate
+  if (!todaysOrders.length) return false; // no orders came in today — nothing to generate
 
-  try {
-    buildReceiversPDF(
-      todaysOrders,
-      `Sheet Receivers List — Order Window Closed (${formatBusinessDateLabel(todayKey)})`,
-      `AutoClose_${todayKey}`
-    );
-    try { localStorage.setItem(storageKey, '1'); } catch (e) { /* ignore */ }
-  } catch (e) {
-    console.error("Auto receivers PDF generation failed:", e);
-  }
+  buildReceiversPDF(
+    todaysOrders,
+    `Sheet Receivers List — ${formatBusinessDateLabel(todayKey)}`,
+    `${todayKey}_${Date.now()}`
+  );
+  return true;
+}
+
+window.downloadTodayReceiversPDF = () => {
+  const ok = generateTodayReceiversPDF();
+  if (!ok) alert("আজকে এখনো কোনো অর্ডার আসেনি — ডাউনলোড করার কিছু নেই।");
+};
+
+// ============ AUTO RECEIVERS PDF — fires right after the order window closes ============
+// Subscribers can only place orders between 10 AM and 5 PM (ORDER_WINDOW_END_HOUR) daily. Once
+// the treasurer's browser is open at/after 5 PM, we automatically build & download today's
+// receivers list (boys & girls, sheet-by-sheet) so nobody has to remember to click the button.
+//
+// This is a per-tab, in-memory guard only (autoReceiversFiredKey below) — NOT persisted to
+// localStorage. That's intentional: there are two treasurers, and the same list may legitimately
+// need downloading several times a day (a second treasurer opening the app on their own device,
+// someone reopening/refreshing the page after clearing their downloads, etc). The in-memory guard
+// only stops it from firing again and again every 60 seconds while a single tab stays open past
+// 5 PM — refreshing the page, opening a new tab, or being the *other* treasurer all get a fresh
+// automatic download. Anyone can also always pull it manually via downloadTodayReceiversPDF()
+// above, with no restriction at all.
+let autoReceiversFiredKey = null;
+window.maybeAutoDownloadReceiversPDF = () => {
+  if (currentUserRole !== 'treasurer') return;
+  const now = new Date();
+  if (now.getHours() < ORDER_WINDOW_END_HOUR) return; // order window still open — nothing to do yet
+  const todayKey = localDateKey(now);
+  if (autoReceiversFiredKey === todayKey) return; // already auto-fired this tab session today
+
+  const generated = generateTodayReceiversPDF();
+  if (generated) autoReceiversFiredKey = todayKey;
 };
 
 // Subscriber: "কোন খাতে খরচ হচ্ছে" — everything currently counted in their due/credit,
