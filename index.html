@@ -240,6 +240,16 @@
     text-align:center;padding:28px 12px;color:var(--ink-soft);font-size:.88rem;
     border:1.5px dashed var(--line-strong);border-radius:12px;
   }
+  .sheet-subject-section{margin-bottom:20px;}
+  .sheet-subject-section:last-child{margin-bottom:0;}
+  .sheet-subject-heading{
+    display:flex;align-items:center;gap:8px;font-size:.9rem;font-weight:700;color:var(--ink);
+    margin:0 0 10px;padding-bottom:6px;border-bottom:2px solid var(--accent-bg);
+  }
+  .sheet-subject-heading .ssh-count{
+    font-size:.7rem;font-weight:600;color:var(--ink-soft);background:var(--accent-bg);
+    padding:2px 9px;border-radius:999px;
+  }
 </style>
 </head>
 <body>
@@ -572,13 +582,17 @@
     <h2>লেকচার শিট ব্যবস্থাপনা</h2>
     <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">এখানে যেসব শিট যোগ করবেন, সাবস্ক্রাইবাররা তাদের ড্যাশবোর্ড থেকে সেগুলো প্রিন্টের জন্য অর্ডার করতে পারবে।</p>
     <div class="field-row">
+      <div class="field" style="flex:2;"><label>সাবজেক্ট</label><input type="text" id="new-sheet-subject" placeholder="e.g. Physics"></div>
+      <div class="field"><label>কার্ড নং (সিরিয়াল)</label><input type="number" id="new-sheet-card" placeholder="1"></div>
+    </div>
+    <div class="field-row">
       <div class="field" style="flex:2;"><label>শিটের নাম</label><input type="text" id="new-sheet-title" placeholder="e.g. Chapter 4 - Algebra"></div>
       <div class="field"><label>দাম (৳)</label><input type="number" id="new-sheet-price" placeholder="20"></div>
     </div>
     <div class="btn-row"><button class="btn btn-primary" onclick="addSheet()">+ শিট যোগ করুন</button></div>
     <div class="table-scroll" style="margin-top:16px;">
       <table class="ledger">
-        <thead><tr><th>শিট</th><th>দাম</th><th>যোগ করেছেন</th><th></th></tr></thead>
+        <thead><tr><th>সাবজেক্ট</th><th>কার্ড#</th><th>শিট</th><th>দাম</th><th>যোগ করেছেন</th><th></th></tr></thead>
         <tbody id="sheet-catalog-body"></tbody>
       </table>
     </div>
@@ -1446,18 +1460,50 @@ function renderActivity() {
 
 // ============ LECTURE SHEETS (RENDER) ============
 
-// Treasurer: the catalog list (title, price, delete button)
+// Groups a list of sheets by subject, then sorts each group by card# (serial),
+// then title. Sheets without a subject fall into "সাধারণ" and sort to the end.
+// This only affects display order — it never mutates sheetsData itself, so
+// nothing else that reads sheetsData (orders, PDF report, etc.) is affected.
+function getGroupedSheets(list) {
+  const FALLBACK = 'সাধারণ';
+  const groups = {};
+  const subjects = [];
+  list.forEach(s => {
+    const subject = (s.subject && String(s.subject).trim()) || FALLBACK;
+    if (!groups[subject]) { groups[subject] = []; subjects.push(subject); }
+    groups[subject].push(s);
+  });
+  subjects.sort((a, b) => {
+    if (a === FALLBACK) return 1;
+    if (b === FALLBACK) return -1;
+    return a.localeCompare(b, 'bn');
+  });
+  subjects.forEach(subject => {
+    groups[subject].sort((a, b) => {
+      const ca = (a.cardNo !== null && a.cardNo !== undefined && a.cardNo !== '') ? Number(a.cardNo) : Infinity;
+      const cb = (b.cardNo !== null && b.cardNo !== undefined && b.cardNo !== '') ? Number(b.cardNo) : Infinity;
+      if (ca !== cb) return ca - cb;
+      return (a.title || '').localeCompare(b.title || '', 'bn');
+    });
+  });
+  return subjects.map(subject => ({ subject, sheets: groups[subject] }));
+}
+
+// Treasurer: the catalog list (subject, card#, title, price, delete button)
 function renderSheetCatalogTreasurer() {
   const tbody = document.getElementById('sheet-catalog-body');
   if (!tbody) return;
-  tbody.innerHTML = sheetsData.map(s => `
+  const grouped = getGroupedSheets(sheetsData);
+  tbody.innerHTML = grouped.map(g => g.sheets.map(s => `
     <tr>
+      <td class="activity-meta">${g.subject}</td>
+      <td class="num">${(s.cardNo !== null && s.cardNo !== undefined && s.cardNo !== '') ? s.cardNo : '—'}</td>
       <td>${s.title}</td>
       <td class="num">৳${(s.price || 0).toFixed(2)}</td>
       <td class="activity-meta">${s.addedBy || ''}</td>
       <td><button class="icon-btn" onclick="deleteSheet('${s.id}')">✕</button></td>
     </tr>
-  `).join('') || `<tr><td colspan="4" class="activity-meta">এখনো কোনো লেকচার শিট যোগ করা হয়নি।</td></tr>`;
+  `).join('')).join('') || `<tr><td colspan="6" class="activity-meta">এখনো কোনো লেকচার শিট যোগ করা হয়নি।</td></tr>`;
 }
 
 // Subscriber: selectable list of sheets with checkboxes, disabled/checked for already-ordered ones
@@ -1511,21 +1557,29 @@ function renderSheetCatalogSubscriber() {
     return;
   }
 
-  box.className = 'sheet-grid';
-  box.innerHTML = filtered.map(s => {
-    const ordered = myOrderedIds.has(s.id);
-    const disabled = ordered || !canOrder;
-    const cardClasses = ['sheet-card'];
-    if (ordered) cardClasses.push('ordered');
-    else if (!canOrder) cardClasses.push('locked');
-    return `
-      <label class="${cardClasses.join(' ')}">
-        <input type="checkbox" class="sheet-check" value="${s.id}" ${ordered ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="onSheetCheckChange(this)">
-        <span class="sc-title">${s.title}</span>
-        <span class="sc-price num">৳${(s.price || 0).toFixed(2)}</span>
-        ${ordered ? '<span class="sc-badge">✓ অর্ডার করা হয়েছে</span>' : ''}
-      </label>`;
-  }).join('');
+  box.className = '';
+  const grouped = getGroupedSheets(filtered);
+  box.innerHTML = grouped.map(g => `
+    <div class="sheet-subject-section">
+      <div class="sheet-subject-heading">${g.subject} <span class="ssh-count">${g.sheets.length}টি</span></div>
+      <div class="sheet-grid">
+        ${g.sheets.map(s => {
+          const ordered = myOrderedIds.has(s.id);
+          const disabled = ordered || !canOrder;
+          const cardClasses = ['sheet-card'];
+          if (ordered) cardClasses.push('ordered');
+          else if (!canOrder) cardClasses.push('locked');
+          return `
+            <label class="${cardClasses.join(' ')}">
+              <input type="checkbox" class="sheet-check" value="${s.id}" ${ordered ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="onSheetCheckChange(this)">
+              <span class="sc-title">${(s.cardNo !== null && s.cardNo !== undefined && s.cardNo !== '') ? `#${s.cardNo} · ` : ''}${s.title}</span>
+              <span class="sc-price num">৳${(s.price || 0).toFixed(2)}</span>
+              ${ordered ? '<span class="sc-badge">✓ অর্ডার করা হয়েছে</span>' : ''}
+            </label>`;
+        }).join('')}
+      </div>
+    </div>
+  `).join('');
 
   // reflect "checked" highlight state on load (in case of re-render after a partial selection)
   box.querySelectorAll('.sheet-check:checked').forEach(cb => cb.closest('.sheet-card').classList.add('checked'));
@@ -2456,13 +2510,19 @@ window.saveExpense = async () => {
 window.addSheet = async () => {
   const title = document.getElementById('new-sheet-title').value.trim();
   const price = parseFloat(document.getElementById('new-sheet-price').value);
+  const subject = document.getElementById('new-sheet-subject').value.trim();
+  const cardRaw = document.getElementById('new-sheet-card').value;
+  const cardNo = cardRaw !== '' ? parseFloat(cardRaw) : null;
   if (!title || !price || price <= 0) { alert("Please enter a sheet name and a valid price."); return; }
   try {
     await addDoc(collection(db, "sheets"), {
-      title, price, addedBy: currentTreasurerName, addedAt: serverTimestamp()
+      title, price, subject: subject || null, cardNo,
+      addedBy: currentTreasurerName, addedAt: serverTimestamp()
     });
     document.getElementById('new-sheet-title').value = "";
     document.getElementById('new-sheet-price').value = "";
+    document.getElementById('new-sheet-subject').value = "";
+    document.getElementById('new-sheet-card').value = "";
   } catch (e) {
     alert("শিট যোগ করা যায়নি। কারণ: " + (e && e.message ? e.message : e));
   }
