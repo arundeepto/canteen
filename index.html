@@ -196,6 +196,50 @@
   }
 
   #voucher-box{display:none;}
+
+  /* ---------- sheet order (subscriber) ---------- */
+  .sheet-order-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap;}
+  .sheet-search-box{flex:1;min-width:180px;position:relative;}
+  .sheet-search-box input{padding-left:34px;}
+  .sheet-search-box::before{
+    content:"🔍";position:absolute;left:11px;top:50%;transform:translateY(-50%);
+    font-size:.8rem;opacity:.6;pointer-events:none;
+  }
+  .sheet-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:8px;
+  }
+  .sheet-card{
+    position:relative;border:1.5px solid var(--line-strong);border-radius:12px;
+    padding:14px 14px 12px;background:#fff;cursor:pointer;
+    transition:border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .sheet-card:hover{border-color:var(--accent-2);box-shadow:0 4px 14px rgba(11,132,218,0.12);}
+  .sheet-card:active{transform:translateY(1px);}
+  .sheet-card.checked{border-color:var(--accent);background:var(--accent-bg);box-shadow:0 4px 14px rgba(11,132,218,0.16);}
+  .sheet-card.ordered{border-color:var(--green);background:var(--green-bg);cursor:default;}
+  .sheet-card.locked{opacity:.5;cursor:not-allowed;}
+  .sheet-card input[type=checkbox]{position:absolute;top:12px;right:12px;width:18px;height:18px;accent-color:var(--accent);cursor:pointer;}
+  .sheet-card.ordered input[type=checkbox]{accent-color:var(--green);}
+  .sheet-card .sc-title{font-weight:600;font-size:.92rem;padding-right:24px;line-height:1.3;}
+  .sheet-card .sc-price{font-size:1.05rem;font-weight:700;color:var(--accent);}
+  .sheet-card.ordered .sc-price{color:var(--green);}
+  .sheet-card .sc-badge{
+    align-self:flex-start;font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:999px;
+    background:var(--green);color:#fff;
+  }
+  .sheet-order-summary{
+    position:sticky;bottom:0;z-index:5;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    background:var(--panel);border:1px solid var(--line-strong);border-radius:12px;
+    padding:12px 16px;margin-top:14px;box-shadow:0 -4px 16px rgba(15,23,42,0.08);
+  }
+  .sheet-order-summary .sos-text{font-size:.88rem;color:var(--ink-soft);}
+  .sheet-order-summary .sos-total{font-size:1.15rem;font-weight:700;color:var(--ink);margin-left:6px;}
+  .sheet-order-empty{
+    text-align:center;padding:28px 12px;color:var(--ink-soft);font-size:.88rem;
+    border:1.5px dashed var(--line-strong);border-radius:12px;
+  }
 </style>
 </head>
 <body>
@@ -312,8 +356,14 @@
     <h2>লেকচার শিট</h2>
     <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">যে শিটগুলো প্রিন্ট করাতে চান, নিচ থেকে বেছে নিয়ে কনফার্ম করুন। কনফার্ম করার সাথে সাথেই দাম আপনার হিসাব থেকে ব্যক্তিগত চার্জ হিসেবে কেটে নেওয়া হবে। <strong>অর্ডার শুধু প্রতিদিন সকাল ১০টা থেকে বিকাল ৫টার মধ্যে দেওয়া যায়।</strong></p>
     <div id="order-window-notice" class="hidden" style="background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold);border-radius:8px;padding:10px 12px;font-size:.85rem;margin-bottom:12px;font-weight:600;"></div>
+    <div class="sheet-order-toolbar">
+      <div class="sheet-search-box"><input type="text" id="sheet-search-input" placeholder="শিটের নাম দিয়ে খুঁজুন..." oninput="renderSheetCatalogSubscriber()"></div>
+    </div>
     <div id="sheet-select-list"></div>
-    <div class="btn-row"><button class="btn btn-gold" id="confirm-sheet-order-btn" onclick="confirmSheetOrders()">✓ নির্বাচিত শিট অর্ডার নিশ্চিত করুন</button></div>
+    <div class="sheet-order-summary">
+      <div class="sos-text">নির্বাচিত: <strong id="sheet-selected-count">0</strong>টি শিট<span class="sos-total num" id="sheet-selected-total">৳0.00</span></div>
+      <button class="btn btn-gold" id="confirm-sheet-order-btn" onclick="confirmSheetOrders()">✓ নির্বাচিত শিট অর্ডার নিশ্চিত করুন</button>
+    </div>
 
     <h2 style="margin-top:20px;">আপনার অর্ডারকৃত শিট</h2>
     <div class="table-scroll">
@@ -757,6 +807,7 @@ window.doLogin = async () => {
 
 window.doLogout = async () => {
   currentActiveTab = null;
+  stopListeners();
   await signOut(auth);
 };
 
@@ -946,6 +997,7 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     applyLoggedInUser(user);
   } else {
+    stopListeners();
     document.getElementById('app').classList.add('hidden');
     document.getElementById('pending-screen').classList.add('hidden');
     document.getElementById('auth-screen').classList.remove('hidden');
@@ -955,11 +1007,13 @@ onAuthStateChanged(auth, (user) => {
 
 // ============ FIRESTORE LISTENERS ============
 let listenersStarted = false;
+let activeUnsubscribes = []; // holds every onSnapshot's unsubscribe fn, so stopListeners() can cleanly detach them all
 function startListeners() {
   if (listenersStarted) return;
   listenersStarted = true;
+  activeUnsubscribes = [];
 
-  onSnapshot(query(collection(db, "students"), orderBy("roll")), (snap) => {
+  activeUnsubscribes.push(onSnapshot(query(collection(db, "students"), orderBy("roll")), (snap) => {
     students = [];
     snap.forEach(d => students.push({ id: d.id, ...d.data() }));
     renderStudentRows();
@@ -970,25 +1024,30 @@ function startListeners() {
     renderExpenses();
     renderSummary();
     renderGirlsAdminPanel();
-  });
+  }));
 
   // login accounts — treasurer-only tab; lets the treasurer create/manage accounts without
-  // touching the Firebase Console directly
-  onSnapshot(collection(db, "users"), (snap) => {
-    usersData = [];
-    snap.forEach(d => usersData.push({ id: d.id, ...d.data() }));
-    renderUsersList();
-  });
+  // touching the Firebase Console directly.
+  // FIX: this collection has no reason to be read by subscriber/girls_admin sessions — it was
+  // previously fetched unconditionally for every logged-in user, which is one of the biggest
+  // sources of wasted reads (every subscriber pulling every login-account doc, every time).
+  if (currentUserRole === 'treasurer') {
+    activeUnsubscribes.push(onSnapshot(collection(db, "users"), (snap) => {
+      usersData = [];
+      snap.forEach(d => usersData.push({ id: d.id, ...d.data() }));
+      renderUsersList();
+    }));
+  }
 
   // legacy single-amount records (from before the fix) — kept as a starting balance, never written to again
-  onSnapshot(collection(db, "collections"), (snap) => {
+  activeUnsubscribes.push(onSnapshot(collection(db, "collections"), (snap) => {
     legacyCollectionsData = {};
     snap.forEach(d => legacyCollectionsData[d.id] = d.data());
     recomputeCollections();
-  });
+  }));
 
   // every payment is its own document — adding a new one never overwrites or removes an earlier one
-  onSnapshot(query(collection(db, "payments"), orderBy("addedAt", "desc")), (snap) => {
+  activeUnsubscribes.push(onSnapshot(query(collection(db, "payments"), orderBy("addedAt", "desc")), (snap) => {
     paymentsData = {};
     snap.forEach(d => {
       const data = d.data();
@@ -997,44 +1056,44 @@ function startListeners() {
       paymentsData[key].push({ id: d.id, ...data });
     });
     recomputeCollections();
-  });
+  }));
 
-  onSnapshot(query(collection(db, "donations"), orderBy("addedAt", "desc")), (snap) => {
+  activeUnsubscribes.push(onSnapshot(query(collection(db, "donations"), orderBy("addedAt", "desc")), (snap) => {
     donationsData = [];
     snap.forEach(d => donationsData.push({ id: d.id, ...d.data() }));
     renderDonations();
     renderStudents(); // equal share depends on total fund
     renderSummary();
-  });
+  }));
 
-  onSnapshot(query(collection(db, "expenses"), orderBy("addedAt", "desc")), (snap) => {
+  activeUnsubscribes.push(onSnapshot(query(collection(db, "expenses"), orderBy("addedAt", "desc")), (snap) => {
     expensesData = [];
     snap.forEach(d => expensesData.push({ id: d.id, ...d.data() }));
     renderExpenses();
     renderStudents(); // equal share & personal charges depend on expenses
     renderSummary();
-  });
+  }));
 
-  onSnapshot(query(collection(db, "activity"), orderBy("createdAt", "desc"), limit(20)), (snap) => {
+  activeUnsubscribes.push(onSnapshot(query(collection(db, "activity"), orderBy("createdAt", "desc"), limit(20)), (snap) => {
     activityData = [];
     snap.forEach(d => activityData.push({ id: d.id, ...d.data() }));
     renderActivity();
-  });
+  }));
 
   // lecture sheet catalog — read by everyone, managed by treasurer only
   // (sorted client-side rather than via orderBy so a sheet never silently disappears
   // from the subscriber's list if its addedAt hasn't resolved yet)
-  onSnapshot(collection(db, "sheets"), (snap) => {
+  activeUnsubscribes.push(onSnapshot(collection(db, "sheets"), (snap) => {
     sheetsData = [];
     snap.forEach(d => sheetsData.push({ id: d.id, ...d.data() }));
     sheetsData.sort((a, b) => (tsToDate(b.addedAt) || 0) - (tsToDate(a.addedAt) || 0));
     renderSheetCatalogTreasurer();
     renderSheetCatalogSubscriber();
     renderGirlsAdminSheetCatalog();
-  });
+  }));
 
   // sheet print orders — each subscriber can create their own; treasurer/girls-admin see everyone's
-  onSnapshot(collection(db, "sheetOrders"), (snap) => {
+  activeUnsubscribes.push(onSnapshot(collection(db, "sheetOrders"), (snap) => {
     sheetOrdersData = [];
     snap.forEach(d => sheetOrdersData.push({ id: d.id, ...d.data() }));
     sheetOrdersData.sort((a, b) => (tsToDate(b.orderedAt) || 0) - (tsToDate(a.orderedAt) || 0));
@@ -1046,7 +1105,16 @@ function startListeners() {
     renderGirlsAdminPanel();
     renderSummary();         // sheet cost must also count toward the admin's Total Expense/Balance cards
     window.maybeAutoDownloadReceiversPDF();
-  });
+  }));
+}
+
+// Detaches every listener started in startListeners(). Called on logout so a signed-out (or
+// switched-to-a-different-account) tab stops consuming Firestore reads in the background —
+// previously listeners just kept running forever once started, even after signOut().
+function stopListeners() {
+  activeUnsubscribes.forEach(unsub => { try { unsub(); } catch (_) {} });
+  activeUnsubscribes = [];
+  listenersStarted = false;
 }
 
 // ============ SUBSCRIBER MANAGEMENT (WRITES) ============
@@ -1426,20 +1494,60 @@ function renderSheetCatalogSubscriber() {
   }
 
   if (!sheetsData.length) {
-    box.innerHTML = `<div class="activity-meta">এখনো কোনো লেকচার শিট যোগ করা হয়নি।</div>`;
+    box.className = '';
+    box.innerHTML = `<div class="sheet-order-empty">📄 এখনো কোনো লেকচার শিট যোগ করা হয়নি।</div>`;
+    updateSheetOrderSummary();
     return;
   }
-  box.innerHTML = sheetsData.map(s => {
+
+  const searchInput = document.getElementById('sheet-search-input');
+  const q = (searchInput ? searchInput.value : '').trim().toLowerCase();
+  const filtered = q ? sheetsData.filter(s => s.title.toLowerCase().includes(q)) : sheetsData;
+
+  if (!filtered.length) {
+    box.className = '';
+    box.innerHTML = `<div class="sheet-order-empty">🔍 "${q}" নামে কোনো শিট পাওয়া যায়নি।</div>`;
+    updateSheetOrderSummary();
+    return;
+  }
+
+  box.className = 'sheet-grid';
+  box.innerHTML = filtered.map(s => {
     const ordered = myOrderedIds.has(s.id);
     const disabled = ordered || !canOrder;
+    const cardClasses = ['sheet-card'];
+    if (ordered) cardClasses.push('ordered');
+    else if (!canOrder) cardClasses.push('locked');
     return `
-      <label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:.9rem;${!canOrder && !ordered ? 'opacity:.55;' : ''}">
-        <input type="checkbox" class="sheet-check" value="${s.id}" ${ordered ? 'checked' : ''} ${disabled ? 'disabled' : ''} style="width:16px;height:16px;">
-        <span style="flex:1;">${s.title}</span>
-        <span class="num" style="color:var(--ink-soft);">৳${(s.price || 0).toFixed(2)}</span>
-        ${ordered ? '<span class="activity-meta" style="color:var(--green);">✓ অর্ডার করা হয়েছে</span>' : ''}
+      <label class="${cardClasses.join(' ')}">
+        <input type="checkbox" class="sheet-check" value="${s.id}" ${ordered ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="onSheetCheckChange(this)">
+        <span class="sc-title">${s.title}</span>
+        <span class="sc-price num">৳${(s.price || 0).toFixed(2)}</span>
+        ${ordered ? '<span class="sc-badge">✓ অর্ডার করা হয়েছে</span>' : ''}
       </label>`;
   }).join('');
+
+  // reflect "checked" highlight state on load (in case of re-render after a partial selection)
+  box.querySelectorAll('.sheet-check:checked').forEach(cb => cb.closest('.sheet-card').classList.add('checked'));
+  updateSheetOrderSummary();
+}
+
+// Toggle the visual "checked" state of a card and refresh the live selection summary
+window.onSheetCheckChange = (cb) => {
+  cb.closest('.sheet-card').classList.toggle('checked', cb.checked);
+  updateSheetOrderSummary();
+};
+
+// Live count + total of currently-checked (not-yet-ordered) sheets
+function updateSheetOrderSummary() {
+  const countEl = document.getElementById('sheet-selected-count');
+  const totalEl = document.getElementById('sheet-selected-total');
+  if (!countEl || !totalEl) return;
+  const checkedIds = Array.from(document.querySelectorAll('.sheet-check:checked:not(:disabled)')).map(cb => cb.value);
+  const chosen = sheetsData.filter(s => checkedIds.includes(s.id));
+  const total = chosen.reduce((a, s) => a + (s.price || 0), 0);
+  countEl.textContent = String(chosen.length);
+  totalEl.textContent = '৳' + total.toFixed(2);
 }
 
 // Subscriber: their own order history
