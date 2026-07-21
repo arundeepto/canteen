@@ -206,26 +206,31 @@
     font-size:.8rem;opacity:.6;pointer-events:none;
   }
   .sheet-grid{
-    display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:8px;
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-bottom:8px;
   }
   .sheet-card{
-    position:relative;border:1.5px solid var(--line-strong);border-radius:12px;
-    padding:14px 14px 12px;background:#fff;cursor:pointer;
+    position:relative;border:2px solid var(--line-strong);border-radius:16px;
+    padding:20px 20px 16px;background:#fff;cursor:pointer;
     transition:border-color .15s ease, box-shadow .15s ease, transform .1s ease;
-    display:flex;flex-direction:column;gap:8px;
+    display:flex;flex-direction:column;gap:10px;min-height:150px;
   }
-  .sheet-card:hover{border-color:var(--accent-2);box-shadow:0 4px 14px rgba(11,132,218,0.12);}
+  .sheet-card:hover{border-color:var(--accent-2);box-shadow:0 6px 20px rgba(11,132,218,0.14);}
   .sheet-card:active{transform:translateY(1px);}
-  .sheet-card.checked{border-color:var(--accent);background:var(--accent-bg);box-shadow:0 4px 14px rgba(11,132,218,0.16);}
+  .sheet-card.checked{border-color:var(--accent);background:var(--accent-bg);box-shadow:0 6px 20px rgba(11,132,218,0.18);}
   .sheet-card.ordered{border-color:var(--green);background:var(--green-bg);cursor:default;}
   .sheet-card.locked{opacity:.5;cursor:not-allowed;}
-  .sheet-card input[type=checkbox]{position:absolute;top:12px;right:12px;width:18px;height:18px;accent-color:var(--accent);cursor:pointer;}
+  .sheet-card input[type=checkbox]{position:absolute;top:16px;right:16px;width:22px;height:22px;accent-color:var(--accent);cursor:pointer;}
   .sheet-card.ordered input[type=checkbox]{accent-color:var(--green);}
-  .sheet-card .sc-title{font-weight:600;font-size:.92rem;padding-right:24px;line-height:1.3;}
-  .sheet-card .sc-price{font-size:1.05rem;font-weight:700;color:var(--accent);}
+  .sheet-card .sc-subject{
+    font-size:.72rem;font-weight:700;letter-spacing:.02em;color:var(--accent);
+    text-transform:uppercase;padding-right:28px;
+  }
+  .sheet-card .sc-title{font-weight:700;font-size:1.08rem;padding-right:28px;line-height:1.35;}
+  .sheet-card .sc-meta{font-size:.78rem;color:var(--ink-soft);display:flex;gap:10px;flex-wrap:wrap;}
+  .sheet-card .sc-price{font-size:1.3rem;font-weight:700;color:var(--accent);margin-top:auto;}
   .sheet-card.ordered .sc-price{color:var(--green);}
   .sheet-card .sc-badge{
-    align-self:flex-start;font-size:.7rem;font-weight:600;padding:2px 8px;border-radius:999px;
+    align-self:flex-start;font-size:.72rem;font-weight:600;padding:3px 10px;border-radius:999px;
     background:var(--green);color:#fff;
   }
   .sheet-order-summary{
@@ -364,7 +369,7 @@
   <!-- ============ SUBSCRIBER-ONLY: lecture sheet ordering ============ -->
   <div class="panel subscriber-only hidden" data-tab="sheets">
     <h2>লেকচার শিট</h2>
-    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">যে শিটগুলো প্রিন্ট করাতে চান, নিচ থেকে বেছে নিয়ে কনফার্ম করুন। কনফার্ম করার সাথে সাথেই দাম আপনার হিসাব থেকে ব্যক্তিগত চার্জ হিসেবে কেটে নেওয়া হবে। <strong>অর্ডার শুধু প্রতিদিন সকাল ১০টা থেকে বিকাল ৫টার মধ্যে দেওয়া যায়।</strong></p>
+    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">যে শিটগুলো প্রিন্ট করাতে চান, নিচ থেকে বেছে নিয়ে কনফার্ম করুন। কনফার্ম করার সাথে সাথেই দাম আপনার হিসাব থেকে ব্যক্তিগত চার্জ হিসেবে কেটে নেওয়া হবে। <strong>অর্ডার শুধু ট্রেজারারের ঠিক করা সময়সীমার মধ্যে দেওয়া যায়</strong> (নিচে দেখুন)।</p>
     <div id="order-window-notice" class="hidden" style="background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold);border-radius:8px;padding:10px 12px;font-size:.85rem;margin-bottom:12px;font-weight:600;"></div>
     <div class="sheet-order-toolbar">
       <div class="sheet-search-box"><input type="text" id="sheet-search-input" placeholder="শিটের নাম দিয়ে খুঁজুন..." oninput="renderSheetCatalogSubscriber()"></div>
@@ -428,7 +433,7 @@
   <!-- ============ GIRLS-ADMIN-ONLY: her own free personal sheet order ============ -->
   <div class="panel girls-admin-only hidden" data-tab="sheets">
     <h2>আপনার ব্যক্তিগত শিট অর্ডার</h2>
-    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">এটা আপনার নিজের (এডমিনের) শিট অর্ডার — কোনো সাবস্ক্রাইবারের হিসাব থেকে এর দাম কাটা হবে না। <strong>অর্ডার শুধু প্রতিদিন সকাল ১০টা থেকে বিকাল ৫টার মধ্যে দেওয়া যায়।</strong></p>
+    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">এটা আপনার নিজের (এডমিনের) শিট অর্ডার — কোনো সাবস্ক্রাইবারের হিসাব থেকে এর দাম কাটা হবে না। <strong>অর্ডার শুধু ট্রেজারারের ঠিক করা সময়সীমার মধ্যে দেওয়া যায়</strong> (নিচে দেখুন)।</p>
     <div id="girls-order-window-notice" class="hidden" style="background:var(--gold-bg);color:var(--gold);border:1px solid var(--gold);border-radius:8px;padding:10px 12px;font-size:.85rem;margin-bottom:12px;font-weight:600;"></div>
     <div id="girls-admin-sheet-select-list"></div>
     <div class="btn-row"><button class="btn btn-gold" id="confirm-girls-order-btn" onclick="confirmGirlsAdminPersonalOrder()">✓ নির্বাচিত শিট অর্ডার নিশ্চিত করুন</button></div>
@@ -577,22 +582,48 @@
     </div>
   </div>
 
+  <!-- order timing control -->
+  <div class="panel treasurer-only" data-tab="sheets">
+    <h2>⏰ অর্ডার সময়সূচী নিয়ন্ত্রণ</h2>
+    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">সাবস্ক্রাইবার ও মেয়েদের এডমিন কখন শিট অর্ডার দিতে পারবেন, এবং কোন সময়ের পরের অর্ডার পরের দিনের ব্যাচে যোগ হবে — এখান থেকেই নিয়ন্ত্রণ করুন। কোনো কোড পরিবর্তনের দরকার নেই।</p>
+    <div class="field-row">
+      <div class="field"><label>অর্ডার শুরু (ঘণ্টা, ০-২৩)</label><input type="number" min="0" max="23" id="cfg-window-start"></div>
+      <div class="field"><label>অর্ডার শেষ (ঘণ্টা, ০-২৩)</label><input type="number" min="0" max="23" id="cfg-window-end"></div>
+      <div class="field"><label>ব্যাচ কাট-অফ (ঘণ্টা, ০-২৩)</label><input type="number" min="0" max="23" id="cfg-cutoff"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="saveOrderTimingSettings()">সংরক্ষণ করুন</button></div>
+    <p id="cfg-preview" style="color:var(--ink-soft);font-size:.82rem;margin:10px 0 0;"></p>
+  </div>
+
   <!-- lecture sheet catalog management -->
   <div class="panel treasurer-only" data-tab="sheets">
     <h2>লেকচার শিট ব্যবস্থাপনা</h2>
-    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">এখানে যেসব শিট যোগ করবেন, সাবস্ক্রাইবাররা তাদের ড্যাশবোর্ড থেকে সেগুলো প্রিন্টের জন্য অর্ডার করতে পারবে।</p>
+    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">এখানে যেসব শিট যোগ করবেন, সাবস্ক্রাইবাররা তাদের ড্যাশবোর্ড থেকে সেগুলো প্রিন্টের জন্য অর্ডার করতে পারবে। দাম বসাতে হয় না — পেজ সংখ্যা ও প্রিন্ট সাইড দিলেই দাম স্বয়ংক্রিয়ভাবে হিসাব হয়ে যাবে (দুই সাইড = ৳৩/পেজ, এক সাইড = ৳১.৫/পেজ)।</p>
     <div class="field-row">
       <div class="field" style="flex:2;"><label>সাবজেক্ট</label><input type="text" id="new-sheet-subject" placeholder="e.g. Physics"></div>
       <div class="field"><label>কার্ড নং (সিরিয়াল)</label><input type="number" id="new-sheet-card" placeholder="1"></div>
     </div>
     <div class="field-row">
       <div class="field" style="flex:2;"><label>শিটের নাম</label><input type="text" id="new-sheet-title" placeholder="e.g. Chapter 4 - Algebra"></div>
-      <div class="field"><label>দাম (৳)</label><input type="number" id="new-sheet-price" placeholder="20"></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>পেজ সংখ্যা</label><input type="number" min="1" id="new-sheet-pages" placeholder="1" oninput="updateNewSheetPricePreview()"></div>
+      <div class="field">
+        <label>প্রিন্ট সাইড</label>
+        <select id="new-sheet-side" onchange="updateNewSheetPricePreview()" style="width:100%;padding:9px 11px;border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-family:inherit;font-size:.92rem;color:var(--ink);">
+          <option value="double">দুই সাইড (৳৩/পেজ)</option>
+          <option value="single">এক সাইড (৳১.৫/পেজ)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>মোট দাম (স্বয়ংক্রিয়)</label>
+        <div id="new-sheet-price-preview" style="padding:9px 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--accent-bg);font-weight:700;color:var(--accent);">৳০.০০</div>
+      </div>
     </div>
     <div class="btn-row"><button class="btn btn-primary" onclick="addSheet()">+ শিট যোগ করুন</button></div>
     <div class="table-scroll" style="margin-top:16px;">
       <table class="ledger">
-        <thead><tr><th>সাবজেক্ট</th><th>কার্ড#</th><th>শিট</th><th>দাম</th><th>যোগ করেছেন</th><th></th></tr></thead>
+        <thead><tr><th>সাবজেক্ট</th><th>কার্ড#</th><th>শিট</th><th>পেজ</th><th>দাম</th><th>যোগ করেছেন</th><th></th></tr></thead>
         <tbody id="sheet-catalog-body"></tbody>
       </table>
     </div>
@@ -601,7 +632,7 @@
   <!-- lecture sheet print orders -->
   <div class="panel treasurer-only" data-tab="sheets">
     <h2>শিট প্রিন্ট রিকোয়েস্ট (ব্যাচ অনুযায়ী)</h2>
-    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">প্রতিদিন বিকাল ৩টা পর্যন্ত অর্ডার নেওয়া হয়; তারপরের অর্ডার পরের দিনের ব্যাচে যোগ হয়। একই শিট একাধিক সাবস্ক্রাইবার চাইলে এখানে একসাথে দেখা যাবে — ব্যাচে প্রিন্ট করার জন্য সুবিধাজনক।</p>
+    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">অর্ডার সময়সূচী উপরের প্যানেল থেকে ঠিক করা যায় — তার পরের অর্ডার পরের দিনের ব্যাচে যোগ হয়। একই দিনে একাধিক ব্যাচেও প্রিন্ট করা যাবে: একটি ব্যাচ "প্রিন্ট সম্পন্ন" চিহ্নিত করলেই তারপরের নতুন অর্ডারগুলো স্বয়ংক্রিয়ভাবে সেই দিনের পরবর্তী নতুন ব্যাচ হিসেবে গণনা শুরু করে। একই শিট একাধিক সাবস্ক্রাইবার চাইলে এখানে একসাথে দেখা যাবে — ব্যাচে প্রিন্ট করার জন্য সুবিধাজনক।</p>
 
     <div class="field-row" style="align-items:flex-end;margin-bottom:14px;">
       <div class="field" style="max-width:280px;">
@@ -703,7 +734,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   getFirestore, doc, setDoc, deleteDoc, updateDoc, collection, onSnapshot, addDoc,
-  query, orderBy, limit, serverTimestamp, where, getDocs, getDoc
+  query, orderBy, limit, serverTimestamp, where, getDocs, getDoc, increment
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ============ Firebase Config ============
@@ -738,7 +769,7 @@ let usersData = [];         // [{id(=uid), role, roll, name, email}] — login a
 let currentTreasurerName = "";
 let currentUserRole = "treasurer";   // 'treasurer' | 'subscriber' | 'girls_admin' — detected from users/{uid} after sign-in
 let currentSubscriberRoll = null;    // set when currentUserRole === 'subscriber'
-let currentOrderDateFilter = null;   // businessDate key currently selected in the treasurer's order panel
+let currentOrderDateFilter = null;   // composite "businessDate#seq" batch key currently selected in the treasurer's order panel
 let currentActiveTab = null;         // which nav-bar tab is currently open
 // "প্রাপ্তি স্বীকার" (received) checklist filters — 'all' means no filter on that dimension.
 // Kept separate for the treasurer's (all-genders) checklist and the girls-admin's (female-only) one.
@@ -746,43 +777,82 @@ let currentReceivedDateFilter = 'all';
 let currentReceivedSheetFilter = 'all';
 let currentGirlsReceivedDateFilter = 'all';
 let currentGirlsReceivedSheetFilter = 'all';
+let batchCountersData = {};   // { businessDate: { currentSeq } } — which print-batch number new orders for that date currently fall into
 
-// ============ ORDER CUTOFF: daily orders are taken until 3:00 PM (15:00) local time ============
-// Anything ordered after the cutoff is bucketed into the NEXT day's order batch.
-const ORDER_CUTOFF_HOUR = 15;
+// ============ ORDER TIMING: fully controlled by the treasurer now (settings/orderConfig doc) ============
+// cutoffHour: after this hour, a new order is bucketed into the NEXT day's batch.
+// windowStartHour/windowEndHour: subscribers/girls-admin may only PLACE orders in this range.
+// Defaults below are only used until the settings/orderConfig doc loads (or if it's never created).
+let orderConfig = { cutoffHour: 15, windowStartHour: 10, windowEndHour: 17 };
 
 function businessDateKeyOf(date) {
   const d = new Date(date);
-  if (d.getHours() >= ORDER_CUTOFF_HOUR) d.setDate(d.getDate() + 1);
+  if (d.getHours() >= orderConfig.cutoffHour) d.setDate(d.getDate() + 1);
   const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
 function currentBusinessDateKey() { return businessDateKeyOf(new Date()); }
-function isPastCutoffNow() { return new Date().getHours() >= ORDER_CUTOFF_HOUR; }
+function isPastCutoffNow() { return new Date().getHours() >= orderConfig.cutoffHour; }
 function formatBusinessDateLabel(key) {
   const [y, m, d] = key.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 // Local (not UTC) Y-M-D key — used for "which calendar day is this" comparisons, as opposed to
-// businessDateKeyOf() which additionally rolls forward past the 3PM cutoff.
+// businessDateKeyOf() which additionally rolls forward past the cutoff hour.
 function localDateKey(d) {
   const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
+// 24h hour -> a short 12h label, e.g. 15 -> "3:00 PM" — used to render the treasurer's chosen
+// timing back into messages/UI without hardcoding text anywhere.
+function formatHourLabel(h) {
+  const hour = ((Number(h) % 24) + 24) % 24;
+  const period = hour < 12 ? 'AM' : 'PM';
+  let hour12 = hour % 12; if (hour12 === 0) hour12 = 12;
+  return `${hour12}:00 ${period}`;
+}
 
-// ============ ORDER WINDOW: subscribers/girls-admin may only PLACE orders between 10:00 AM
-// and 5:00 PM (17:00) local time, every day. Outside this window the ordering UI is disabled
-// and confirmSheetOrders/confirmGirlsAdminPersonalOrder refuse to submit (checked again there
-// as a hard safety net, in case the UI wasn't refreshed). This is separate from ORDER_CUTOFF_HOUR
-// above, which only decides which day's *print batch* an accepted order is bucketed into.
-const ORDER_WINDOW_START_HOUR = 10; // 10:00 AM
-const ORDER_WINDOW_END_HOUR = 17;   // 5:00 PM
+// ============ ORDER WINDOW: subscribers/girls-admin may only PLACE orders between
+// orderConfig.windowStartHour and orderConfig.windowEndHour local time, every day. Outside this
+// window the ordering UI is disabled and confirmSheetOrders/confirmGirlsAdminPersonalOrder refuse
+// to submit (checked again there as a hard safety net, in case the UI wasn't refreshed). This is
+// separate from orderConfig.cutoffHour above, which only decides which day's *print batch* an
+// accepted order is bucketed into. The treasurer edits all three from the "শিট ও অর্ডার" tab.
 function isWithinOrderWindow() {
   const h = new Date().getHours();
-  return h >= ORDER_WINDOW_START_HOUR && h < ORDER_WINDOW_END_HOUR;
+  return h >= orderConfig.windowStartHour && h < orderConfig.windowEndHour;
 }
 function orderWindowMessage() {
-  return `অর্ডার শুধুমাত্র প্রতিদিন সকাল ১০টা থেকে বিকাল ৫টার মধ্যে দেওয়া যায়। এখন অর্ডার নেওয়া বন্ধ আছে — অনুগ্রহ করে সকাল ১০টা থেকে বিকাল ৫টার মধ্যে আবার চেষ্টা করুন।`;
+  return `অর্ডার শুধুমাত্র প্রতিদিন ${formatHourLabel(orderConfig.windowStartHour)} থেকে ${formatHourLabel(orderConfig.windowEndHour)} এর মধ্যে দেওয়া যায়। এখন অর্ডার নেওয়া বন্ধ আছে — অনুগ্রহ করে এই সময়ের মধ্যে আবার চেষ্টা করুন।`;
+}
+
+// ============ PRINT BATCHES: a business date can contain MULTIPLE print batches. New orders
+// always land in the "current" (still-open) batch for their business date. When the treasurer
+// marks a batch as printed, that date's counter advances — any order placed afterwards (even
+// later the same business date) automatically starts a fresh batch instead of mixing into the
+// one that's already gone to print. ============
+function currentBatchSeqFor(businessDate) {
+  const rec = batchCountersData[businessDate];
+  return (rec && rec.currentSeq) ? rec.currentSeq : 1;
+}
+function orderBatchKey(o) {
+  return `${o.businessDate}#${o.batchSeq || 1}`;
+}
+function parseBatchKey(key) {
+  const idx = key.lastIndexOf('#');
+  return { businessDate: key.slice(0, idx), seq: Number(key.slice(idx + 1)) || 1 };
+}
+function formatBatchLabel(businessDate, seq, extra) {
+  return `${formatBusinessDateLabel(businessDate)} — ব্যাচ ${seq}${extra ? ' ' + extra : ''}`;
+}
+
+// ============ SHEET PRICING: fully automatic from page count + print side ============
+// Double-sided (দুই সাইড): ৳3 per page. Single-sided (এক সাইড): ৳1.5 per page.
+const PRICE_PER_PAGE_DOUBLE_SIDED = 3;
+const PRICE_PER_PAGE_SINGLE_SIDED = 1.5;
+function computeSheetPrice(pages, doubleSided) {
+  const p = Number(pages) || 0;
+  return p * (doubleSided ? PRICE_PER_PAGE_DOUBLE_SIDED : PRICE_PER_PAGE_SINGLE_SIDED);
 }
 // Re-check the order window every 60s so the ordering UI locks/unlocks itself right at the
 // 10:00/17:00 boundary even if the person just leaves the tab open — Firestore listeners only
@@ -1026,6 +1096,30 @@ function startListeners() {
   if (listenersStarted) return;
   listenersStarted = true;
   activeUnsubscribes = [];
+
+  // order timing (window + cutoff hours) — treasurer-editable, read by everyone so the
+  // ordering UI (all roles) reflects the current setting live.
+  activeUnsubscribes.push(onSnapshot(doc(db, "settings", "orderConfig"), (snap) => {
+    if (snap.exists()) {
+      const data = snap.data();
+      orderConfig = {
+        cutoffHour: (typeof data.cutoffHour === 'number') ? data.cutoffHour : orderConfig.cutoffHour,
+        windowStartHour: (typeof data.windowStartHour === 'number') ? data.windowStartHour : orderConfig.windowStartHour,
+        windowEndHour: (typeof data.windowEndHour === 'number') ? data.windowEndHour : orderConfig.windowEndHour
+      };
+    }
+    renderOrderTimingSettingsForm();
+    renderSheetCatalogSubscriber();
+    renderGirlsAdminSheetCatalog();
+  }));
+
+  // print-batch counters — one doc per business date, tracking which batch number new orders
+  // currently fall into for that date (advances each time the treasurer marks a batch printed)
+  activeUnsubscribes.push(onSnapshot(collection(db, "batchCounters"), (snap) => {
+    batchCountersData = {};
+    snap.forEach(d => batchCountersData[d.id] = d.data());
+    renderSheetOrdersTreasurer();
+  }));
 
   activeUnsubscribes.push(onSnapshot(query(collection(db, "students"), orderBy("roll")), (snap) => {
     students = [];
@@ -1499,11 +1593,12 @@ function renderSheetCatalogTreasurer() {
       <td class="activity-meta">${g.subject}</td>
       <td class="num">${(s.cardNo !== null && s.cardNo !== undefined && s.cardNo !== '') ? s.cardNo : '—'}</td>
       <td>${s.title}</td>
+      <td class="activity-meta">${s.pages ? s.pages + ' পেজ · ' + (s.doubleSided ? 'দুই সাইড' : 'এক সাইড') : '—'}</td>
       <td class="num">৳${(s.price || 0).toFixed(2)}</td>
       <td class="activity-meta">${s.addedBy || ''}</td>
       <td><button class="icon-btn" onclick="deleteSheet('${s.id}')">✕</button></td>
     </tr>
-  `).join('')).join('') || `<tr><td colspan="6" class="activity-meta">এখনো কোনো লেকচার শিট যোগ করা হয়নি।</td></tr>`;
+  `).join('')).join('') || `<tr><td colspan="7" class="activity-meta">এখনো কোনো লেকচার শিট যোগ করা হয়নি।</td></tr>`;
 }
 
 // Subscriber: selectable list of sheets with checkboxes, disabled/checked for already-ordered ones
@@ -1569,10 +1664,13 @@ function renderSheetCatalogSubscriber() {
           const cardClasses = ['sheet-card'];
           if (ordered) cardClasses.push('ordered');
           else if (!canOrder) cardClasses.push('locked');
+          const hasCardNo = s.cardNo !== null && s.cardNo !== undefined && s.cardNo !== '';
           return `
             <label class="${cardClasses.join(' ')}">
               <input type="checkbox" class="sheet-check" value="${s.id}" ${ordered ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="onSheetCheckChange(this)">
-              <span class="sc-title">${(s.cardNo !== null && s.cardNo !== undefined && s.cardNo !== '') ? `#${s.cardNo} · ` : ''}${s.title}</span>
+              <span class="sc-subject">${g.subject}${hasCardNo ? ' · কার্ড #' + s.cardNo : ''}</span>
+              <span class="sc-title">${s.title}</span>
+              ${s.pages ? `<span class="sc-meta"><span>📄 ${s.pages} পেজ</span><span>${s.doubleSided ? 'দুই সাইড' : 'এক সাইড'}</span></span>` : ''}
               <span class="sc-price num">৳${(s.price || 0).toFixed(2)}</span>
               ${ordered ? '<span class="sc-badge">✓ অর্ডার করা হয়েছে</span>' : ''}
             </label>`;
@@ -1619,10 +1717,16 @@ function renderMySheetOrders() {
   }).join('') || `<tr><td colspan="5" class="activity-meta">এখনো কোনো শিট অর্ডার করা হয়নি।</td></tr>`;
 }
 
-// ---- batch date list & filter (treasurer's order panel) ----
-function getDistinctBusinessDates() {
-  const set = new Set(sheetOrdersData.map(o => o.businessDate).filter(Boolean));
-  return Array.from(set).sort().reverse(); // newest first
+// ---- batch key list & filter (treasurer's order panel) ----
+// Each entry is a distinct "businessDate#seq" print batch. Sorted newest date first, and within
+// the same date, highest (most recently opened) batch number first.
+function getDistinctBatchKeys() {
+  const set = new Set(sheetOrdersData.map(o => orderBatchKey(o)).filter(Boolean));
+  return Array.from(set).sort((a, b) => {
+    const pa = parseBatchKey(a), pb = parseBatchKey(b);
+    if (pa.businessDate !== pb.businessDate) return pb.businessDate.localeCompare(pa.businessDate);
+    return pb.seq - pa.seq;
+  });
 }
 
 function orderStatusLabel(o) {
@@ -1742,24 +1846,30 @@ function renderSheetOrdersTreasurer() {
   const dateSelect = document.getElementById('order-date-select');
   if (!detailBody || !groupedBody || !dateSelect) return;
 
-  const dates = getDistinctBusinessDates();
+  const batchKeys = getDistinctBatchKeys();
   const today = currentBusinessDateKey();
-  if (!dates.includes(today)) dates.unshift(today); // always allow picking today's (possibly empty) batch
-  dates.sort().reverse();
+  const todayCurrentKey = `${today}#${currentBatchSeqFor(today)}`;
+  if (!batchKeys.includes(todayCurrentKey)) batchKeys.unshift(todayCurrentKey); // always allow picking today's (possibly empty) open batch
+  batchKeys.sort((a, b) => {
+    const pa = parseBatchKey(a), pb = parseBatchKey(b);
+    if (pa.businessDate !== pb.businessDate) return pb.businessDate.localeCompare(pa.businessDate);
+    return pb.seq - pa.seq;
+  });
 
-  if (!currentOrderDateFilter || !dates.includes(currentOrderDateFilter)) {
-    currentOrderDateFilter = dates.includes(today) ? today : dates[0];
+  if (!currentOrderDateFilter || !batchKeys.includes(currentOrderDateFilter)) {
+    currentOrderDateFilter = batchKeys.includes(todayCurrentKey) ? todayCurrentKey : batchKeys[0];
   }
-  const prevVal = dateSelect.value;
-  dateSelect.innerHTML = dates.map(d => {
-    const count = sheetOrdersData.filter(o => o.businessDate === d).length;
-    const label = `${formatBusinessDateLabel(d)}${d === today ? ' (আজ)' : ''} — ${count} অর্ডার`;
-    return `<option value="${d}">${label}</option>`;
+  dateSelect.innerHTML = batchKeys.map(key => {
+    const { businessDate: d, seq } = parseBatchKey(key);
+    const count = sheetOrdersData.filter(o => orderBatchKey(o) === key).length;
+    const isOpenBatch = key === `${d}#${currentBatchSeqFor(d)}`;
+    const tag = `${d === today ? ' (আজ)' : ''}${isOpenBatch ? ' (চলমান)' : ' (প্রিন্টে গেছে)'}`;
+    return `<option value="${key}">${formatBatchLabel(d, seq, tag)} — ${count} অর্ডার</option>`;
   }).join('');
   dateSelect.value = currentOrderDateFilter;
   if (dateSelect.value !== currentOrderDateFilter) dateSelect.selectedIndex = 0; // fallback safety
 
-  const batchOrders = sheetOrdersData.filter(o => o.businessDate === currentOrderDateFilter);
+  const batchOrders = sheetOrdersData.filter(o => orderBatchKey(o) === currentOrderDateFilter);
 
   detailBody.innerHTML = batchOrders.map(o => {
     const t = o.orderedAt && o.orderedAt.toDate ? o.orderedAt.toDate().toLocaleString('en-US') : '...';
@@ -1819,15 +1929,26 @@ function renderSheetOrdersTreasurer() {
 window.markCurrentBatchPrinted = () => window.markOrdersPrinted(currentOrderDateFilter);
 window.downloadCurrentBatchPDF = () => window.downloadOrdersPDF(currentOrderDateFilter);
 
-window.markOrdersPrinted = async (businessDate) => {
-  if (!businessDate) return;
-  const toMark = sheetOrdersData.filter(o => o.businessDate === businessDate && !o.printed);
+// Marks every un-printed order in the given batch (businessDate#seq) as printed, then advances
+// that business date's batch counter — so any order placed after this point (even later the same
+// business date) automatically starts a brand-new batch instead of mixing into this one.
+window.markOrdersPrinted = async (batchKey) => {
+  if (!batchKey) return;
+  const { businessDate, seq } = parseBatchKey(batchKey);
+  const toMark = sheetOrdersData.filter(o => orderBatchKey(o) === batchKey && !o.printed);
   if (!toMark.length) { alert("এই ব্যাচের সব অর্ডার ইতিমধ্যে প্রিন্ট সম্পন্ন চিহ্নিত করা আছে।"); return; }
-  if (!confirm(`${formatBusinessDateLabel(businessDate)} ব্যাচের ${toMark.length}টি অর্ডার প্রিন্ট সম্পন্ন হিসেবে চিহ্নিত করবেন?`)) return;
+  if (!confirm(`${formatBatchLabel(businessDate, seq)}-এর ${toMark.length}টি অর্ডার প্রিন্ট সম্পন্ন হিসেবে চিহ্নিত করবেন? এরপর নতুন যেকোনো অর্ডার এই তারিখের একটি নতুন (পরবর্তী) ব্যাচ হিসেবে গণনা হবে।`)) return;
   try {
     await Promise.all(toMark.map(o => updateDoc(doc(db, "sheetOrders", o.id), {
       printed: true, printedAt: serverTimestamp(), printedBy: currentTreasurerName
     })));
+    // Only advance the counter if this WAS the currently-open batch for that date (marking an
+    // already-closed older batch printed shouldn't reopen/skip batch numbers).
+    if (seq >= currentBatchSeqFor(businessDate)) {
+      await setDoc(doc(db, "batchCounters", businessDate), {
+        currentSeq: increment(1), updatedBy: currentTreasurerName, updatedAt: serverTimestamp()
+      }, { merge: true });
+    }
   } catch (e) {
     alert("প্রিন্ট স্ট্যাটাস আপডেট করা যায়নি। কারণ: " + (e && e.message ? e.message : e));
   }
@@ -1958,10 +2079,11 @@ window.confirmGirlsAdminPersonalOrder = async () => {
   const names = chosenSheets.map(s => s.title).join(', ');
   const businessDate = currentBusinessDateKey();
   const cutoffNote = isPastCutoffNow()
-    ? `\n\n⏰ বিকাল ৩টা পার হয়ে গেছে, তাই এই অর্ডারটি ${formatBusinessDateLabel(businessDate)} তারিখের ব্যাচে গণনা হবে।`
+    ? `\n\n⏰ ${formatHourLabel(orderConfig.cutoffHour)} পার হয়ে গেছে, তাই এই অর্ডারটি ${formatBusinessDateLabel(businessDate)} তারিখের ব্যাচে গণনা হবে।`
     : `\n\nএই অর্ডারটি ${formatBusinessDateLabel(businessDate)} তারিখের ব্যাচে গণনা হবে।`;
   if (!confirm(`নিচের শিটগুলো আপনার ব্যক্তিগত অর্ডার হিসেবে বসাতে চান? এতে কোনো সাবস্ক্রাইবারের হিসাব থেকে টাকা কাটা হবে না।\n\n${names}${cutoffNote}`)) return;
 
+  const batchSeq = currentBatchSeqFor(businessDate);
   try {
     await Promise.all(chosenSheets.map(s => addDoc(collection(db, "sheetOrders"), {
       roll: null,
@@ -1973,6 +2095,7 @@ window.confirmGirlsAdminPersonalOrder = async () => {
       price: s.price,
       orderedAt: serverTimestamp(),
       businessDate,
+      batchSeq,
       printed: false, printedAt: null, printedBy: null,
       received: false, receivedAt: null, receivedBy: null,
       addedBy: currentTreasurerName,
@@ -2037,9 +2160,10 @@ window.onGirlsReceivedSheetFilterChange = () => {
 // ============ ORDERS PDF (treasurer) ============
 // Printing-floor summary only: no subscriber names. Per sheet — total copies needed, plus a
 // boys/girls split. (Personal/admin orders have no gender and are counted only in the total.)
-window.downloadOrdersPDF = (businessDate) => {
-  if (!businessDate) return;
-  const orders = sheetOrdersData.filter(o => o.businessDate === businessDate);
+window.downloadOrdersPDF = (batchKey) => {
+  if (!batchKey) return;
+  const { businessDate, seq } = parseBatchKey(batchKey);
+  const orders = sheetOrdersData.filter(o => orderBatchKey(o) === batchKey);
   if (!orders.length) { alert("এই ব্যাচে কোনো অর্ডার নেই।"); return; }
 
   const { jsPDF } = window.jspdf;
@@ -2047,7 +2171,7 @@ window.downloadOrdersPDF = (businessDate) => {
   const now = new Date();
 
   doc.setFontSize(16); doc.setTextColor(30, 41, 59);
-  doc.text(`Sheet Print Orders — ${formatBusinessDateLabel(businessDate)}`, 14, 18);
+  doc.text(`Sheet Print Orders — ${formatBusinessDateLabel(businessDate)} (Batch ${seq})`, 14, 18);
   doc.setFontSize(9); doc.setTextColor(100, 116, 139);
   doc.text(`Treasurer: ${currentTreasurerName}   |   Generated: ${now.toLocaleString()}`, 14, 24);
 
@@ -2076,7 +2200,7 @@ window.downloadOrdersPDF = (businessDate) => {
   doc.setFontSize(10); doc.setTextColor(30, 41, 59);
   doc.text(`Total Copies: ${totalCopies}   |   Boys: ${totalBoys}   |   Girls: ${totalGirls}`, 14, finalY);
 
-  doc.save(`Sheet_Orders_${businessDate}.pdf`);
+  doc.save(`Sheet_Orders_${businessDate}_batch${seq}.pdf`);
 };
 
 // ============ RECEIVERS PDF (who receives which sheet — boys & girls listed separately) ============
@@ -2172,8 +2296,8 @@ window.downloadTodayReceiversPDF = () => {
 };
 
 // ============ AUTO RECEIVERS PDF — fires right after the order window closes ============
-// Subscribers can only place orders between 10 AM and 5 PM (ORDER_WINDOW_END_HOUR) daily. Once
-// the treasurer's browser is open at/after 5 PM, we automatically build & download today's
+// Subscribers can only place orders within the treasurer-configured window (orderConfig) daily.
+// Once the treasurer's browser is open at/after the window's end hour, we automatically build & download today's
 // receivers list (boys & girls, sheet-by-sheet) so nobody has to remember to click the button.
 //
 // This is a per-tab, in-memory guard only (autoReceiversFiredKey below) — NOT persisted to
@@ -2188,7 +2312,7 @@ let autoReceiversFiredKey = null;
 window.maybeAutoDownloadReceiversPDF = () => {
   if (currentUserRole !== 'treasurer') return;
   const now = new Date();
-  if (now.getHours() < ORDER_WINDOW_END_HOUR) return; // order window still open — nothing to do yet
+  if (now.getHours() < orderConfig.windowEndHour) return; // order window still open — nothing to do yet
   const todayKey = localDateKey(now);
   if (autoReceiversFiredKey === todayKey) return; // already auto-fired this tab session today
 
@@ -2506,23 +2630,75 @@ window.saveExpense = async () => {
   onExpenseChargeTypeChange();
 };
 
+// ============ ORDER TIMING SETTINGS (treasurer-editable) ============
+function renderOrderTimingSettingsForm() {
+  const s = document.getElementById('cfg-window-start');
+  const e = document.getElementById('cfg-window-end');
+  const c = document.getElementById('cfg-cutoff');
+  // Don't stomp on whatever the treasurer is actively typing.
+  if (s && document.activeElement !== s) s.value = orderConfig.windowStartHour;
+  if (e && document.activeElement !== e) e.value = orderConfig.windowEndHour;
+  if (c && document.activeElement !== c) c.value = orderConfig.cutoffHour;
+  const preview = document.getElementById('cfg-preview');
+  if (preview) {
+    preview.textContent = `এখন অর্ডার নেওয়া হচ্ছে ${formatHourLabel(orderConfig.windowStartHour)} থেকে ${formatHourLabel(orderConfig.windowEndHour)} পর্যন্ত। ${formatHourLabel(orderConfig.cutoffHour)}-এর পরের অর্ডার পরের দিনের ব্যাচে যোগ হবে।`;
+  }
+}
+
+window.saveOrderTimingSettings = async () => {
+  const start = parseInt(document.getElementById('cfg-window-start').value, 10);
+  const end = parseInt(document.getElementById('cfg-window-end').value, 10);
+  const cutoff = parseInt(document.getElementById('cfg-cutoff').value, 10);
+  if ([start, end, cutoff].some(v => isNaN(v) || v < 0 || v > 23)) {
+    alert("প্রতিটি ঘণ্টা অবশ্যই ০ থেকে ২৩ এর মধ্যে একটি সংখ্যা হতে হবে।");
+    return;
+  }
+  if (start >= end) {
+    alert("অর্ডার শুরুর সময় অবশ্যই শেষ সময়ের আগে হতে হবে।");
+    return;
+  }
+  try {
+    await setDoc(doc(db, "settings", "orderConfig"), {
+      windowStartHour: start, windowEndHour: end, cutoffHour: cutoff,
+      updatedBy: currentTreasurerName, updatedAt: serverTimestamp()
+    }, { merge: true });
+    alert("অর্ডার সময়সূচী সংরক্ষণ করা হয়েছে।");
+  } catch (e) {
+    alert("সংরক্ষণ করা যায়নি। কারণ: " + (e && e.message ? e.message : e));
+  }
+};
+
 // ============ LECTURE SHEETS (WRITES) ============
+// Live price preview while the treasurer fills in the "শিট যোগ করুন" form — price is never
+// typed by hand, it's always pages × (৳3 double-sided or ৳1.5 single-sided per page).
+window.updateNewSheetPricePreview = () => {
+  const pages = parseInt(document.getElementById('new-sheet-pages').value, 10) || 0;
+  const doubleSided = document.getElementById('new-sheet-side').value === 'double';
+  const preview = document.getElementById('new-sheet-price-preview');
+  if (preview) preview.textContent = '৳' + computeSheetPrice(pages, doubleSided).toFixed(2);
+};
+
 window.addSheet = async () => {
   const title = document.getElementById('new-sheet-title').value.trim();
-  const price = parseFloat(document.getElementById('new-sheet-price').value);
   const subject = document.getElementById('new-sheet-subject').value.trim();
   const cardRaw = document.getElementById('new-sheet-card').value;
   const cardNo = cardRaw !== '' ? parseFloat(cardRaw) : null;
-  if (!title || !price || price <= 0) { alert("Please enter a sheet name and a valid price."); return; }
+  const pages = parseInt(document.getElementById('new-sheet-pages').value, 10);
+  const doubleSided = document.getElementById('new-sheet-side').value === 'double';
+  if (!title) { alert("শিটের নাম লিখুন।"); return; }
+  if (!pages || pages <= 0) { alert("সঠিক পেজ সংখ্যা লিখুন।"); return; }
+  const price = computeSheetPrice(pages, doubleSided);
   try {
     await addDoc(collection(db, "sheets"), {
-      title, price, subject: subject || null, cardNo,
+      title, price, pages, doubleSided, subject: subject || null, cardNo,
       addedBy: currentTreasurerName, addedAt: serverTimestamp()
     });
     document.getElementById('new-sheet-title').value = "";
-    document.getElementById('new-sheet-price').value = "";
+    document.getElementById('new-sheet-pages').value = "";
     document.getElementById('new-sheet-subject').value = "";
     document.getElementById('new-sheet-card').value = "";
+    document.getElementById('new-sheet-side').value = "double";
+    window.updateNewSheetPricePreview();
   } catch (e) {
     alert("শিট যোগ করা যায়নি। কারণ: " + (e && e.message ? e.message : e));
   }
@@ -2559,12 +2735,13 @@ window.confirmSheetOrders = async () => {
   const names = chosenSheets.map(s => `${s.title} (৳${s.price.toFixed(2)})`).join(', ');
   const businessDate = currentBusinessDateKey();
   const cutoffNote = isPastCutoffNow()
-    ? `\n\n⏰ বিকাল ৩টা পার হয়ে গেছে, তাই এই অর্ডারটি আজকের নয় — ${formatBusinessDateLabel(businessDate)} তারিখের ব্যাচে গণনা হবে।`
-    : `\n\nএই অর্ডারটি ${formatBusinessDateLabel(businessDate)} তারিখের ব্যাচে গণনা হবে (প্রতিদিন বিকাল ৩টা পর্যন্ত অর্ডার নেওয়া হয়)।`;
+    ? `\n\n⏰ ${formatHourLabel(orderConfig.cutoffHour)} পার হয়ে গেছে, তাই এই অর্ডারটি আজকের নয় — ${formatBusinessDateLabel(businessDate)} তারিখের ব্যাচে গণনা হবে।`
+    : `\n\nএই অর্ডারটি ${formatBusinessDateLabel(businessDate)} তারিখের ব্যাচে গণনা হবে (প্রতিদিন ${formatHourLabel(orderConfig.cutoffHour)} পর্যন্ত অর্ডার নেওয়া হয়)।`;
   if (!confirm(`নিচের শিটগুলো প্রিন্টের জন্য অর্ডার করবেন? মোট ৳${total.toFixed(2)} আপনার হিসাব থেকে কাটা হবে।\n\n${names}${cutoffNote}`)) return;
 
   const user = auth.currentUser;
   const student = students.find(s => s.roll === currentSubscriberRoll);
+  const batchSeq = currentBatchSeqFor(businessDate);
   try {
     await Promise.all(chosenSheets.map(s => addDoc(collection(db, "sheetOrders"), {
       roll: currentSubscriberRoll,
@@ -2575,6 +2752,7 @@ window.confirmSheetOrders = async () => {
       price: s.price,
       orderedAt: serverTimestamp(),
       businessDate,
+      batchSeq,
       printed: false, printedAt: null, printedBy: null,
       received: false, receivedAt: null, receivedBy: null,
       addedBy: currentTreasurerName,
