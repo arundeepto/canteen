@@ -99,6 +99,7 @@
   .panel{
     background:var(--panel);border:1px solid var(--line);border-radius:14px;
     padding:18px 20px;box-shadow:var(--shadow);margin-bottom:16px;
+    transition:box-shadow .15s ease;
   }
   .panel h2{font-size:1rem;margin:0 0 12px;font-weight:600;letter-spacing:-.01em;}
 
@@ -137,6 +138,7 @@
   .btn-gold:hover{background:#B45F04;}
   .btn-outline{background:none;border:1px solid var(--line-strong);color:var(--ink);}
   .btn-outline:hover{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);}
+  .btn-sm{padding:6px 12px;font-size:.78rem;border-radius:7px;}
   .btn-row{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;}
 
   /* ---------- table ---------- */
@@ -157,6 +159,8 @@
     padding:4px 9px;font-size:.78rem;cursor:pointer;color:var(--red);
   }
   .icon-btn:hover{background:var(--red-bg);}
+  .icon-btn.edit{color:var(--accent);}
+  .icon-btn.edit:hover{background:var(--accent-bg);border-color:var(--accent);}
 
   /* ---------- activity ---------- */
   .activity-item{
@@ -598,7 +602,7 @@
   <!-- lecture sheet catalog management -->
   <div class="panel treasurer-only" data-tab="sheets">
     <h2>লেকচার শিট ব্যবস্থাপনা</h2>
-    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">এখানে যেসব শিট যোগ করবেন, সাবস্ক্রাইবাররা তাদের ড্যাশবোর্ড থেকে সেগুলো প্রিন্টের জন্য অর্ডার করতে পারবে। দাম বসাতে হয় না — পেজ সংখ্যা ও প্রিন্ট সাইড দিলেই দাম স্বয়ংক্রিয়ভাবে হিসাব হয়ে যাবে (দুই সাইড = ৳৩/পেজ, এক সাইড = ৳১.৫/পেজ)।</p>
+    <p style="color:var(--ink-soft);font-size:.85rem;margin:0 0 10px;">এখানে যেসব শিট যোগ করবেন, সাবস্ক্রাইবাররা তাদের ড্যাশবোর্ড থেকে সেগুলো প্রিন্টের জন্য অর্ডার করতে পারবে। দাম বসাতে হয় না — শুধু পেজ সংখ্যা দিলেই দাম স্বয়ংক্রিয়ভাবে হিসাব হয়ে যাবে। সব পিডিএফ এপিঠ-ওপিঠ (দুই সাইড) প্রিন্ট হয়, তাই প্রতি ২ পেজে ১টি এপিঠ-ওপিঠ শিট (৳৩) — আর পেজ সংখ্যা বিজোড় হলে শেষে একটি এক সাইড শিট (৳১.৫) যুক্ত হয়।</p>
     <div class="field-row">
       <div class="field" style="flex:2;"><label>সাবজেক্ট</label><input type="text" id="new-sheet-subject" placeholder="e.g. Physics"></div>
       <div class="field"><label>কার্ড নং (সিরিয়াল)</label><input type="number" id="new-sheet-card" placeholder="1"></div>
@@ -609,18 +613,18 @@
     <div class="field-row">
       <div class="field"><label>পেজ সংখ্যা</label><input type="number" min="1" id="new-sheet-pages" placeholder="1" oninput="updateNewSheetPricePreview()"></div>
       <div class="field">
-        <label>প্রিন্ট সাইড</label>
-        <select id="new-sheet-side" onchange="updateNewSheetPricePreview()" style="width:100%;padding:9px 11px;border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-family:inherit;font-size:.92rem;color:var(--ink);">
-          <option value="double">দুই সাইড (৳৩/পেজ)</option>
-          <option value="single">এক সাইড (৳১.৫/পেজ)</option>
-        </select>
-      </div>
-      <div class="field">
         <label>মোট দাম (স্বয়ংক্রিয়)</label>
         <div id="new-sheet-price-preview" style="padding:9px 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--accent-bg);font-weight:700;color:var(--accent);">৳০.০০</div>
       </div>
+      <div class="field">
+        <label>হিসাব</label>
+        <div id="new-sheet-price-breakdown" style="padding:9px 0;font-size:.8rem;color:var(--ink-soft);"></div>
+      </div>
     </div>
-    <div class="btn-row"><button class="btn btn-primary" onclick="addSheet()">+ শিট যোগ করুন</button></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="add-sheet-btn" onclick="addSheet()">+ শিট যোগ করুন</button>
+      <button class="btn hidden" id="cancel-sheet-edit-btn" onclick="cancelSheetEdit()" style="background:var(--bg);color:var(--ink-soft);border:1px solid var(--line-strong);">✕ বাতিল করুন</button>
+    </div>
     <div class="table-scroll" style="margin-top:16px;">
       <table class="ledger">
         <thead><tr><th>সাবজেক্ট</th><th>কার্ড#</th><th>শিট</th><th>পেজ</th><th>দাম</th><th>যোগ করেছেন</th><th></th></tr></thead>
@@ -846,13 +850,30 @@ function formatBatchLabel(businessDate, seq, extra) {
   return `${formatBusinessDateLabel(businessDate)} — ব্যাচ ${seq}${extra ? ' ' + extra : ''}`;
 }
 
-// ============ SHEET PRICING: fully automatic from page count + print side ============
-// Double-sided (দুই সাইড): ৳3 per page. Single-sided (এক সাইড): ৳1.5 per page.
-const PRICE_PER_PAGE_DOUBLE_SIDED = 3;
-const PRICE_PER_PAGE_SINGLE_SIDED = 1.5;
-function computeSheetPrice(pages, doubleSided) {
-  const p = Number(pages) || 0;
-  return p * (doubleSided ? PRICE_PER_PAGE_DOUBLE_SIDED : PRICE_PER_PAGE_SINGLE_SIDED);
+// ============ SHEET PRICING: fully automatic from page count alone ============
+// All lecture-sheet PDFs are printed duplex (এপিঠ-ওপিঠ / front+back on one physical sheet of
+// paper). So N pages consume floor(N/2) physical duplex sheets, each costing ৳3 — and if N is
+// odd, one leftover page has to go on its own single-sided physical sheet, costing ৳1.5.
+// Example: 5 pages -> 2 duplex sheets (৳3 each) + 1 single-sided sheet (৳1.5) = ৳7.5 total.
+const PRICE_PER_DUPLEX_SHEET = 3;
+const PRICE_PER_SINGLE_SHEET = 1.5;
+function sheetBreakdownFor(pages) {
+  const p = Math.max(0, Math.floor(Number(pages) || 0));
+  const duplexSheets = Math.floor(p / 2);
+  const hasSingleLeftover = p % 2 === 1;
+  return { pages: p, duplexSheets, hasSingleLeftover, physicalSheets: duplexSheets + (hasSingleLeftover ? 1 : 0) };
+}
+function computeSheetPrice(pages) {
+  const { duplexSheets, hasSingleLeftover } = sheetBreakdownFor(pages);
+  return duplexSheets * PRICE_PER_DUPLEX_SHEET + (hasSingleLeftover ? PRICE_PER_SINGLE_SHEET : 0);
+}
+// Short Bengali description of the physical-sheet breakdown, e.g. "২টি এপিঠ-ওপিঠ + ১টি এক সাইড"
+function sheetBreakdownLabel(pages) {
+  const { duplexSheets, hasSingleLeftover } = sheetBreakdownFor(pages);
+  const parts = [];
+  if (duplexSheets > 0) parts.push(`${duplexSheets}টি এপিঠ-ওপিঠ`);
+  if (hasSingleLeftover) parts.push(`১টি এক সাইড`);
+  return parts.join(' + ') || 'পেজ নেই';
 }
 // Re-check the order window every 60s so the ordering UI locks/unlocks itself right at the
 // 10:00/17:00 boundary even if the person just leaves the tab open — Firestore listeners only
@@ -1593,10 +1614,10 @@ function renderSheetCatalogTreasurer() {
       <td class="activity-meta">${g.subject}</td>
       <td class="num">${(s.cardNo !== null && s.cardNo !== undefined && s.cardNo !== '') ? s.cardNo : '—'}</td>
       <td>${s.title}</td>
-      <td class="activity-meta">${s.pages ? s.pages + ' পেজ · ' + (s.doubleSided ? 'দুই সাইড' : 'এক সাইড') : '—'}</td>
+      <td class="activity-meta">${s.pages ? s.pages + ' পেজ · ' + sheetBreakdownLabel(s.pages) : '—'}</td>
       <td class="num">৳${(s.price || 0).toFixed(2)}</td>
       <td class="activity-meta">${s.addedBy || ''}</td>
-      <td><button class="icon-btn" onclick="deleteSheet('${s.id}')">✕</button></td>
+      <td><button class="icon-btn edit" onclick="editSheet('${s.id}')" title="সম্পাদনা করুন">✎</button> <button class="icon-btn" onclick="deleteSheet('${s.id}')" title="মুছে ফেলুন">✕</button></td>
     </tr>
   `).join('')).join('') || `<tr><td colspan="7" class="activity-meta">এখনো কোনো লেকচার শিট যোগ করা হয়নি।</td></tr>`;
 }
@@ -1670,7 +1691,7 @@ function renderSheetCatalogSubscriber() {
               <input type="checkbox" class="sheet-check" value="${s.id}" ${ordered ? 'checked' : ''} ${disabled ? 'disabled' : ''} onchange="onSheetCheckChange(this)">
               <span class="sc-subject">${g.subject}${hasCardNo ? ' · কার্ড #' + s.cardNo : ''}</span>
               <span class="sc-title">${s.title}</span>
-              ${s.pages ? `<span class="sc-meta"><span>📄 ${s.pages} পেজ</span><span>${s.doubleSided ? 'দুই সাইড' : 'এক সাইড'}</span></span>` : ''}
+              ${s.pages ? `<span class="sc-meta"><span>📄 ${s.pages} পেজ</span><span>${sheetBreakdownLabel(s.pages)}</span></span>` : ''}
               <span class="sc-price num">৳${(s.price || 0).toFixed(2)}</span>
               ${ordered ? '<span class="sc-badge">✓ অর্ডার করা হয়েছে</span>' : ''}
             </label>`;
@@ -1710,12 +1731,36 @@ function renderMySheetOrders() {
   tbody.innerHTML = mine.map(o => {
     const t = o.orderedAt && o.orderedAt.toDate ? o.orderedAt.toDate().toLocaleDateString('en-US') : '...';
     const batch = o.businessDate ? formatBusinessDateLabel(o.businessDate) : '—';
-    const status = o.received
-      ? '<span style="color:var(--green);font-weight:600;">✓ গৃহীত</span>'
-      : (o.printed ? '<span style="color:var(--gold);font-weight:600;">প্রিন্ট সম্পন্ন</span>' : '<span class="activity-meta">পেন্ডিং</span>');
+    let status;
+    if (o.received) {
+      status = '<span style="color:var(--green);font-weight:600;">✓ গৃহীত</span>';
+    } else if (o.printed) {
+      status = `<button class="btn btn-sm btn-primary" onclick="markMyOrderReceived('${o.id}')">📥 পেয়ে গেছি</button>`;
+    } else {
+      status = '<span class="activity-meta">পেন্ডিং</span>';
+    }
     return `<tr><td class="activity-meta">${t}</td><td>${o.sheetTitle}</td><td class="num">৳${(o.price || 0).toFixed(2)}</td><td class="activity-meta">${batch}</td><td>${status}</td></tr>`;
   }).join('') || `<tr><td colspan="5" class="activity-meta">এখনো কোনো শিট অর্ডার করা হয়নি।</td></tr>`;
 }
+
+// Subscriber confirms they've personally received a printed sheet — a one-way action (can't be
+// undone from here) that updates ONLY that subscriber's own order/copy, exactly like the
+// treasurer/girls-admin checkbox does for theirs. Firestore rules restrict this so a subscriber
+// can only flip received false->true on their own order and touch nothing else.
+window.markMyOrderReceived = async (orderId) => {
+  const order = sheetOrdersData.find(o => o.id === orderId && o.roll === currentSubscriberRoll);
+  if (!order || order.received) return;
+  if (!confirm(`আপনি কি "${order.sheetTitle}" শিটটি বুঝে পেয়েছেন? এটি একবার নিশ্চিত করার পর আর পরিবর্তন করা যাবে না।`)) return;
+  const student = students.find(s => s.roll === currentSubscriberRoll);
+  try {
+    await updateDoc(doc(db, "sheetOrders", orderId), {
+      received: true, receivedAt: serverTimestamp(),
+      receivedBy: `${student ? student.name : 'Subscriber'} (নিজে)`
+    });
+  } catch (e) {
+    alert("আপডেট করা যায়নি। কারণ: " + (e && e.message ? e.message : e));
+  }
+};
 
 // ---- batch key list & filter (treasurer's order panel) ----
 // Each entry is a distinct "businessDate#seq" print batch. Sorted newest date first, and within
@@ -1810,7 +1855,7 @@ function renderGroupedReceivedChecklist(orders, tbodyId, showGenderCol) {
       ? `<span class="activity-meta">${o.receivedBy || ''} ${o.receivedAt && o.receivedAt.toDate ? '· ' + o.receivedAt.toDate().toLocaleDateString('en-US') : ''}</span>`
       : '<span class="activity-meta">এখনো বুঝে পায়নি</span>';
     html += `<tr>
-      <td style="padding-left:20px;"><input type="checkbox" ${o.received ? 'checked' : ''} onchange="toggleOrderReceived('${o.id}', this.checked)" style="width:16px;height:16px;"></td>
+      <td style="padding-left:20px;"><input type="checkbox" ${o.received ? 'checked disabled' : ''} onchange="toggleOrderReceived('${o.id}', this)" style="width:16px;height:16px;"></td>
       <td>${o.studentName || '—'} <span class="activity-meta">${orderRollTag(o)}</span></td>
       ${showGenderCol ? `<td class="activity-meta">${genderLabel}</td>` : ''}
       <td>${info}</td>
@@ -1954,12 +1999,24 @@ window.markOrdersPrinted = async (batchKey) => {
   }
 };
 
-window.toggleOrderReceived = async (orderId, checked) => {
+// "প্রাপ্তি স্বীকার" (received) checkboxes are ONE-WAY: once checked, the box is rendered
+// `disabled` so it physically can't be unchecked from the UI. This handler only ever runs for
+// the check (false -> true) transition, and asks for confirmation before writing since it can't
+// be undone afterwards.
+window.toggleOrderReceived = async (orderId, checkboxEl) => {
+  if (!checkboxEl.checked) return; // guard — shouldn't fire since the box is disabled once received
+  if (!confirm("নিশ্চিত করছেন এই শিটটি বুঝে পেয়েছে? একবার টিক দেওয়ার পর এটি আর পরিবর্তন/আনটিক করা যাবে না।")) {
+    checkboxEl.checked = false;
+    return;
+  }
+  checkboxEl.disabled = true; // lock immediately so a second click can't slip through before the write completes
   try {
-    await updateDoc(doc(db, "sheetOrders", orderId), checked
-      ? { received: true, receivedAt: serverTimestamp(), receivedBy: currentTreasurerName }
-      : { received: false, receivedAt: null, receivedBy: null });
+    await updateDoc(doc(db, "sheetOrders", orderId), {
+      received: true, receivedAt: serverTimestamp(), receivedBy: currentTreasurerName
+    });
   } catch (e) {
+    checkboxEl.disabled = false;
+    checkboxEl.checked = false;
     alert("প্রাপ্তি স্ট্যাটাস আপডেট করা যায়নি। কারণ: " + (e && e.message ? e.message : e));
   }
 };
@@ -2669,13 +2726,49 @@ window.saveOrderTimingSettings = async () => {
 };
 
 // ============ LECTURE SHEETS (WRITES) ============
-// Live price preview while the treasurer fills in the "শিট যোগ করুন" form — price is never
-// typed by hand, it's always pages × (৳3 double-sided or ৳1.5 single-sided per page).
+// Live price preview + breakdown while the treasurer fills in the "শিট যোগ করুন" form — price is
+// never typed by hand, it's always computed from page count (see computeSheetPrice above).
 window.updateNewSheetPricePreview = () => {
   const pages = parseInt(document.getElementById('new-sheet-pages').value, 10) || 0;
-  const doubleSided = document.getElementById('new-sheet-side').value === 'double';
   const preview = document.getElementById('new-sheet-price-preview');
-  if (preview) preview.textContent = '৳' + computeSheetPrice(pages, doubleSided).toFixed(2);
+  const breakdown = document.getElementById('new-sheet-price-breakdown');
+  if (preview) preview.textContent = '৳' + computeSheetPrice(pages).toFixed(2);
+  if (breakdown) breakdown.textContent = pages > 0 ? sheetBreakdownLabel(pages) : '';
+};
+
+// editingSheetId is null while adding a brand-new sheet; set to a sheet's id while the treasurer
+// is editing that sheet's name/subject/card/pages inline via the same form + button.
+let editingSheetId = null;
+
+window.cancelSheetEdit = () => {
+  editingSheetId = null;
+  document.getElementById('new-sheet-title').value = "";
+  document.getElementById('new-sheet-pages').value = "";
+  document.getElementById('new-sheet-subject').value = "";
+  document.getElementById('new-sheet-card').value = "";
+  window.updateNewSheetPricePreview();
+  const btn = document.getElementById('add-sheet-btn');
+  const cancelBtn = document.getElementById('cancel-sheet-edit-btn');
+  if (btn) btn.textContent = '+ শিট যোগ করুন';
+  if (cancelBtn) cancelBtn.classList.add('hidden');
+};
+
+// Loads an existing sheet's info into the form above so the treasurer can change its name,
+// subject, card number, or page count — price recalculates automatically from the new page count.
+window.editSheet = (id) => {
+  const s = sheetsData.find(x => x.id === id);
+  if (!s) return;
+  editingSheetId = id;
+  document.getElementById('new-sheet-title').value = s.title || "";
+  document.getElementById('new-sheet-pages').value = s.pages || "";
+  document.getElementById('new-sheet-subject').value = s.subject || "";
+  document.getElementById('new-sheet-card').value = (s.cardNo !== null && s.cardNo !== undefined) ? s.cardNo : "";
+  window.updateNewSheetPricePreview();
+  const btn = document.getElementById('add-sheet-btn');
+  const cancelBtn = document.getElementById('cancel-sheet-edit-btn');
+  if (btn) btn.textContent = '✓ পরিবর্তন সংরক্ষণ করুন';
+  if (cancelBtn) cancelBtn.classList.remove('hidden');
+  document.getElementById('new-sheet-title').scrollIntoView({ behavior: 'smooth', block: 'center' });
 };
 
 window.addSheet = async () => {
@@ -2684,28 +2777,30 @@ window.addSheet = async () => {
   const cardRaw = document.getElementById('new-sheet-card').value;
   const cardNo = cardRaw !== '' ? parseFloat(cardRaw) : null;
   const pages = parseInt(document.getElementById('new-sheet-pages').value, 10);
-  const doubleSided = document.getElementById('new-sheet-side').value === 'double';
   if (!title) { alert("শিটের নাম লিখুন।"); return; }
   if (!pages || pages <= 0) { alert("সঠিক পেজ সংখ্যা লিখুন।"); return; }
-  const price = computeSheetPrice(pages, doubleSided);
+  const price = computeSheetPrice(pages);
   try {
-    await addDoc(collection(db, "sheets"), {
-      title, price, pages, doubleSided, subject: subject || null, cardNo,
-      addedBy: currentTreasurerName, addedAt: serverTimestamp()
-    });
-    document.getElementById('new-sheet-title').value = "";
-    document.getElementById('new-sheet-pages').value = "";
-    document.getElementById('new-sheet-subject').value = "";
-    document.getElementById('new-sheet-card').value = "";
-    document.getElementById('new-sheet-side').value = "double";
-    window.updateNewSheetPricePreview();
+    if (editingSheetId) {
+      await updateDoc(doc(db, "sheets", editingSheetId), {
+        title, price, pages, subject: subject || null, cardNo,
+        editedBy: currentTreasurerName, editedAt: serverTimestamp()
+      });
+    } else {
+      await addDoc(collection(db, "sheets"), {
+        title, price, pages, subject: subject || null, cardNo,
+        addedBy: currentTreasurerName, addedAt: serverTimestamp()
+      });
+    }
+    window.cancelSheetEdit(); // clears the form and resets the button back to "add" mode
   } catch (e) {
-    alert("শিট যোগ করা যায়নি। কারণ: " + (e && e.message ? e.message : e));
+    alert((editingSheetId ? "পরিবর্তন সংরক্ষণ করা যায়নি।" : "শিট যোগ করা যায়নি।") + " কারণ: " + (e && e.message ? e.message : e));
   }
 };
 
 window.deleteSheet = async (id) => {
   if (!confirm("এই শিটটি লিস্ট থেকে সরিয়ে দিতে চান?")) return;
+  if (editingSheetId === id) window.cancelSheetEdit();
   try {
     await deleteDoc(doc(db, "sheets", id));
   } catch (e) {
