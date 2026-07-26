@@ -357,6 +357,8 @@ button{font-family:inherit;cursor:pointer;}
 .letter-revealed .letter-text{font-size:15px;line-height:1.6;white-space:pre-wrap;background:var(--dawn-1);border-radius:12px;padding:14px 16px;margin:6px 0 12px;}
 .letter-revealed .letter-note{font-size:11.5px;color:var(--veil);margin-bottom:10px;}
 .letter-close-btn{background:var(--coral);color:#fff;border:none;border-radius:999px;padding:8px 18px;font-size:12.5px;font-weight:700;}
+.letter-report-btn{background:none;border:1.5px solid var(--line);color:var(--veil);border-radius:999px;padding:7px 14px;font-size:12px;font-weight:700;}
+.letter-report-btn:hover{border-color:var(--coral);color:var(--coral);}
 .tb-bell.letter-bell{font-size:17px;}
 .empty{text-align:center;padding:50px 20px;color:var(--veil);}
 .empty .ic{font-size:34px;display:block;margin-bottom:10px;}
@@ -668,6 +670,7 @@ button{font-family:inherit;cursor:pointer;}
         <div class="admin-tabs">
           <button class="active" data-atab="secret" onclick="adminTab('secret')">সিক্রেট চ্যাট</button>
           <button data-atab="confess" onclick="adminTab('confess')">কনফেশন</button>
+          <button data-atab="letters" onclick="adminTab('letters')">চিঠি রিপোর্ট</button>
         </div>
         <div id="adminList"></div>
       </div>
@@ -1550,13 +1553,29 @@ function sendUnspokenLetter(){
   if(!recipientUid){ alert('কাকে পাঠাবে সেটা বেছে নাও'); return; }
   if(!text){ alert('কিছু একটা লেখো'); return; }
   if(recipientUid === currentUser.uid){ alert('নিজেকে চিঠি পাঠানো যায় না 🙂'); return; }
-  db.collection('unspokenLetters').add({
+  // One letter per recipient per day — the marker doc's deterministic ID
+  // (recipientUid_senderUid_date) makes a second attempt the same day fail
+  // server-side (rules only allow *create*, so a repeat write is rejected),
+  // which stops the same person from being flooded with anonymous letters.
+  const todayStr = todayDateStr();
+  const cooldownRef = db.collection('letterCooldowns').doc(`${recipientUid}_${currentUser.uid}_${todayStr}`);
+  const letterRef = db.collection('unspokenLetters').doc();
+  const batch = db.batch();
+  batch.set(letterRef, {
     recipientUid, senderUid: currentUser.uid, text,
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
-  textEl.value='';
-  sel.value='';
-  alert('চিঠিটা পাঠানো হয়েছে — সম্পূর্ণ অ্যানোনিমাসভাবে।');
+  batch.set(cooldownRef, {
+    recipientUid, senderUid: currentUser.uid, date: todayStr,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  batch.commit().then(()=>{
+    textEl.value='';
+    sel.value='';
+    alert('চিঠিটা পাঠানো হয়েছে — সম্পূর্ণ অ্যানোনিমাসভাবে।');
+  }).catch(()=>{
+    alert('আজকে এই ব্যক্তিকে তুমি ইতিমধ্যে একটা চিঠি পাঠিয়েছ — কালকে আবার পাঠাতে পারবে।');
+  });
 }
 function revealLetter(id){
   revealedLetters.add(id);
@@ -1565,6 +1584,20 @@ function revealLetter(id){
 function closeLetter(id){
   revealedLetters.delete(id);
   db.collection('unspokenLetters').doc(id).delete();
+}
+// letterReports/{id}: { letterId, reporterUid, reportedSenderUid, text, createdAt }
+// Only admins can read this collection — it exists purely so abuse can be
+// traced without the sender's identity ever being visible in the normal UI.
+function reportLetter(id){
+  const doc = lastUnspokenDocs.find(d=>d.id===id);
+  if(!doc) return;
+  const l = doc.data();
+  if(!confirm('এই চিঠিটা অ্যাডমিনের কাছে রিপোর্ট করবে? চিঠির লেখাটা অ্যাডমিন রিভিউ করতে পারবে।')) return;
+  db.collection('letterReports').add({
+    letterId: id, reporterUid: currentUser.uid, reportedSenderUid: l.senderUid, text: l.text,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>alert('রিপোর্ট পাঠানো হয়েছে। ধন্যবাদ।'))
+    .catch(()=>alert('রিপোর্ট পাঠাতে সমস্যা হয়েছে, আবার চেষ্টা করো।'));
 }
 function updateLetterBadge(count){
   const badge = document.getElementById('letterBadge');
@@ -1587,7 +1620,10 @@ function renderUnspokenInbox(){
       return `<div class="letter-card letter-revealed">
         <div class="letter-note">💌 অ্যানোনিমাস চিঠি</div>
         <div class="letter-text">${escapeHtml(l.text)}</div>
-        <button class="letter-close-btn" onclick="closeLetter('${d.id}')">পড়া শেষ — চিঠিটা এখন হারিয়ে যাক</button>
+        <div style="display:flex;gap:8px;">
+          <button class="letter-close-btn" onclick="closeLetter('${d.id}')">পড়া শেষ — চিঠিটা এখন হারিয়ে যাক</button>
+          <button class="letter-report-btn" onclick="reportLetter('${d.id}')">🚩 রিপোর্ট করো</button>
+        </div>
       </div>`;
     }
     return `<div class="letter-card">
@@ -1797,10 +1833,35 @@ function svPrev(){
 }
 
 /* ============ SECRET CHAT ============ */
+// Blocks common "I love you" / "ভালোবাসি" style romantic messages from
+// being sent in the anonymous Secret Chat. This is a client-side keyword
+// filter, not a perfect one — someone determined could still get around it
+// with creative spelling, but it stops the ordinary case cleanly. Add more
+// phrases to BLOCKED_PATTERNS any time you notice something slipping through.
+const BLOCKED_PATTERNS = [
+  /\bi\s*l+o+v+e*\s*u+\b/i,
+  /\bi\s*l+o+v+e*\s*you+\b/i,
+  /\blove\s*you+\b/i,
+  /\bi\s*luv\s*u+\b/i,
+  /\bilu+\b/i,
+  /\bily\b/i,
+  /ভালোবাসি/,
+  /ভালবাসি/,
+  /ভালোবাসো/,
+  /ভালবাসো/,
+  /love\s*u\b/i,
+];
+function containsBlockedContent(text){
+  return BLOCKED_PATTERNS.some(re=>re.test(text));
+}
 function sendSecret(){
   const input=document.getElementById('secretInput');
   const text=input.value.trim();
   if(!text) return;
+  if(containsBlockedContent(text)){
+    alert('এই ধরনের রোমান্টিক মেসেজ (যেমন "ভালোবাসি" / "I love you") সিক্রেট চ্যাটে পাঠানো যাবে না।');
+    return;
+  }
   db.collection('secretChat').add({
     anonName:myAnonName, // no uid stored on the message at all
     text, createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -1857,7 +1918,7 @@ async function loadAdminData(){
       </div>`;
     }
     el.innerHTML = rows || '<div class="empty">কোনো মেসেজ নেই</div>';
-  } else {
+  } else if(currentAdminTab==='confess'){
     const snap = await db.collection('confessions').orderBy('createdAt','desc').limit(100).get();
     let rows='';
     for(const d of snap.docs){
@@ -1889,6 +1950,21 @@ async function loadAdminData(){
       </div>${replyRows}`;
     }
     el.innerHTML = rows || '<div class="empty">কোনো কনফেশন নেই</div>';
+  } else {
+    const snap = await db.collection('letterReports').orderBy('createdAt','desc').limit(100).get();
+    let rows='';
+    for(const d of snap.docs){
+      const r=d.data();
+      const real = await nameFor(r.reportedSenderUid).catch(()=>'অজানা');
+      rows += `<div class="admin-row">
+        <span class="admin-tag">চিঠি রিপোর্ট</span>
+        <div class="meta"><span>${timeAgo(r.createdAt)}</span>
+          <span class="reveal">প্রেরকের আসল ইউজারনেম: ${escapeHtml(real)}</span></div>
+        <div>${escapeHtml(r.text)}</div>
+        <button class="del-btn" onclick="adminDelete('letterReports','${d.id}')">রিপোর্ট মুছে ফেলো</button>
+      </div>`;
+    }
+    el.innerHTML = rows || '<div class="empty">কোনো রিপোর্ট নেই</div>';
   }
 }
 function adminDelete(col,id){
