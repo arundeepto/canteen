@@ -838,11 +838,15 @@ window.doRegister = async () => {
 
   let cred;
   try {
+    // NOTE: the uniqueness check must run AFTER sign-in, not before — Firestore rules require
+    // isSignedIn() to read the "users" collection, and before createUserWithEmailAndPassword()
+    // there is no signed-in user yet (this used to cause "Missing or insufficient permissions").
+    cred = await createUserWithEmailAndPassword(auth, email, password);
+
     const existingSnap = await getDocs(query(collection(db, "users"), where("roll", "==", roll)));
     if (existingSnap.docs.some(d => d.data().role === 'subscriber')) {
       throw new Error(`Roll ${roll} এর জন্য আগে থেকেই একটি অ্যাকাউন্ট রেজিস্টার করা আছে।`);
     }
-    cred = await createUserWithEmailAndPassword(auth, email, password);
 
     await setDoc(doc(db, "students", roll.toString()), {
       roll, name, mobile: phone, email, gender, batch, hostel, room, createdAt: serverTimestamp()
