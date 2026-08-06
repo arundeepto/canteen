@@ -240,6 +240,26 @@
   .toggle-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;background:var(--accent-bg);border:1px solid var(--line-strong);border-radius:10px;padding:10px 14px;}
 
   .served-check{width:20px;height:20px;accent-color:var(--accent-2);cursor:pointer;}
+
+  /* ---------- quick-serve (rush-hour distribution) ---------- */
+  .quick-serve-box{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    background:linear-gradient(135deg, var(--navy), var(--accent-2));
+    border-radius:12px;padding:14px 16px;margin-bottom:14px;
+    box-shadow:0 4px 16px rgba(11,42,74,0.25);
+  }
+  .quick-serve-input{
+    flex:1;min-width:160px;padding:12px 14px;font-size:1.1rem;font-weight:700;
+    border:none;border-radius:9px;text-align:center;letter-spacing:.02em;
+  }
+  .quick-serve-box .btn{flex:none;white-space:nowrap;}
+  .quick-serve-count{color:#fff;font-weight:700;font-size:.85rem;background:rgba(255,255,255,0.18);padding:8px 14px;border-radius:8px;white-space:nowrap;}
+  tr.served-row{opacity:.5;}
+  tr.served-row td{text-decoration:line-through;}
+  tr.order-row{cursor:pointer;}
+  tr.order-row:hover{background:var(--accent-bg);}
+  @keyframes flashServed{0%{background:var(--green-bg);}100%{background:transparent;}}
+  tr.just-served{animation:flashServed 1.1s ease;}
 </style>
 </head>
 <body>
@@ -412,7 +432,12 @@
   <!-- ============ HOSTEL ADMIN: meal order checklist + downloads ============ -->
   <div class="panel hostel-admin-only hidden" data-tab="orders">
     <h2>📦 মিল অর্ডার তালিকা ও বিতরণ চেকলিস্ট</h2>
-    <p class="hint">হোস্টেল, ব্যাচ ও রুম অনুযায়ী গ্রুপ করা তালিকা — মিল বিতরণের পর "বিতরণকৃত" টিক দিন।</p>
+    <p class="hint">ভিড়ের সময় দ্রুত বিতরণ করতে নিচে শুধু <b>রোল নম্বর</b> লিখে Enter চাপুন — সাথে সাথেই "বিতরণকৃত" মার্ক হয়ে যাবে।</p>
+    <div class="quick-serve-box">
+      <input type="number" id="hostel-quickserve-roll" class="quick-serve-input" placeholder="🔎 রোল নম্বর লিখুন..." onkeydown="if(event.key==='Enter'){quickServeByRoll('hostel-quickserve-roll','hostel-orders-date','hostel-orders-mealtype',null);}">
+      <button class="btn btn-primary" onclick="quickServeByRoll('hostel-quickserve-roll','hostel-orders-date','hostel-orders-mealtype',null)">✓ বিতরণ সম্পন্ন করুন</button>
+      <div class="quick-serve-count" id="hostel-orders-count">0 / 0 বিতরণ সম্পন্ন</div>
+    </div>
     <div class="field-row" style="align-items:flex-end;margin-bottom:12px;">
       <div class="field"><label>তারিখ</label><input type="date" id="hostel-orders-date"></div>
       <div class="field">
@@ -424,6 +449,7 @@
           <option value="dinner">Dinner (রাতের খাবার)</option>
         </select>
       </div>
+      <div class="field"><label>খুঁজুন (নাম/রোল/রুম)</label><input type="text" id="hostel-orders-search" placeholder="🔍 লিখে খুঁজুন..." oninput="renderMealOrdersTable('hostel-orders-body','hostel-orders-date','hostel-orders-mealtype',null,false,'hostel-orders-search','hostel-orders-count')"></div>
     </div>
     <div class="btn-row" style="margin-top:0;margin-bottom:12px;">
       <button class="btn btn-primary" onclick="downloadHostelMealOrdersPDF()">📄 PDF ডাউনলোড</button>
@@ -654,7 +680,12 @@
   <!-- treasurer: all meal orders / downloads -->
   <div class="panel treasurer-only" data-tab="orders">
     <h2>📦 সব মিল অর্ডার ও বিতরণ চেকলিস্ট</h2>
-    <p class="hint">হোস্টেল, ব্যাচ ও রুম অনুযায়ী গ্রুপ করা তালিকা — ক্যান্টিন স্টাফদের সহজে ডেলিভারি ও যাচাই করার জন্য।</p>
+    <p class="hint">ভিড়ের সময় দ্রুত বিতরণ করতে নিচে শুধু <b>রোল নম্বর</b> লিখে Enter চাপুন — সাথে সাথেই "বিতরণকৃত" মার্ক হয়ে যাবে।</p>
+    <div class="quick-serve-box">
+      <input type="number" id="tr-quickserve-roll" class="quick-serve-input" placeholder="🔎 রোল নম্বর লিখুন..." onkeydown="if(event.key==='Enter'){quickServeByRoll('tr-quickserve-roll','tr-orders-date','tr-orders-mealtype','tr-orders-hostel');}">
+      <button class="btn btn-primary" onclick="quickServeByRoll('tr-quickserve-roll','tr-orders-date','tr-orders-mealtype','tr-orders-hostel')">✓ বিতরণ সম্পন্ন করুন</button>
+      <div class="quick-serve-count" id="tr-orders-count">0 / 0 বিতরণ সম্পন্ন</div>
+    </div>
     <div class="field-row" style="align-items:flex-end;margin-bottom:12px;">
       <div class="field"><label>তারিখ</label><input type="date" id="tr-orders-date"></div>
       <div class="field">
@@ -676,6 +707,7 @@
           <option value="Internee Hostel">Internee Hostel</option>
         </select>
       </div>
+      <div class="field"><label>খুঁজুন (নাম/রোল/রুম)</label><input type="text" id="tr-orders-search" placeholder="🔍 লিখে খুঁজুন..." oninput="renderMealOrdersTable('tr-orders-body','tr-orders-date','tr-orders-mealtype','tr-orders-hostel',true,'tr-orders-search','tr-orders-count')"></div>
     </div>
     <div class="btn-row" style="margin-top:0;margin-bottom:12px;">
       <button class="btn btn-primary" onclick="downloadTreasurerMealOrdersPDF()">📄 Download Meal Order List (PDF)</button>
@@ -1095,8 +1127,8 @@ function renderAll() {
   renderMealCatalogForOrdering('hostel-admin-meal-catalog', null, true);
   renderMyMealOrders();
   renderHostelAdminMyOrders();
-  renderMealOrdersTable('tr-orders-body', 'tr-orders-date', 'tr-orders-mealtype', 'tr-orders-hostel', true);
-  renderMealOrdersTable('hostel-orders-body', 'hostel-orders-date', 'hostel-orders-mealtype', null, false);
+  renderMealOrdersTable('tr-orders-body', 'tr-orders-date', 'tr-orders-mealtype', 'tr-orders-hostel', true, 'tr-orders-search', 'tr-orders-count');
+  renderMealOrdersTable('hostel-orders-body', 'hostel-orders-date', 'hostel-orders-mealtype', null, false, 'hostel-orders-search', 'hostel-orders-count');
   renderExpenseTargetOptions();
 }
 
@@ -1526,7 +1558,7 @@ function groupOrders(list) {
   return groups;
 }
 
-function renderMealOrdersTable(tbodyId, dateElId, mealTypeElId, hostelElId, restrictToTreasurer) {
+function renderMealOrdersTable(tbodyId, dateElId, mealTypeElId, hostelElId, restrictToTreasurer, searchElId, countElId) {
   const tbody = document.getElementById(tbodyId);
   if (!tbody) return;
   const isTreasurerView = restrictToTreasurer;
@@ -1534,15 +1566,32 @@ function renderMealOrdersTable(tbodyId, dateElId, mealTypeElId, hostelElId, rest
   if (!isTreasurerView && !isHostelAdminRole(currentUserRole)) return;
 
   const restrictGender = isTreasurerView ? null : adminGender(currentUserRole);
-  const list = filteredMealOrdersFor(dateElId, mealTypeElId, isTreasurerView ? hostelElId : null, restrictGender);
+  let list = filteredMealOrdersFor(dateElId, mealTypeElId, isTreasurerView ? hostelElId : null, restrictGender);
+
+  // live student/roll/room/batch search — helps staff find someone fast without scrolling
+  const searchEl = searchElId ? document.getElementById(searchElId) : null;
+  const q = searchEl ? searchEl.value.trim().toLowerCase() : '';
+  if (q) {
+    list = list.filter(o => `${o.roll} ${o.studentName || ''} ${o.room || ''} ${o.batch || ''}`.toLowerCase().includes(q));
+  }
+
+  // rush-hour counter
+  const countEl = countElId ? document.getElementById(countElId) : null;
+  if (countEl) {
+    const servedCount = list.filter(o => o.served).length;
+    countEl.textContent = `${servedCount} / ${list.length} বিতরণ সম্পন্ন`;
+  }
+
   const groups = groupOrders(list);
   const rows = [];
   Object.keys(groups).sort().forEach(hostel => {
     Object.keys(groups[hostel]).sort().forEach(batch => {
       Object.keys(groups[hostel][batch]).sort().forEach(room => {
-        groups[hostel][batch][room].forEach(o => {
-          rows.push(`<tr>
-            <td><input type="checkbox" class="served-check" ${o.served ? 'checked' : ''} onchange="toggleMealServed('${o.id}', this.checked)"></td>
+        // within each room, show not-yet-served students first so staff never has to hunt for who's left
+        const roomOrders = groups[hostel][batch][room].slice().sort((a, b) => (a.served === b.served) ? 0 : (a.served ? 1 : -1));
+        roomOrders.forEach(o => {
+          rows.push(`<tr class="order-row ${o.served ? 'served-row' : ''}" onclick="toggleMealServed('${o.id}', ${!o.served})">
+            <td onclick="event.stopPropagation()"><input type="checkbox" class="served-check" ${o.served ? 'checked' : ''} onclick="event.stopPropagation()" onchange="toggleMealServed('${o.id}', this.checked)"></td>
             ${isTreasurerView ? `<td>${hostel}</td>` : ''}
             <td>${batch}</td><td>${room}</td>
             <td>${o.studentName} (${o.roll})</td>
@@ -1556,6 +1605,7 @@ function renderMealOrdersTable(tbodyId, dateElId, mealTypeElId, hostelElId, rest
   const colspan = isTreasurerView ? 7 : 6;
   tbody.innerHTML = rows.join('') || `<tr><td colspan="${colspan}" style="text-align:center;color:var(--ink-soft);">কোনো মিল অর্ডার পাওয়া যায়নি</td></tr>`;
 }
+window.renderMealOrdersTable = renderMealOrdersTable;
 
 window.toggleMealServed = async (orderId, checked) => {
   try {
@@ -1563,6 +1613,41 @@ window.toggleMealServed = async (orderId, checked) => {
       served: checked, servedAt: checked ? serverTimestamp() : null, servedBy: checked ? currentTreasurerName : null
     });
   } catch (e) { alert("আপডেট করা যায়নি: " + (e && e.message ? e.message : e)); }
+};
+
+// ============ QUICK-SERVE BY ROLL (rush-hour one-tap distribution) ============
+window.quickServeByRoll = async (inputId, dateElId, mealTypeElId, hostelElId) => {
+  const input = document.getElementById(inputId);
+  const roll = Number(input.value);
+  if (!roll) { input.focus(); return; }
+
+  const isTreasurerView = !!hostelElId;
+  const restrictGender = isTreasurerView ? null : adminGender(currentUserRole);
+  const list = filteredMealOrdersFor(dateElId, mealTypeElId, isTreasurerView ? hostelElId : null, restrictGender);
+  const candidates = list.filter(o => o.roll === roll && !o.served);
+
+  if (!candidates.length) {
+    const anyToday = list.some(o => o.roll === roll);
+    input.style.background = '#FBE7E7';
+    setTimeout(() => { input.style.background = ''; }, 500);
+    alert(anyToday ? `Roll ${roll} — এই মিল ইতিমধ্যে বিতরণ করা হয়ে গেছে।` : `Roll ${roll} — এই ফিল্টারে কোনো অর্ডার পাওয়া যায়নি (তারিখ/মিলের ধরন/হোস্টেল চেক করুন)।`);
+    input.value = ""; input.focus();
+    return;
+  }
+
+  // if the student ordered more than one meal type in this filter (e.g. "সব ধরন" selected), serve the earliest unserved one
+  const target = candidates.sort((a, b) => (a.orderedAt?.seconds || 0) - (b.orderedAt?.seconds || 0))[0];
+  try {
+    await updateDoc(doc(db, "mealOrders", target.id), {
+      served: true, servedAt: serverTimestamp(), servedBy: currentTreasurerName
+    });
+    input.style.background = '#E1F5EC';
+    setTimeout(() => { input.style.background = ''; }, 400);
+  } catch (e) {
+    alert("আপডেট করা যায়নি: " + (e && e.message ? e.message : e));
+  }
+  input.value = "";
+  input.focus();
 };
 
 // ============ PDF / CSV DOWNLOADS ============
