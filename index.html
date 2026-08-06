@@ -290,16 +290,26 @@
 
     <!-- REGISTER FORM (student self-registration with full profile) -->
     <div id="register-form" class="hidden">
-      <p class="hint" style="margin:-6px 0 14px;">নিচের সব তথ্য দিয়ে আপনার ক্যান্টিন অ্যাকাউন্ট তৈরি করুন — Roll Number দিয়েই আপনার শনাক্তকরণ হবে।</p>
+      <p class="hint" style="margin:-6px 0 14px;">নিচের সব তথ্য দিয়ে আপনার ক্যান্টিন অ্যাকাউন্ট তৈরি করুন — ব্যাচ ও রোল নম্বর দিয়ে তৈরি ইউনিক আইডি দিয়েই আপনার শনাক্তকরণ হবে।</p>
       <div class="field-row">
         <div class="field"><label>নাম / Name</label><input type="text" id="reg-name" placeholder="e.g. Rahim Uddin"></div>
-        <div class="field"><label>রোল নম্বর / Roll Number</label><input type="number" id="reg-roll" placeholder="e.g. 45"></div>
+        <div class="field">
+          <label>ব্যাচ নম্বর / Batch Number</label>
+          <select id="reg-batch" onchange="updateRegHostelPreview()">
+            <option value="">নির্বাচন করুন</option>
+            <option value="4">৪ (Batch 4)</option>
+            <option value="5">৫ (Batch 5)</option>
+            <option value="6">৬ (Batch 6)</option>
+            <option value="7">৭ (Batch 7)</option>
+            <option value="8">৮ (Batch 8)</option>
+          </select>
+        </div>
       </div>
       <div class="field-row" style="margin-top:10px;">
-        <div class="field"><label>ব্যাচ নম্বর / Batch Number</label><input type="text" id="reg-batch" placeholder="e.g. NMC-05"></div>
+        <div class="field"><label>রোল নম্বর / Roll Number</label><input type="number" id="reg-roll" placeholder="e.g. 66" oninput="updateRegHostelPreview()"></div>
         <div class="field">
           <label>জেন্ডার / Gender</label>
-          <select id="reg-gender">
+          <select id="reg-gender" onchange="updateRegHostelPreview()">
             <option value="male">ছেলে / Male</option>
             <option value="female">মেয়ে / Female</option>
           </select>
@@ -308,18 +318,18 @@
       <div class="field-row" style="margin-top:10px;">
         <div class="field">
           <label>হোস্টেলের নাম / Hostel Name</label>
-          <select id="reg-hostel">
-            <option value="Main Boys Hostel">Main Boys Hostel</option>
-            <option value="Main Girls Hostel">Main Girls Hostel</option>
-            <option value="New Girls Hostel">New Girls Hostel</option>
-            <option value="Internee Hostel">Internee Hostel</option>
-          </select>
+          <input type="text" id="reg-hostel-preview" readonly disabled value="করতোয়া ছাত্রাবাস">
+          <input type="hidden" id="reg-hostel" value="করতোয়া ছাত্রাবাস">
         </div>
-        <div class="field"><label>রুম নম্বর / Room Number</label><input type="text" id="reg-room" placeholder="e.g. 204"></div>
+        <div class="field"><label>ইউনিক আইডি / Unique ID</label><input type="text" id="reg-id-preview" readonly disabled placeholder="ব্যাচ ও রোল দিলে দেখাবে"></div>
       </div>
       <div class="field-row" style="margin-top:10px;">
-        <div class="field"><label>ফোন নম্বর / Phone Number</label><input type="tel" id="reg-phone" placeholder="e.g. 01700000000"></div>
+        <div class="field"><label>রুম নম্বর / Room Number</label><input type="text" id="reg-room" placeholder="e.g. 204"></div>
+        <div class="field"><label>মোবাইল নম্বর / Mobile Number</label><input type="tel" id="reg-phone" placeholder="e.g. 01700000000"></div>
+      </div>
+      <div class="field-row" style="margin-top:10px;">
         <div class="field"><label>ইমেইল / Email</label><input type="email" id="reg-email" placeholder="you@example.com" autocomplete="username"></div>
+        <div class="field"></div>
       </div>
       <div class="field-row" style="margin-top:10px;">
         <div class="field"><label>পাসওয়ার্ড / Password</label><input type="password" id="reg-password" placeholder="কমপক্ষে ৬ অক্ষর" autocomplete="new-password"></div>
@@ -423,7 +433,7 @@
     <input type="text" class="search-box" id="hostel-admin-student-search" placeholder="🔍 নাম বা রোল দিয়ে খুঁজুন..." oninput="filterHostelAdminStudents()">
     <div class="table-scroll">
       <table class="ledger">
-        <thead><tr><th>Roll</th><th>নাম</th><th>ব্যাচ</th><th>রুম</th><th>মোট জমা (৳)</th><th>ব্যালেন্স</th></tr></thead>
+        <thead><tr><th>আইডি (ID)</th><th>নাম</th><th>ব্যাচ</th><th>রুম</th><th>মোট জমা (৳)</th><th>ব্যালেন্স</th></tr></thead>
         <tbody id="hostel-admin-student-body"></tbody>
       </table>
     </div>
@@ -434,7 +444,7 @@
     <h2>📦 মিল অর্ডার তালিকা ও বিতরণ চেকলিস্ট</h2>
     <p class="hint">ভিড়ের সময় দ্রুত বিতরণ করতে নিচে শুধু <b>রোল নম্বর</b> লিখে Enter চাপুন — সাথে সাথেই "বিতরণকৃত" মার্ক হয়ে যাবে।</p>
     <div class="quick-serve-box">
-      <input type="number" id="hostel-quickserve-roll" class="quick-serve-input" placeholder="🔎 রোল নম্বর লিখুন..." onkeydown="if(event.key==='Enter'){quickServeByRoll('hostel-quickserve-roll','hostel-orders-date','hostel-orders-mealtype',null);}">
+      <input type="number" id="hostel-quickserve-roll" class="quick-serve-input" placeholder="🔎 ইউনিক আইডি লিখুন (যেমন 866)..." onkeydown="if(event.key==='Enter'){quickServeByRoll('hostel-quickserve-roll','hostel-orders-date','hostel-orders-mealtype',null);}">
       <button class="btn btn-primary" onclick="quickServeByRoll('hostel-quickserve-roll','hostel-orders-date','hostel-orders-mealtype',null)">✓ বিতরণ সম্পন্ন করুন</button>
       <div class="quick-serve-count" id="hostel-orders-count">0 / 0 বিতরণ সম্পন্ন</div>
     </div>
@@ -516,49 +526,8 @@
     </div>
   </div>
 
-  <!-- student management -->
-  <div class="panel treasurer-only" data-tab="students">
-    <h2>নতুন শিক্ষার্থী যোগ করুন</h2>
-    <div class="field-row">
-      <div class="field"><label>নাম</label><input type="text" id="new-student-name" placeholder="e.g. John Smith"></div>
-      <div class="field"><label>রোল</label><input type="number" id="new-student-roll" placeholder="e.g. 12"></div>
-      <div class="field"><label>ফোন নম্বর</label><input type="tel" id="new-student-mobile" placeholder="e.g. 01700000000"></div>
-      <div class="field">
-        <label>জেন্ডার</label>
-        <select id="new-student-gender">
-          <option value="male">ছেলে</option>
-          <option value="female">মেয়ে</option>
-        </select>
-      </div>
-    </div>
-    <div class="field-row" style="margin-top:10px;">
-      <div class="field"><label>ব্যাচ নম্বর</label><input type="text" id="new-student-batch" placeholder="e.g. NMC-05"></div>
-      <div class="field">
-        <label>হোস্টেল</label>
-        <select id="new-student-hostel">
-          <option value="Main Boys Hostel">Main Boys Hostel</option>
-          <option value="Main Girls Hostel">Main Girls Hostel</option>
-          <option value="New Girls Hostel">New Girls Hostel</option>
-          <option value="Internee Hostel">Internee Hostel</option>
-        </select>
-      </div>
-      <div class="field"><label>রুম নম্বর</label><input type="text" id="new-student-room" placeholder="e.g. 204"></div>
-    </div>
-    <div class="btn-row"><button class="btn btn-primary" onclick="addStudent()">শিক্ষার্থী যোগ করুন</button></div>
-
-    <h2 style="margin-top:22px;">সব শিক্ষার্থী ও টাকা জমা</h2>
-    <p class="hint">টাকা জমা যোগ করার অনুমতি শুধুমাত্র Treasurer / Canteen Admin-এর আছে — জমা করার সাথে সাথেই তা সংশ্লিষ্ট শিক্ষার্থীর ড্যাশবোর্ডে দেখা যাবে।</p>
-    <input type="text" class="search-box" id="student-search" placeholder="🔍 নাম বা রোল দিয়ে খুঁজুন..." oninput="filterStudents()">
-    <div class="table-scroll">
-      <table class="ledger">
-        <thead><tr><th>Roll</th><th>নাম</th><th>ব্যাচ</th><th>হোস্টেল</th><th>রুম</th><th>ফোন</th><th>জেন্ডার</th><th>ব্যালেন্স</th><th>টাকা জমা যোগ করুন</th><th></th></tr></thead>
-        <tbody id="students-body"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- login accounts -->
-  <div class="panel treasurer-only" data-tab="users">
+  <!-- login accounts (moved into Dashboard tab) -->
+  <div class="panel treasurer-only" data-tab="dashboard">
     <h2>নতুন লগইন অ্যাকাউন্ট তৈরি করুন</h2>
     <p class="hint">এখান থেকেই Treasurer/Canteen Admin, হোস্টেল এডমিন, বা শিক্ষার্থীর জন্য লগইন অ্যাকাউন্ট তৈরি করুন।</p>
     <div class="field-row">
@@ -586,14 +555,14 @@
     <h2 style="margin-top:22px;">সব লগইন অ্যাকাউন্ট</h2>
     <div class="table-scroll">
       <table class="ledger">
-        <thead><tr><th>নাম</th><th>ইমেইল</th><th>ভূমিকা</th><th>Roll</th><th></th></tr></thead>
+        <thead><tr><th>নাম</th><th>ইমেইল</th><th>ভূমিকা</th><th>আইডি (ID)</th><th></th></tr></thead>
         <tbody id="users-list-body"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- fund -->
-  <div class="panel treasurer-only" data-tab="fund">
+  <!-- fund (moved into Dashboard tab) -->
+  <div class="panel treasurer-only" data-tab="dashboard">
     <h2>Add Fund</h2>
     <p class="hint">Record contributions received from parents, alumni, or other donors.</p>
     <div class="field-row">
@@ -610,8 +579,8 @@
     </div>
   </div>
 
-  <!-- expense -->
-  <div class="panel treasurer-only" data-tab="expense">
+  <!-- expense (moved into Dashboard tab) -->
+  <div class="panel treasurer-only" data-tab="dashboard">
     <h2>Add Expense</h2>
     <div class="field-row">
       <div class="field" style="flex:2;"><label>Description</label><input type="text" id="expense-desc" placeholder="e.g. Kitchen gas purchase"></div>
@@ -639,6 +608,19 @@
     </div>
   </div>
 
+  <!-- student management -->
+  <div class="panel treasurer-only" data-tab="students">
+    <h2>সব শিক্ষার্থী ও টাকা জমা</h2>
+    <p class="hint">টাকা জমা যোগ করার অনুমতি শুধুমাত্র Treasurer / Canteen Admin-এর আছে — জমা করার সাথে সাথেই তা সংশ্লিষ্ট শিক্ষার্থীর ড্যাশবোর্ডে দেখা যাবে।</p>
+    <input type="text" class="search-box" id="student-search" placeholder="🔍 নাম বা রোল দিয়ে খুঁজুন..." oninput="filterStudents()">
+    <div class="table-scroll">
+      <table class="ledger">
+        <thead><tr><th>আইডি (ID)</th><th>নাম</th><th>ব্যাচ</th><th>হোস্টেল</th><th>রুম</th><th>ফোন</th><th>জেন্ডার</th><th>ব্যালেন্স</th><th>টাকা জমা যোগ করুন</th><th></th></tr></thead>
+        <tbody id="students-body"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- meal catalog management -->
   <div class="panel treasurer-only" data-tab="meals">
     <h2>🍽️ মিল আইটেম যোগ/পরিচালনা করুন</h2>
@@ -656,12 +638,20 @@
     </div>
     <div class="field-row" style="margin-top:10px;">
       <div class="field" style="flex:2;"><label>নোট (ঐচ্ছিক)</label><input type="text" id="new-meal-note" placeholder="e.g. Served with salad"></div>
+      <div class="field">
+        <label>কোন হোস্টেলের জন্য</label>
+        <select id="new-meal-hostel">
+          <option value="all">উভয় হোস্টেল</option>
+          <option value="করতোয়া ছাত্রাবাস">করতোয়া ছাত্রাবাস (ছেলে)</option>
+          <option value="তিস্তা ছাত্রীনিবাস">তিস্তা ছাত্রীনিবাস (মেয়ে)</option>
+        </select>
+      </div>
     </div>
     <div class="btn-row"><button class="btn btn-primary" onclick="addMealItem()">মিল আইটেম যোগ করুন</button></div>
 
     <div class="table-scroll" style="margin-top:16px;">
       <table class="ledger">
-        <thead><tr><th>মিল</th><th>ধরন</th><th>মূল্য</th><th>নোট</th><th>সক্রিয়</th><th></th></tr></thead>
+        <thead><tr><th>মিল</th><th>ধরন</th><th>মূল্য</th><th>হোস্টেল</th><th>নোট</th><th>সক্রিয়</th><th></th></tr></thead>
         <tbody id="meal-items-body"></tbody>
       </table>
     </div>
@@ -682,7 +672,7 @@
     <h2>📦 সব মিল অর্ডার ও বিতরণ চেকলিস্ট</h2>
     <p class="hint">ভিড়ের সময় দ্রুত বিতরণ করতে নিচে শুধু <b>রোল নম্বর</b> লিখে Enter চাপুন — সাথে সাথেই "বিতরণকৃত" মার্ক হয়ে যাবে।</p>
     <div class="quick-serve-box">
-      <input type="number" id="tr-quickserve-roll" class="quick-serve-input" placeholder="🔎 রোল নম্বর লিখুন..." onkeydown="if(event.key==='Enter'){quickServeByRoll('tr-quickserve-roll','tr-orders-date','tr-orders-mealtype','tr-orders-hostel');}">
+      <input type="number" id="tr-quickserve-roll" class="quick-serve-input" placeholder="🔎 ইউনিক আইডি লিখুন (যেমন 866)..." onkeydown="if(event.key==='Enter'){quickServeByRoll('tr-quickserve-roll','tr-orders-date','tr-orders-mealtype','tr-orders-hostel');}">
       <button class="btn btn-primary" onclick="quickServeByRoll('tr-quickserve-roll','tr-orders-date','tr-orders-mealtype','tr-orders-hostel')">✓ বিতরণ সম্পন্ন করুন</button>
       <div class="quick-serve-count" id="tr-orders-count">0 / 0 বিতরণ সম্পন্ন</div>
     </div>
@@ -701,10 +691,8 @@
         <label>হোস্টেল</label>
         <select id="tr-orders-hostel">
           <option value="all">সব হোস্টেল</option>
-          <option value="Main Boys Hostel">Main Boys Hostel</option>
-          <option value="Main Girls Hostel">Main Girls Hostel</option>
-          <option value="New Girls Hostel">New Girls Hostel</option>
-          <option value="Internee Hostel">Internee Hostel</option>
+          <option value="করতোয়া ছাত্রাবাস">করতোয়া ছাত্রাবাস (ছেলে)</option>
+          <option value="তিস্তা ছাত্রীনিবাস">তিস্তা ছাত্রীনিবাস (মেয়ে)</option>
         </select>
       </div>
       <div class="field"><label>খুঁজুন (নাম/রোল/রুম)</label><input type="text" id="tr-orders-search" placeholder="🔍 লিখে খুঁজুন..." oninput="renderMealOrdersTable('tr-orders-body','tr-orders-date','tr-orders-mealtype','tr-orders-hostel',true,'tr-orders-search','tr-orders-count')"></div>
@@ -767,7 +755,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const HOSTELS = ["Main Boys Hostel", "Main Girls Hostel", "New Girls Hostel", "Internee Hostel"];
+const HOSTELS = ["করতোয়া ছাত্রাবাস", "তিস্তা ছাত্রীনিবাস"];
 const MEAL_TYPE_LABEL = { breakfast: "Breakfast (সকালের নাস্তা)", lunch: "Lunch (দুপুরের খাবার)", dinner: "Dinner (রাতের খাবার)" };
 const MEAL_TYPES = ["breakfast", "lunch", "dinner"];
 
@@ -822,10 +810,29 @@ function showAuthError(msg) {
 }
 function clearAuthError() { document.getElementById('auth-error').classList.add('hidden'); }
 
+const HOSTEL_BY_GENDER = { male: 'করতোয়া ছাত্রাবাস', female: 'তিস্তা ছাত্রীনিবাস' };
+
+window.updateRegHostelPreview = () => {
+  const gender = document.getElementById('reg-gender').value;
+  const hostel = HOSTEL_BY_GENDER[gender] || HOSTEL_BY_GENDER.male;
+  document.getElementById('reg-hostel-preview').value = hostel;
+  document.getElementById('reg-hostel').value = hostel;
+
+  const batch = document.getElementById('reg-batch').value;
+  const classRoll = document.getElementById('reg-roll').value;
+  const idPreview = document.getElementById('reg-id-preview');
+  if (batch && classRoll) {
+    idPreview.value = `${batch}${Number(classRoll)}`;
+  } else {
+    idPreview.value = '';
+  }
+};
+
 window.showRegisterForm = () => {
   clearAuthError();
   document.getElementById('login-form').classList.add('hidden');
   document.getElementById('register-form').classList.remove('hidden');
+  updateRegHostelPreview();
 };
 window.showLoginForm = () => {
   clearAuthError();
@@ -850,19 +857,20 @@ window.doLogout = async () => { try { await signOut(auth); } catch (_) {} };
 window.doRegister = async () => {
   clearAuthError();
   const name = document.getElementById('reg-name').value.trim();
-  const roll = Number(document.getElementById('reg-roll').value);
-  const batch = document.getElementById('reg-batch').value.trim();
+  const batch = document.getElementById('reg-batch').value;
+  const classRoll = Number(document.getElementById('reg-roll').value);
   const gender = document.getElementById('reg-gender').value;
-  const hostel = document.getElementById('reg-hostel').value;
+  const hostel = HOSTEL_BY_GENDER[gender] || HOSTEL_BY_GENDER.male;
   const room = document.getElementById('reg-room').value.trim();
   const phone = document.getElementById('reg-phone').value.trim();
   const email = document.getElementById('reg-email').value.trim();
   const password = document.getElementById('reg-password').value;
   const confirmPassword = document.getElementById('reg-confirm-password').value;
 
-  if (!name || !roll || !batch || !hostel || !room || !phone || !email || !password) {
+  if (!name || !batch || !classRoll || !room || !phone || !email || !password) {
     showAuthError("অনুগ্রহ করে সব ঘর পূরণ করুন।"); return;
   }
+  const roll = Number(`${batch}${classRoll}`);
   if (password !== confirmPassword) { showAuthError("পাসওয়ার্ড দুটি মিলছে না।"); return; }
   if (password.length < 6) { showAuthError("পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।"); return; }
 
@@ -878,19 +886,21 @@ window.doRegister = async () => {
 
     const existingSnap = await getDocs(query(collection(db, "users"), where("roll", "==", roll)));
     if (existingSnap.docs.some(d => d.data().role === 'subscriber')) {
-      throw new Error(`Roll ${roll} এর জন্য আগে থেকেই একটি অ্যাকাউন্ট রেজিস্টার করা আছে।`);
+      throw new Error(`ব্যাচ ${batch} রোল ${classRoll} (আইডি ${roll}) এর জন্য আগে থেকেই একটি অ্যাকাউন্ট রেজিস্টার করা আছে।`);
     }
 
     await setDoc(doc(db, "students", roll.toString()), {
-      roll, name, mobile: phone, email, gender, batch, hostel, room, createdAt: serverTimestamp()
+      roll, classRoll, name, mobile: phone, email, gender, batch, hostel, room, createdAt: serverTimestamp()
     });
     await setDoc(doc(db, "users", cred.user.uid), {
       role: 'subscriber', roll, name, email, createdAt: serverTimestamp(), addedBy: 'self-registration'
     });
 
-    ['reg-name','reg-roll','reg-batch','reg-room','reg-phone','reg-email','reg-password','reg-confirm-password'].forEach(id => {
+    ['reg-name','reg-roll','reg-room','reg-phone','reg-email','reg-password','reg-confirm-password'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = "";
     });
+    document.getElementById('reg-batch').value = "";
+    updateRegHostelPreview();
     await applyLoggedInUser(cred.user);
   } catch (e) {
     showAuthError(e && e.message ? e.message : "রেজিস্ট্রেশন করা যায়নি।");
@@ -954,9 +964,6 @@ const TABS_BY_ROLE = {
   treasurer: [
     { id: 'dashboard', label: '📊 ড্যাশবোর্ড' },
     { id: 'students', label: '👥 শিক্ষার্থী' },
-    { id: 'users', label: '🔑 লগইন অ্যাকাউন্ট' },
-    { id: 'fund', label: '💰 ফান্ড' },
-    { id: 'expense', label: '🧾 খরচ' },
     { id: 'meals', label: '🍽️ মিল ম্যানেজমেন্ট' },
     { id: 'orders', label: '📦 মিল অর্ডার' },
     { id: 'activity', label: '🕘 কার্যক্রম' }
@@ -1139,7 +1146,7 @@ window.addStudent = async () => {
   const mobile = document.getElementById('new-student-mobile').value.trim();
   const gender = document.getElementById('new-student-gender').value;
   const batch = document.getElementById('new-student-batch').value.trim();
-  const hostel = document.getElementById('new-student-hostel').value;
+  const hostel = HOSTEL_BY_GENDER[gender] || HOSTEL_BY_GENDER.male;
   const room = document.getElementById('new-student-room').value.trim();
   if (!name || !roll || !batch || !room) { alert("নাম, রোল, ব্যাচ ও রুম নম্বর আবশ্যক।"); return; }
   try {
@@ -1155,7 +1162,7 @@ window.addStudent = async () => {
 };
 
 window.deleteStudent = async (roll) => {
-  if (!confirm(`Roll ${roll} মুছে ফেলতে চান? এই শিক্ষার্থীর হিসাব-সংক্রান্ত রেকর্ডও প্রভাবিত হতে পারে।`)) return;
+  if (!confirm(`আইডি ${roll} মুছে ফেলতে চান? এই শিক্ষার্থীর হিসাব-সংক্রান্ত রেকর্ডও প্রভাবিত হতে পারে।`)) return;
   try { await deleteDoc(doc(db, "students", roll.toString())); }
   catch (e) { alert("মুছে ফেলা যায়নি: " + (e && e.message ? e.message : e)); }
 };
@@ -1306,7 +1313,7 @@ function renderSubscriberPanel() {
   const roll = currentSubscriberRoll;
   const student = students.find(s => s.roll === roll);
   const sub = document.getElementById('subscriber-account-sub');
-  if (sub && student) sub.textContent = `${student.name} — Roll ${student.roll} | ব্যাচ ${student.batch || '-'} | ${student.hostel || '-'}, রুম ${student.room || '-'}`;
+  if (sub && student) sub.textContent = `${student.name} — আইডি ${student.roll} | ব্যাচ ${student.batch || '-'} | ${student.hostel || '-'}, রুম ${student.room || '-'}`;
 
   const deposits = totalDepositsFor(roll);
   const expenseTotal = getEqualShareForStudent(roll) + getIndividualExpenseTotal(roll) + getMealOrdersTotal(roll);
@@ -1373,7 +1380,14 @@ function renderMealCatalogForOrdering(containerId, roll, isAdminPersonal) {
     }
   }
 
-  const active = mealItemsData.filter(m => m.active !== false);
+  let viewerHostel = null;
+  if (isAdminPersonal) {
+    viewerHostel = HOSTEL_BY_GENDER[adminGender(currentUserRole)] || null;
+  } else if (roll) {
+    const st = students.find(s => s.roll === roll);
+    viewerHostel = st ? st.hostel : null;
+  }
+  const active = mealItemsData.filter(m => m.active !== false && (!m.hostel || m.hostel === 'all' || m.hostel === viewerHostel));
   const todaysOrders = myOrdersToday(roll, isAdminPersonal);
   const orderedTypeSet = new Set(todaysOrders.map(o => o.mealType));
 
@@ -1630,7 +1644,7 @@ window.quickServeByRoll = async (inputId, dateElId, mealTypeElId, hostelElId) =>
     const anyToday = list.some(o => o.roll === roll);
     input.style.background = '#FBE7E7';
     setTimeout(() => { input.style.background = ''; }, 500);
-    alert(anyToday ? `Roll ${roll} — এই মিল ইতিমধ্যে বিতরণ করা হয়ে গেছে।` : `Roll ${roll} — এই ফিল্টারে কোনো অর্ডার পাওয়া যায়নি (তারিখ/মিলের ধরন/হোস্টেল চেক করুন)।`);
+    alert(anyToday ? `আইডি ${roll} — এই মিল ইতিমধ্যে বিতরণ করা হয়ে গেছে।` : `আইডি ${roll} — এই ফিল্টারে কোনো অর্ডার পাওয়া যায়নি (তারিখ/মিলের ধরন/হোস্টেল চেক করুন)।`);
     input.value = ""; input.focus();
     return;
   }
@@ -1737,9 +1751,10 @@ window.addMealItem = async () => {
   const mealType = document.getElementById('new-meal-type').value;
   const price = Number(document.getElementById('new-meal-price').value);
   const note = document.getElementById('new-meal-note').value.trim();
+  const hostel = document.getElementById('new-meal-hostel').value;
   if (!name || !price || price <= 0) { alert("মিলের নাম ও সঠিক মূল্য দিন।"); return; }
   try {
-    await addDoc(collection(db, "mealItems"), { name, mealType, price, note, active: true, addedBy: currentTreasurerName, createdAt: serverTimestamp() });
+    await addDoc(collection(db, "mealItems"), { name, mealType, price, note, hostel, active: true, addedBy: currentTreasurerName, createdAt: serverTimestamp() });
     document.getElementById('new-meal-name').value = "";
     document.getElementById('new-meal-price').value = "";
     document.getElementById('new-meal-note').value = "";
@@ -1764,10 +1779,11 @@ function renderMealItemsAdmin() {
     <td>${m.name}</td>
     <td><span class="badge navy">${MEAL_TYPE_LABEL[m.mealType] || m.mealType}</span></td>
     <td class="num">৳${(m.price||0).toFixed(2)}</td>
+    <td>${!m.hostel || m.hostel === 'all' ? 'উভয় হোস্টেল' : m.hostel}</td>
     <td>${m.note || '-'}</td>
     <td><label class="switch"><input type="checkbox" ${m.active !== false ? 'checked' : ''} onchange="toggleMealItemActive('${m.id}', this.checked)"><span class="slider"></span></label></td>
     <td><button class="icon-btn" onclick="deleteMealItem('${m.id}')">মুছুন</button></td>
-  </tr>`).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">কোনো মিল আইটেম নেই</td></tr>`;
+  </tr>`).join('') || `<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);">কোনো মিল আইটেম নেই</td></tr>`;
 }
 
 function fillOrderConfigForm() {
@@ -1813,7 +1829,7 @@ function renderExpenseTargetOptions() {
   const sel = document.getElementById('expense-target-roll');
   if (!sel) return;
   const prev = sel.value;
-  sel.innerHTML = students.map(s => `<option value="${s.roll}">${s.name} (Roll ${s.roll})</option>`).join('');
+  sel.innerHTML = students.map(s => `<option value="${s.roll}">${s.name} (আইডি ${s.roll})</option>`).join('');
   if (prev) sel.value = prev;
 }
 
@@ -1848,7 +1864,7 @@ function renderNewUserRollOptions() {
   const sel = document.getElementById('new-user-roll');
   if (!sel) return;
   const takenRolls = new Set(usersData.filter(u => u.role === 'subscriber').map(u => u.roll));
-  sel.innerHTML = students.filter(s => !takenRolls.has(s.roll)).map(s => `<option value="${s.roll}">${s.name} (Roll ${s.roll})</option>`).join('');
+  sel.innerHTML = students.filter(s => !takenRolls.has(s.roll)).map(s => `<option value="${s.roll}">${s.name} (আইডি ${s.roll})</option>`).join('');
 }
 window.onNewUserRoleChange = () => {
   const role = document.getElementById('new-user-role').value;
