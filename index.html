@@ -396,14 +396,14 @@
     </div>
   </div>
 
-  <!-- ============ HOSTEL ADMIN: payments ============ -->
+  <!-- ============ HOSTEL ADMIN: view-only student balances ============ -->
   <div class="panel hostel-admin-only hidden" data-tab="payments">
-    <h2>টাকা জমা যোগ করুন</h2>
-    <p class="hint">এখানে শুধু আপনার হোস্টেলের শিক্ষার্থীদের তালিকা দেখা যাবে।</p>
+    <h2>শিক্ষার্থীদের জমার হিসাব (শুধু দেখার জন্য)</h2>
+    <p class="hint">এখানে শুধু আপনার হোস্টেলের শিক্ষার্থীদের তালিকা ও তাদের জমার পরিমাণ দেখা যাবে। টাকা জমা যোগ করার অনুমতি শুধুমাত্র Treasurer / Canteen Admin-এর আছে।</p>
     <input type="text" class="search-box" id="hostel-admin-student-search" placeholder="🔍 নাম বা রোল দিয়ে খুঁজুন..." oninput="filterHostelAdminStudents()">
     <div class="table-scroll">
       <table class="ledger">
-        <thead><tr><th>Roll</th><th>নাম</th><th>ব্যাচ</th><th>রুম</th><th>মোট জমা (৳)</th><th>নতুন জমা যোগ করুন</th></tr></thead>
+        <thead><tr><th>Roll</th><th>নাম</th><th>ব্যাচ</th><th>রুম</th><th>মোট জমা (৳)</th><th>ব্যালেন্স</th></tr></thead>
         <tbody id="hostel-admin-student-body"></tbody>
       </table>
     </div>
@@ -520,11 +520,12 @@
     </div>
     <div class="btn-row"><button class="btn btn-primary" onclick="addStudent()">শিক্ষার্থী যোগ করুন</button></div>
 
-    <h2 style="margin-top:22px;">সব শিক্ষার্থী</h2>
+    <h2 style="margin-top:22px;">সব শিক্ষার্থী ও টাকা জমা</h2>
+    <p class="hint">টাকা জমা যোগ করার অনুমতি শুধুমাত্র Treasurer / Canteen Admin-এর আছে — জমা করার সাথে সাথেই তা সংশ্লিষ্ট শিক্ষার্থীর ড্যাশবোর্ডে দেখা যাবে।</p>
     <input type="text" class="search-box" id="student-search" placeholder="🔍 নাম বা রোল দিয়ে খুঁজুন..." oninput="filterStudents()">
     <div class="table-scroll">
       <table class="ledger">
-        <thead><tr><th>Roll</th><th>নাম</th><th>ব্যাচ</th><th>হোস্টেল</th><th>রুম</th><th>ফোন</th><th>জেন্ডার</th><th>ব্যালেন্স</th><th></th></tr></thead>
+        <thead><tr><th>Roll</th><th>নাম</th><th>ব্যাচ</th><th>হোস্টেল</th><th>রুম</th><th>ফোন</th><th>জেন্ডার</th><th>ব্যালেন্স</th><th>টাকা জমা যোগ করুন</th><th></th></tr></thead>
         <tbody id="students-body"></tbody>
       </table>
     </div>
@@ -935,13 +936,13 @@ const TABS_BY_ROLE = {
   ],
   girls_admin: [
     { id: 'dashboard', label: '📊 সংক্ষিপ্ত' },
-    { id: 'payments', label: '💰 জমা যোগ করুন' },
+    { id: 'payments', label: '💰 জমার হিসাব' },
     { id: 'orders', label: '📦 মিল অর্ডার' },
     { id: 'myorder', label: '🍽️ ব্যক্তিগত অর্ডার' }
   ],
   boys_admin: [
     { id: 'dashboard', label: '📊 সংক্ষিপ্ত' },
-    { id: 'payments', label: '💰 জমা যোগ করুন' },
+    { id: 'payments', label: '💰 জমার হিসাব' },
     { id: 'orders', label: '📦 মিল অর্ডার' },
     { id: 'myorder', label: '🍽️ ব্যক্তিগত অর্ডার' }
   ]
@@ -1188,9 +1189,10 @@ function renderStudents() {
       <td>${s.mobile || '-'}</td>
       <td>${s.gender === 'female' ? 'মেয়ে' : 'ছেলে'}</td>
       <td class="num ${balClass}">৳${bal.toFixed(2)}</td>
+      <td><div style="display:flex;gap:6px;"><input type="number" class="coll-input" id="treasurer-pay-${s.roll}" placeholder="৳"><button class="btn btn-primary btn-sm" onclick="addPayment(${s.roll})">যোগ করুন</button></div></td>
       <td><button class="icon-btn" onclick="deleteStudent(${s.roll})">মুছুন</button></td>
     </tr>`;
-  }).join('') || `<tr><td colspan="9" style="text-align:center;color:var(--ink-soft);">কোনো শিক্ষার্থী নেই</td></tr>`;
+  }).join('') || `<tr><td colspan="10" style="text-align:center;color:var(--ink-soft);">কোনো শিক্ষার্থী নেই</td></tr>`;
 }
 
 function renderSummary() {
@@ -1456,16 +1458,19 @@ function renderHostelAdminPanel() {
 }
 
 function renderHostelAdminStudentRows() {
+  // Read-only view for hostel admins — only the Treasurer/Canteen Admin can add money (see renderStudents()).
   const tbody = document.getElementById('hostel-admin-student-body');
   if (!tbody || !isHostelAdminRole(currentUserRole)) return;
   const gender = adminGender(currentUserRole);
   const list = students.filter(s => s.gender === gender);
   tbody.innerHTML = list.map(s => {
     const hay = `${s.roll} ${s.name || ''}`.toLowerCase();
+    const bal = getStudentBalance(s.roll);
+    const balClass = bal >= 0 ? 'due-pos' : 'due-neg';
     return `<tr data-hay="${hay}">
       <td class="num">${s.roll}</td><td>${s.name}</td><td>${s.batch || '-'}</td><td>${s.room || '-'}</td>
       <td class="num">৳${totalDepositsFor(s.roll).toFixed(2)}</td>
-      <td><div style="display:flex;gap:6px;"><input type="number" class="coll-input" id="hostel-pay-${s.roll}" placeholder="৳"><button class="btn btn-primary btn-sm" onclick="addPaymentHostelAdmin(${s.roll})">যোগ করুন</button></div></td>
+      <td class="num ${balClass}">৳${bal.toFixed(2)}</td>
     </tr>`;
   }).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">কোনো শিক্ষার্থী নেই</td></tr>`;
 }
@@ -1477,8 +1482,10 @@ window.filterHostelAdminStudents = () => {
   });
 };
 
-window.addPaymentHostelAdmin = async (roll) => {
-  const input = document.getElementById(`hostel-pay-${roll}`);
+// ============ PAYMENT ADD — Treasurer / Canteen Admin ONLY ============
+window.addPayment = async (roll) => {
+  if (currentUserRole !== 'treasurer') { alert("টাকা জমা যোগ করার অনুমতি শুধুমাত্র Treasurer / Canteen Admin-এর আছে।"); return; }
+  const input = document.getElementById(`treasurer-pay-${roll}`);
   const amount = Number(input.value);
   if (!amount || amount <= 0) { alert("সঠিক পরিমাণ দিন।"); return; }
   const student = students.find(s => s.roll === roll);
@@ -1488,9 +1495,6 @@ window.addPaymentHostelAdmin = async (roll) => {
     input.value = "";
   } catch (e) { alert("জমা যোগ করা যায়নি: " + (e && e.message ? e.message : e)); }
 };
-
-// ============ TREASURER PAYMENT ADD (from students tab quick-add is same fn reused via hostel-admin style, but treasurer manages via Students tab already; add generic fn) ============
-window.addPayment = async (roll) => window.addPaymentHostelAdmin(roll);
 
 // ============ MEAL ORDERS TABLE (grouped by Hostel > Batch > Room) — used by both treasurer and hostel admin ============
 function filteredMealOrdersFor(dateElId, mealTypeElId, hostelElId, restrictGender) {
