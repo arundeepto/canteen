@@ -932,12 +932,27 @@ window.doRegister = async () => {
   let cred;
   try {
     // NOTE: the uniqueness check must run AFTER sign-in, not before — Firestore rules require
-    // isSignedIn() to read the "users" collection, and before createUserWithEmailAndPassword()
-    // there is no signed-in user yet (this used to cause "Missing or insufficient permissions").
+    // isSignedIn() to read the "students"/"users" collections, and before
+    // createUserWithEmailAndPassword() there is no signed-in user yet (this used to cause
+    // "Missing or insufficient permissions").
+    //
+    // FIX: the old check used getDocs(query(collection(db,"users"), where("roll","==",roll))),
+    // which is a *list/query* read. Firestore security rules that only grant per-document
+    // "get" access (e.g. "allow read: if request.auth.uid == resource.id") silently deny list
+    // queries with a permission-denied error — so this check was throwing on nearly every
+    // registration, right after the Auth account had already been created. The catch block then
+    // deleted that freshly-created Auth account to "roll back", so nothing was ever saved to
+    // Firestore even though account creation itself briefly succeeded. That's why students'
+    // registrations never showed up in the database, and why they later got
+    // auth/invalid-credential on login — there was no account left to log into.
+    //
+    // The fix below checks uniqueness with a single-document getDoc() on students/{roll}
+    // instead, since that document already exists with roll as its ID and only needs "get"
+    // permission, not "list" permission.
     cred = await createUserWithEmailAndPassword(auth, email, password);
 
-    const existingSnap = await getDocs(query(collection(db, "users"), where("roll", "==", roll)));
-    if (existingSnap.docs.some(d => d.data().role === 'subscriber')) {
+    const existingStudent = await getDoc(doc(db, "students", roll.toString()));
+    if (existingStudent.exists()) {
       throw new Error(`ব্যাচ ${batch} রোল ${classRoll} (আইডি ${roll}) এর জন্য আগে থেকেই একটি অ্যাকাউন্ট রেজিস্টার করা আছে।`);
     }
 
@@ -955,8 +970,22 @@ window.doRegister = async () => {
     updateRegHostelPreview();
     await applyLoggedInUser(cred.user);
   } catch (e) {
+    // If the Auth account was created but a later step (uniqueness check or Firestore write)
+    // failed, try to roll it back so the email isn't left as an orphaned, doc-less account.
+    if (cred) {
+      try {
+        await deleteUser(cred.user);
+      } catch (delErr) {
+        // Rollback itself failed (e.g. network drop) — the Auth account may still exist with no
+        // Firestore profile. Sign out locally and warn clearly so it doesn't look like a random
+        // "invalid-credential" mystery later; a CR/admin can delete the orphaned account.
+        try { await signOut(auth); } catch (_) {}
+        showAuthError("রেজিস্ট্রেশন সম্পন্ন হয়নি এবং অ্যাকাউন্টটি সম্পূর্ণভাবে মুছাও যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন, অথবা এই ইমেইল দিয়ে সমস্যা থাকলে CR/এডমিনের সাথে যোগাযোগ করুন।");
+        if (btn) { btn.disabled = false; btn.textContent = "রেজিস্ট্রেশন সম্পন্ন করুন / Register"; }
+        return;
+      }
+    }
     showAuthError(e && e.message ? e.message : "রেজিস্ট্রেশন করা যায়নি।");
-    if (cred) { try { await deleteUser(cred.user); } catch (_) { try { await signOut(auth); } catch (_) {} } }
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = "রেজিস্ট্রেশন সম্পন্ন করুন / Register"; }
   }
