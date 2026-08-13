@@ -650,6 +650,19 @@
         <tbody id="students-body"></tbody>
       </table>
     </div>
+
+    <h2 style="margin-top:22px;">🧹 আটকে যাওয়া রেজিস্ট্রেশন (Orphaned Registrations)</h2>
+    <p class="hint">
+      যাদের registration মাঝপথে (নেটওয়ার্ক সমস্যায়) থেমে গিয়েছিল — অর্থাৎ "students" তালিকায় আইডি আছে কিন্তু কোনো লগইন অ্যাকাউন্ট (users) সাথে যুক্ত নেই — তারা নিচে দেখাবে।
+      এই আইডিগুলো মুছে দিলে ঐ শিক্ষার্থী আবার নতুন করে register করতে পারবে। ভুলবশত সক্রিয় কাউকে মুছবেন না — মোছার আগে নাম/রোল ভালোভাবে যাচাই করুন।
+    </p>
+    <div class="btn-row"><button class="btn btn-secondary" onclick="scanOrphanedRegistrations()">🔍 স্ক্যান করুন</button></div>
+    <div class="table-scroll" style="margin-top:10px;">
+      <table class="ledger">
+        <thead><tr><th>আইডি (ID)</th><th>নাম</th><th>ব্যাচ</th><th>ফোন</th><th>অবস্থা</th><th></th></tr></thead>
+        <tbody id="orphan-students-body"><tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">স্ক্যান করতে উপরের বাটনে ক্লিক করুন</td></tr></tbody>
+      </table>
+    </div>
   </div>
 
   <!-- meal catalog management -->
@@ -935,20 +948,6 @@ window.doRegister = async () => {
     // isSignedIn() to read the "students"/"users" collections, and before
     // createUserWithEmailAndPassword() there is no signed-in user yet (this used to cause
     // "Missing or insufficient permissions").
-    //
-    // FIX: the old check used getDocs(query(collection(db,"users"), where("roll","==",roll))),
-    // which is a *list/query* read. Firestore security rules that only grant per-document
-    // "get" access (e.g. "allow read: if request.auth.uid == resource.id") silently deny list
-    // queries with a permission-denied error — so this check was throwing on nearly every
-    // registration, right after the Auth account had already been created. The catch block then
-    // deleted that freshly-created Auth account to "roll back", so nothing was ever saved to
-    // Firestore even though account creation itself briefly succeeded. That's why students'
-    // registrations never showed up in the database, and why they later got
-    // auth/invalid-credential on login — there was no account left to log into.
-    //
-    // The fix below checks uniqueness with a single-document getDoc() on students/{roll}
-    // instead, since that document already exists with roll as its ID and only needs "get"
-    // permission, not "list" permission.
     cred = await createUserWithEmailAndPassword(auth, email, password);
 
     const existingStudent = await getDoc(doc(db, "students", roll.toString()));
@@ -956,11 +955,27 @@ window.doRegister = async () => {
       throw new Error(`ব্যাচ ${batch} রোল ${classRoll} (আইডি ${roll}) এর জন্য আগে থেকেই একটি অ্যাকাউন্ট রেজিস্টার করা আছে।`);
     }
 
-    await setDoc(doc(db, "students", roll.toString()), {
-      roll, classRoll, name, mobile: phone, email, gender, batch, hostel, room, createdAt: serverTimestamp()
-    });
+    // IMPORTANT — write order fixed here.
+    // The Firestore rules only let a *treasurer* delete "students/{roll}" or "users/{uid}"
+    // docs (self-registering users cannot delete either). The old code wrote "students/{roll}"
+    // FIRST and "users/{uid}" SECOND. If the second write ever failed partway (dropped 4G
+    // connection, tab backgrounded/closed mid-registration, etc.), the "students/{roll}" doc
+    // was left behind forever with no matching "users" doc — and since a plain student can't
+    // delete it, the "students" create rule's `!exists(students/roll)` check would then be
+    // false for every future attempt with that same roll, permanently blocking that student
+    // from ever registering again (the catch block would just keep deleting the newly-created
+    // Auth account each time). That's why registrations were vanishing for many students, and
+    // why they'd later see auth/invalid-credential — there was no working account left.
+    //
+    // Fix: write "users/{uid}" FIRST. Its id is the Auth uid, which is unique per attempt, so
+    // even if the second write ("students/{roll}") fails, the leftover "users/{uid}" doc is
+    // harmless clutter — it never blocks a retry, because a fresh registration attempt gets a
+    // brand-new uid. The roll number itself is never at risk of getting permanently stuck.
     await setDoc(doc(db, "users", cred.user.uid), {
       role: 'subscriber', roll, name, email, createdAt: serverTimestamp(), addedBy: 'self-registration'
+    });
+    await setDoc(doc(db, "students", roll.toString()), {
+      roll, classRoll, name, mobile: phone, email, gender, batch, hostel, room, createdAt: serverTimestamp()
     });
 
     ['reg-name','reg-roll','reg-room','reg-phone','reg-email','reg-password','reg-confirm-password'].forEach(id => {
@@ -971,7 +986,7 @@ window.doRegister = async () => {
     await applyLoggedInUser(cred.user);
   } catch (e) {
     // If the Auth account was created but a later step (uniqueness check or Firestore write)
-    // failed, try to roll it back so the email isn't left as an orphaned, doc-less account.
+    // failed, roll it back so the email isn't left as an orphaned, doc-less account.
     if (cred) {
       try {
         await deleteUser(cred.user);
@@ -1255,6 +1270,42 @@ window.deleteStudent = async (roll) => {
   if (!confirm(`আইডি ${roll} মুছে ফেলতে চান? এই শিক্ষার্থীর হিসাব-সংক্রান্ত রেকর্ডও প্রভাবিত হতে পারে।`)) return;
   try { await deleteDoc(doc(db, "students", roll.toString())); }
   catch (e) { alert("মুছে ফেলা যায়নি: " + (e && e.message ? e.message : e)); }
+};
+
+window.scanOrphanedRegistrations = () => {
+  // A "students/{roll}" doc is orphaned when no "users" doc references that roll with
+  // role 'subscriber' — meaning the account-creation step never finished (see registration
+  // write-order fix). We already have both collections live via listeners (students, usersData).
+  const claimedRolls = new Set(
+    usersData.filter(u => u.role === 'subscriber' && u.roll != null).map(u => Number(u.roll))
+  );
+  const orphans = students.filter(s => !claimedRolls.has(Number(s.roll)));
+
+  const tbody = document.getElementById('orphan-students-body');
+  if (!tbody) return;
+  if (!orphans.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">✅ কোনো আটকে যাওয়া রেজিস্ট্রেশন পাওয়া যায়নি</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = orphans.map(s => `
+    <tr>
+      <td class="num">${s.roll}</td>
+      <td>${s.name || '-'}</td>
+      <td>${s.batch || '-'}</td>
+      <td>${s.mobile || '-'}</td>
+      <td>⚠️ কোনো লগইন অ্যাকাউন্ট যুক্ত নেই</td>
+      <td><button class="icon-btn" onclick="deleteOrphanedRegistration(${s.roll}, '${(s.name || '').replace(/'/g, "\\'")}')">মুছুন</button></td>
+    </tr>`).join('');
+};
+
+window.deleteOrphanedRegistration = async (roll, name) => {
+  if (!confirm(`আইডি ${roll}${name ? ' (' + name + ')' : ''} — এই আটকে যাওয়া রেজিস্ট্রেশনটি মুছে ফেলতে চান? এরপর এই আইডি দিয়ে আবার নতুন করে রেজিস্ট্রেশন করা যাবে।`)) return;
+  try {
+    await deleteDoc(doc(db, "students", roll.toString()));
+    scanOrphanedRegistrations();
+  } catch (e) {
+    alert("মুছে ফেলা যায়নি: " + (e && e.message ? e.message : e));
+  }
 };
 
 window.filterStudents = () => {
