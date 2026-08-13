@@ -347,7 +347,7 @@
     <div class="auth-stamp"><div class="stamp">⏳</div></div>
     <h1>অ্যাক্সেসের অপেক্ষায় — Waiting for Access</h1>
     <p style="font-size:.88rem;color:var(--ink-soft);line-height:1.6;margin:14px 0 20px;">
-      আপনার অ্যাকাউন্টে (<b id="pending-email">—</b>) এখনো কোনো ভূমিকা (role) দেওয়া হয়নি। ক্যান্টিন এডমিন / ট্রেজারারের সাথে যোগাযোগ করুন।
+      আপনার অ্যাকাউন্টে (<b id="pending-email">—</b>) এখনো কোনো ভূমিকা (role) দেওয়া হয়নি। ক্যান্টিন এডমিন / ডেভেলপার প্যানেলের সাথে যোগাযোগ করুন।
     </p>
     <button class="btn btn-outline" style="width:100%;" onclick="doLogout()">লগ আউট / Log Out</button>
   </div>
@@ -429,7 +429,7 @@
   <!-- ============ HOSTEL ADMIN: view-only student balances ============ -->
   <div class="panel hostel-admin-only hidden" data-tab="payments">
     <h2>শিক্ষার্থীদের জমার হিসাব (শুধু দেখার জন্য)</h2>
-    <p class="hint">এখানে শুধু আপনার হোস্টেলের শিক্ষার্থীদের তালিকা ও তাদের জমার পরিমাণ দেখা যাবে। টাকা জমা যোগ করার অনুমতি শুধুমাত্র Treasurer / Canteen Admin-এর আছে।</p>
+    <p class="hint">এখানে শুধু আপনার হোস্টেলের শিক্ষার্থীদের তালিকা ও তাদের জমার পরিমাণ দেখা যাবে।</p>
     <input type="text" class="search-box" id="hostel-admin-student-search" placeholder="🔍 নাম বা রোল দিয়ে খুঁজুন..." oninput="filterHostelAdminStudents()">
     <div class="table-scroll">
       <table class="ledger">
@@ -529,7 +529,7 @@
   <!-- login accounts (moved into Dashboard tab) -->
   <div class="panel treasurer-only" data-tab="dashboard">
     <h2>নতুন লগইন অ্যাকাউন্ট তৈরি করুন</h2>
-    <p class="hint">এখান থেকেই Treasurer/Canteen Admin, হোস্টেল এডমিন, বা শিক্ষার্থীর জন্য লগইন অ্যাকাউন্ট তৈরি করুন।</p>
+    <p class="hint">এখান থেকেই ডেভেলপার প্যানেল, শিক্ষক, হোস্টেল এডমিন, বা শিক্ষার্থীর জন্য লগইন অ্যাকাউন্ট তৈরি করুন।</p>
     <div class="field-row">
       <div class="field"><label>নাম</label><input type="text" id="new-user-name" placeholder="e.g. Rahim Uddin"></div>
       <div class="field"><label>ইমেইল</label><input type="email" id="new-user-email" placeholder="e.g. rahim@example.com"></div>
@@ -539,7 +539,8 @@
       <div class="field">
         <label>ভূমিকা (Role)</label>
         <select id="new-user-role" onchange="onNewUserRoleChange()">
-          <option value="treasurer">Treasurer / Canteen Admin</option>
+          <option value="treasurer">ডেভেলপার প্যানেল (Developer Panel)</option>
+          <option value="teacher">শিক্ষক (Teacher)</option>
           <option value="girls_admin">মেয়েদের হোস্টেল এডমিন</option>
           <option value="boys_admin">ছেলেদের হোস্টেল এডমিন</option>
           <option value="subscriber">শিক্ষার্থী (Subscriber)</option>
@@ -611,11 +612,11 @@
   <!-- student management -->
   <div class="panel treasurer-only" data-tab="students">
     <h2>সব শিক্ষার্থী ও টাকা জমা</h2>
-    <p class="hint">টাকা জমা যোগ করার অনুমতি শুধুমাত্র Treasurer / Canteen Admin-এর আছে — জমা করার সাথে সাথেই তা সংশ্লিষ্ট শিক্ষার্থীর ড্যাশবোর্ডে দেখা যাবে।</p>
+    <p class="hint">এখানে সব শিক্ষার্থীর তথ্য ও বর্তমান ব্যালেন্স দেখা যাবে।</p>
     <input type="text" class="search-box" id="student-search" placeholder="🔍 নাম বা রোল দিয়ে খুঁজুন..." oninput="filterStudents()">
     <div class="table-scroll">
       <table class="ledger">
-        <thead><tr><th>আইডি (ID)</th><th>নাম</th><th>ব্যাচ</th><th>হোস্টেল</th><th>রুম</th><th>ফোন</th><th>জেন্ডার</th><th>ব্যালেন্স</th><th>টাকা জমা যোগ করুন</th><th></th></tr></thead>
+        <thead><tr><th>আইডি (ID)</th><th>নাম</th><th>ব্যাচ</th><th>হোস্টেল</th><th>রুম</th><th>ফোন</th><th>জেন্ডার</th><th>ব্যালেন্স</th><th></th></tr></thead>
         <tbody id="students-body"></tbody>
       </table>
     </div>
@@ -663,6 +664,7 @@
       <div class="field"><label>Lunch বন্ধ হবে (ঘণ্টা)</label><input type="number" id="cfg-lunch-cutoff" min="0" max="23"></div>
       <div class="field"><label>Dinner বন্ধ হবে (ঘণ্টা)</label><input type="number" id="cfg-dinner-cutoff" min="0" max="23"></div>
       <div class="field"><label>সর্বোচ্চ বকেয়া (৳) — এর বেশি হলে অর্ডার বন্ধ</label><input type="number" id="cfg-due-limit" min="0"></div>
+      <div class="field"><label>মাসিক ন্যূনতম খাওয়ার পরিমাণ (৳)</label><input type="number" id="cfg-min-monthly-eat" min="0"></div>
     </div>
     <div class="btn-row"><button class="btn btn-primary" onclick="saveOrderTimingSettings()">সেটিংস সংরক্ষণ করুন</button></div>
   </div>
@@ -713,6 +715,26 @@
   <div class="panel treasurer-only" data-tab="activity">
     <h2>সাম্প্রতিক কার্যক্রম</h2>
     <div id="activity-list"></div>
+  </div>
+
+  <!-- ============ TEACHER: shortfall dashboard ============ -->
+  <div class="summary-grid teacher-only" data-tab="dashboard">
+    <div class="sum-card gold"><div class="label">মাসিক ন্যূনতম খাওয়ার পরিমাণ</div><div class="val num" id="teacher-min-required">৳0</div></div>
+    <div class="sum-card red"><div class="label">নির্ধারিত পরিমাণের কম খেয়েছে</div><div class="val num" id="teacher-shortfall-count">0 জন শিক্ষার্থী</div></div>
+  </div>
+
+  <div class="panel teacher-only" data-tab="dashboard">
+    <h2>যারা এই মাসে প্রয়োজনীয় (required) পরিমাণের চেয়ে কম খেয়েছে</h2>
+    <p class="hint">নিচের তালিকায় শুধুমাত্র তাদেরই দেখানো হচ্ছে যারা নির্বাচিত মাসে ন্যূনতম নির্ধারিত পরিমাণের চেয়ে কম খেয়েছে — <b id="teacher-month-label">—</b></p>
+    <div class="field-row" style="align-items:flex-end;margin-bottom:12px;">
+      <div class="field"><label>মাস নির্বাচন করুন</label><input type="month" id="teacher-month" onchange="renderTeacherPanel()"></div>
+    </div>
+    <div class="table-scroll">
+      <table class="ledger">
+        <thead><tr><th>আইডি (ID)</th><th>নাম</th><th>ব্যাচ</th><th>হোস্টেল</th><th>এই মাসে খেয়েছে (৳)</th><th>ঘাটতি (৳)</th></tr></thead>
+        <tbody id="teacher-shortfall-body"></tbody>
+      </table>
+    </div>
   </div>
 
 </div>
@@ -771,11 +793,11 @@ let mealItemsData = [];     // [{id, name, mealType, price, note, active}]
 let mealOrdersData = [];    // [{id, roll, studentName, batch, hostel, room, gender, mealItemId, mealItemName, mealType, price, businessDate, orderedAt, served, servedAt, servedBy, addedBy}]
 
 let currentTreasurerName = "";
-let currentUserRole = "pending";   // 'treasurer' | 'subscriber' | 'girls_admin' | 'boys_admin' | 'pending'
+let currentUserRole = "pending";   // 'treasurer' | 'teacher' | 'subscriber' | 'girls_admin' | 'boys_admin' | 'pending'
 let currentSubscriberRoll = null;
 let currentActiveTab = null;
 
-let orderConfig = { breakfastCutoff: 20, lunchCutoff: 10, dinnerCutoff: 17, dueLimit: 200 };
+let orderConfig = { breakfastCutoff: 20, lunchCutoff: 10, dinnerCutoff: 17, dueLimit: 200, monthlyMinSpend: 0 };
 
 // ============ date/time helpers ============
 function todayKey() {
@@ -947,13 +969,14 @@ async function applyLoggedInUser(user) {
     subscriber: 'শিক্ষার্থী / Subscriber',
     girls_admin: 'মেয়েদের হোস্টেল এডমিন',
     boys_admin: 'ছেলেদের হোস্টেল এডমিন',
-    treasurer: 'Treasurer / Canteen Admin'
+    teacher: 'শিক্ষক / Teacher',
+    treasurer: 'ডেভেলপার প্যানেল'
   };
   document.getElementById('current-user-name').textContent = name;
   document.getElementById('current-user-role').textContent = roleLabels[role] || role;
   document.getElementById('current-user-stamp').textContent = stampInitials(name);
   document.getElementById('masthead-sub').textContent =
-    role === 'subscriber' ? 'Student Dashboard' : (role === 'treasurer' ? 'Canteen Management Dashboard' : 'Hostel Admin Dashboard');
+    role === 'subscriber' ? 'Student Dashboard' : (role === 'treasurer' ? 'Developer Panel' : (role === 'teacher' ? 'Teacher Dashboard' : 'Hostel Admin Dashboard'));
 
   applyRoleVisibility();
   startListeners();
@@ -972,6 +995,9 @@ const TABS_BY_ROLE = {
     { id: 'dashboard', label: '📊 আপনার হিসাব' },
     { id: 'order', label: '🍽️ মিল অর্ডার করুন' },
     { id: 'myorders', label: '📋 অর্ডার ইতিহাস' }
+  ],
+  teacher: [
+    { id: 'dashboard', label: '📊 ড্যাশবোর্ড' }
   ],
   girls_admin: [
     { id: 'dashboard', label: '📊 সংক্ষিপ্ত' },
@@ -1019,6 +1045,7 @@ function applyRoleVisibility() {
   document.querySelectorAll('.treasurer-only').forEach(el => el.classList.toggle('hidden', role !== 'treasurer'));
   document.querySelectorAll('.subscriber-only').forEach(el => el.classList.toggle('hidden', role !== 'subscriber'));
   document.querySelectorAll('.hostel-admin-only').forEach(el => el.classList.toggle('hidden', !isHostelAdminRole(role)));
+  document.querySelectorAll('.teacher-only').forEach(el => el.classList.toggle('hidden', role !== 'teacher'));
   const title = document.getElementById('hostel-admin-title');
   if (title) title.textContent = role === 'girls_admin' ? 'মেয়েদের হোস্টেল হিসাব — সংক্ষিপ্ত' : 'ছেলেদের হোস্টেল হিসাব — সংক্ষিপ্ত';
   renderNavBar();
@@ -1051,7 +1078,8 @@ function startListeners() {
         breakfastCutoff: d.breakfastCutoff ?? orderConfig.breakfastCutoff,
         lunchCutoff: d.lunchCutoff ?? orderConfig.lunchCutoff,
         dinnerCutoff: d.dinnerCutoff ?? orderConfig.dinnerCutoff,
-        dueLimit: d.dueLimit ?? orderConfig.dueLimit
+        dueLimit: d.dueLimit ?? orderConfig.dueLimit,
+        monthlyMinSpend: d.monthlyMinSpend ?? orderConfig.monthlyMinSpend
       };
     }
     fillOrderConfigForm();
@@ -1137,6 +1165,7 @@ function renderAll() {
   renderMealOrdersTable('tr-orders-body', 'tr-orders-date', 'tr-orders-mealtype', 'tr-orders-hostel', true, 'tr-orders-search', 'tr-orders-count');
   renderMealOrdersTable('hostel-orders-body', 'hostel-orders-date', 'hostel-orders-mealtype', null, false, 'hostel-orders-search', 'hostel-orders-count');
   renderExpenseTargetOptions();
+  renderTeacherPanel();
 }
 
 // ============ STUDENTS ============
@@ -1201,6 +1230,19 @@ function getMealOrdersTotal(roll) {
   return mealOrdersData.filter(o => o.roll === roll && !o.isAdminPersonal)
     .reduce((a, o) => a + (o.price || 0), 0);
 }
+function getMealOrdersTotalForMonth(roll, monthKey) {
+  return mealOrdersData.filter(o => o.roll === roll && !o.isAdminPersonal && (o.businessDate || '').startsWith(monthKey))
+    .reduce((a, o) => a + (o.price || 0), 0);
+}
+function currentMonthKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+function formatMonthLabel(monthKey) {
+  if (!monthKey) return '-';
+  const [y, m] = monthKey.split('-').map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
 function getStudentBalance(roll) {
   const deposits = totalDepositsFor(roll);
   const equalShare = getEqualShareForStudent(roll);
@@ -1228,11 +1270,43 @@ function renderStudents() {
       <td>${s.mobile || '-'}</td>
       <td>${s.gender === 'female' ? 'মেয়ে' : 'ছেলে'}</td>
       <td class="num ${balClass}">৳${bal.toFixed(2)}</td>
-      <td><div style="display:flex;gap:6px;"><input type="number" class="coll-input" id="treasurer-pay-${s.roll}" placeholder="৳"><button class="btn btn-primary btn-sm" onclick="addPayment(${s.roll})">যোগ করুন</button></div></td>
       <td><button class="icon-btn" onclick="deleteStudent(${s.roll})">মুছুন</button></td>
     </tr>`;
-  }).join('') || `<tr><td colspan="10" style="text-align:center;color:var(--ink-soft);">কোনো শিক্ষার্থী নেই</td></tr>`;
+  }).join('') || `<tr><td colspan="9" style="text-align:center;color:var(--ink-soft);">কোনো শিক্ষার্থী নেই</td></tr>`;
 }
+
+window.renderTeacherPanel = function renderTeacherPanel() {
+  if (currentUserRole !== 'teacher') return;
+  const monthInput = document.getElementById('teacher-month');
+  if (monthInput && !monthInput.value) monthInput.value = currentMonthKey();
+  const monthKey = (monthInput && monthInput.value) || currentMonthKey();
+
+  const minReq = Number(orderConfig.monthlyMinSpend) || 0;
+  const minEl = document.getElementById('teacher-min-required');
+  if (minEl) minEl.textContent = `৳${minReq.toFixed(2)}`;
+  const labelEl = document.getElementById('teacher-month-label');
+  if (labelEl) labelEl.textContent = formatMonthLabel(monthKey);
+
+  const rows = students.map(s => {
+    const eaten = getMealOrdersTotalForMonth(s.roll, monthKey);
+    return { roll: s.roll, name: s.name, batch: s.batch, hostel: s.hostel, eaten, shortfall: Math.max(0, minReq - eaten) };
+  }).filter(r => r.eaten < minReq);
+  rows.sort((a, b) => b.shortfall - a.shortfall);
+
+  const countEl = document.getElementById('teacher-shortfall-count');
+  if (countEl) countEl.textContent = `${rows.length} জন শিক্ষার্থী`;
+
+  const tbody = document.getElementById('teacher-shortfall-body');
+  if (!tbody) return;
+  tbody.innerHTML = rows.map(r => `<tr>
+      <td class="num">${r.roll}</td>
+      <td>${r.name || ''}</td>
+      <td>${r.batch || '-'}</td>
+      <td>${r.hostel || '-'}</td>
+      <td class="num">৳${r.eaten.toFixed(2)}</td>
+      <td class="num due-neg">৳${r.shortfall.toFixed(2)}</td>
+    </tr>`).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">এই মাসে সবাই ন্যূনতম পরিমাণ খেয়েছে ✅</td></tr>`;
+};
 
 function renderSummary() {
   const totalCollection = students.reduce((a, s) => a + totalDepositsFor(s.roll), 0);
@@ -1504,7 +1578,7 @@ function renderHostelAdminPanel() {
 }
 
 function renderHostelAdminStudentRows() {
-  // Read-only view for hostel admins — only the Treasurer/Canteen Admin can add money (see renderStudents()).
+  // Read-only view for hostel admins.
   const tbody = document.getElementById('hostel-admin-student-body');
   if (!tbody || !isHostelAdminRole(currentUserRole)) return;
   const gender = adminGender(currentUserRole);
@@ -1526,20 +1600,6 @@ window.filterHostelAdminStudents = () => {
   document.querySelectorAll('#hostel-admin-student-body tr').forEach(tr => {
     tr.style.display = (tr.dataset.hay || '').includes(q) ? '' : 'none';
   });
-};
-
-// ============ PAYMENT ADD — Treasurer / Canteen Admin ONLY ============
-window.addPayment = async (roll) => {
-  if (currentUserRole !== 'treasurer') { alert("টাকা জমা যোগ করার অনুমতি শুধুমাত্র Treasurer / Canteen Admin-এর আছে।"); return; }
-  const input = document.getElementById(`treasurer-pay-${roll}`);
-  const amount = Number(input.value);
-  if (!amount || amount <= 0) { alert("সঠিক পরিমাণ দিন।"); return; }
-  const student = students.find(s => s.roll === roll);
-  try {
-    await addDoc(collection(db, "payments"), { roll, amount, addedBy: currentTreasurerName, addedAt: serverTimestamp() });
-    await addDoc(collection(db, "activity"), { type: 'payment', text: `${student ? student.name : 'Roll ' + roll} থেকে ৳${amount.toFixed(2)} জমা নেওয়া হয়েছে`, createdAt: serverTimestamp() });
-    input.value = "";
-  } catch (e) { alert("জমা যোগ করা যায়নি: " + (e && e.message ? e.message : e)); }
 };
 
 // ============ MEAL ORDERS TABLE (grouped by Hostel > Batch > Room) — used by both treasurer and hostel admin ============
@@ -1792,6 +1852,7 @@ function fillOrderConfigForm() {
   set('cfg-lunch-cutoff', orderConfig.lunchCutoff);
   set('cfg-dinner-cutoff', orderConfig.dinnerCutoff);
   set('cfg-due-limit', orderConfig.dueLimit);
+  set('cfg-min-monthly-eat', orderConfig.monthlyMinSpend);
 }
 
 window.saveOrderTimingSettings = async () => {
@@ -1799,8 +1860,9 @@ window.saveOrderTimingSettings = async () => {
   const lunchCutoff = Number(document.getElementById('cfg-lunch-cutoff').value);
   const dinnerCutoff = Number(document.getElementById('cfg-dinner-cutoff').value);
   const dueLimit = Number(document.getElementById('cfg-due-limit').value);
+  const monthlyMinSpend = Number(document.getElementById('cfg-min-monthly-eat').value);
   try {
-    await setDoc(doc(db, "settings", "orderConfig"), { breakfastCutoff, lunchCutoff, dinnerCutoff, dueLimit }, { merge: true });
+    await setDoc(doc(db, "settings", "orderConfig"), { breakfastCutoff, lunchCutoff, dinnerCutoff, dueLimit, monthlyMinSpend }, { merge: true });
     alert("সেটিংস সংরক্ষণ করা হয়েছে।");
   } catch (e) { alert("সংরক্ষণ করা যায়নি: " + (e && e.message ? e.message : e)); }
 };
@@ -1858,7 +1920,8 @@ window.saveExpense = async () => {
 // ============ USER ACCOUNT MANAGEMENT ============
 function roleLabel(role) {
   return role === 'subscriber' ? 'শিক্ষার্থী' : role === 'girls_admin' ? 'মেয়েদের হোস্টেল এডমিন'
-    : role === 'boys_admin' ? 'ছেলেদের হোস্টেল এডমিন' : role === 'treasurer' ? 'Treasurer / Canteen Admin' : 'অনির্ধারিত';
+    : role === 'boys_admin' ? 'ছেলেদের হোস্টেল এডমিন' : role === 'teacher' ? 'শিক্ষক / Teacher'
+    : role === 'treasurer' ? 'ডেভেলপার প্যানেল' : 'অনির্ধারিত';
 }
 function renderNewUserRollOptions() {
   const sel = document.getElementById('new-user-roll');
