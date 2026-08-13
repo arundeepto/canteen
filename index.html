@@ -426,16 +426,46 @@
     </div>
   </div>
 
-  <!-- ============ HOSTEL ADMIN: view-only student balances ============ -->
+  <!-- ============ HOSTEL ADMIN: student balances + add money ============ -->
   <div class="panel hostel-admin-only hidden" data-tab="payments">
-    <h2>শিক্ষার্থীদের জমার হিসাব (শুধু দেখার জন্য)</h2>
-    <p class="hint">এখানে শুধু আপনার হোস্টেলের শিক্ষার্থীদের তালিকা ও তাদের জমার পরিমাণ দেখা যাবে।</p>
-    <input type="text" class="search-box" id="hostel-admin-student-search" placeholder="🔍 নাম বা রোল দিয়ে খুঁজুন..." oninput="filterHostelAdminStudents()">
+    <h2>শিক্ষার্থীদের জমার হিসাব</h2>
+    <p class="hint">এখানে আপনার হোস্টেলের শিক্ষার্থীদের তালিকা, জমার পরিমাণ ও ব্যালেন্স দেখা যাবে — এখান থেকেই তাদের জন্য টাকা জমা যোগ করা যাবে।</p>
+    <input type="text" class="search-box" id="hostel-admin-student-search" placeholder="🔍 আইডি (ID), রোল বা নাম দিয়ে খুঁজুন..." oninput="filterHostelAdminStudents()">
     <div class="table-scroll">
       <table class="ledger">
-        <thead><tr><th>আইডি (ID)</th><th>নাম</th><th>ব্যাচ</th><th>রুম</th><th>মোট জমা (৳)</th><th>ব্যালেন্স</th></tr></thead>
+        <thead><tr><th>আইডি (ID)</th><th>রোল</th><th>নাম</th><th>ব্যাচ</th><th>রুম</th><th>মোট জমা (৳)</th><th>ব্যালেন্স</th><th>টাকা জমা যোগ করুন</th></tr></thead>
         <tbody id="hostel-admin-student-body"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- ============ HOSTEL ADMIN: financial accounts (daily/monthly/total) ============ -->
+  <div class="panel hostel-admin-only hidden" data-tab="finance">
+    <h2>💰 আর্থিক হিসাব</h2>
+    <p class="hint" id="hostel-finance-hint">এখানে দৈনিক ও মাসিক টাকা সংগ্রহ এবং খাবার বিক্রির হিসাব দেখা যাবে।</p>
+
+    <div id="hostel-finance-boys-section" class="hidden">
+      <h2 style="margin-top:18px;">ছেলেদের হিসাব</h2>
+      <div class="summary-grid" style="margin-bottom:0;">
+        <div class="sum-card green"><div class="label">আজকের সংগ্রহ (Collection)</div><div class="val num" id="hf-boys-today-collection">৳0</div></div>
+        <div class="sum-card gold"><div class="label">আজকের খাবার বিক্রি</div><div class="val num" id="hf-boys-today-sales">৳0</div></div>
+        <div class="sum-card green"><div class="label">এই মাসের সংগ্রহ</div><div class="val num" id="hf-boys-month-collection">৳0</div></div>
+        <div class="sum-card gold"><div class="label">এই মাসের খাবার বিক্রি</div><div class="val num" id="hf-boys-month-sales">৳0</div></div>
+        <div class="sum-card"><div class="label">সর্বমোট সংগ্রহ</div><div class="val num" id="hf-boys-total-collection">৳0</div></div>
+        <div class="sum-card"><div class="label">সর্বমোট খাবার বিক্রি</div><div class="val num" id="hf-boys-total-sales">৳0</div></div>
+      </div>
+    </div>
+
+    <div id="hostel-finance-girls-section">
+      <h2 style="margin-top:18px;">মেয়েদের হিসাব</h2>
+      <div class="summary-grid" style="margin-bottom:0;">
+        <div class="sum-card green"><div class="label">আজকের সংগ্রহ (Collection)</div><div class="val num" id="hf-girls-today-collection">৳0</div></div>
+        <div class="sum-card gold"><div class="label">আজকের খাবার বিক্রি</div><div class="val num" id="hf-girls-today-sales">৳0</div></div>
+        <div class="sum-card green"><div class="label">এই মাসের সংগ্রহ</div><div class="val num" id="hf-girls-month-collection">৳0</div></div>
+        <div class="sum-card gold"><div class="label">এই মাসের খাবার বিক্রি</div><div class="val num" id="hf-girls-month-sales">৳0</div></div>
+        <div class="sum-card"><div class="label">সর্বমোট সংগ্রহ</div><div class="val num" id="hf-girls-total-collection">৳0</div></div>
+        <div class="sum-card"><div class="label">সর্বমোট খাবার বিক্রি</div><div class="val num" id="hf-girls-total-sales">৳0</div></div>
+      </div>
     </div>
   </div>
 
@@ -1002,12 +1032,14 @@ const TABS_BY_ROLE = {
   girls_admin: [
     { id: 'dashboard', label: '📊 সংক্ষিপ্ত' },
     { id: 'payments', label: '💰 জমার হিসাব' },
+    { id: 'finance', label: '📈 আর্থিক হিসাব' },
     { id: 'orders', label: '📦 মিল অর্ডার' },
     { id: 'myorder', label: '🍽️ ব্যক্তিগত অর্ডার' }
   ],
   boys_admin: [
     { id: 'dashboard', label: '📊 সংক্ষিপ্ত' },
     { id: 'payments', label: '💰 জমার হিসাব' },
+    { id: 'finance', label: '📈 আর্থিক হিসাব' },
     { id: 'orders', label: '📦 মিল অর্ডার' },
     { id: 'myorder', label: '🍽️ ব্যক্তিগত অর্ডার' }
   ]
@@ -1243,6 +1275,63 @@ function formatMonthLabel(monthKey) {
   const [y, m] = monthKey.split('-').map(Number);
   return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 }
+
+// ============ HOSTEL ADMIN FINANCE (gender-wise daily/monthly/total) ============
+function studentGender(roll) {
+  const s = students.find(x => x.roll === roll);
+  return s ? s.gender : null;
+}
+function tsDateKey(ts) {
+  if (!ts || typeof ts.seconds !== 'number') return null;
+  const d = new Date(ts.seconds * 1000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function collectionTotalForGender(gender, { dateKey, monthKey } = {}) {
+  let total = 0;
+  Object.keys(paymentsData).forEach(rollStr => {
+    const roll = Number(rollStr);
+    if (studentGender(roll) !== gender) return;
+    (paymentsData[roll] || []).forEach(p => {
+      const dk = tsDateKey(p.addedAt);
+      if (dateKey && dk !== dateKey) return;
+      if (monthKey && (!dk || !dk.startsWith(monthKey))) return;
+      total += p.amount || 0;
+    });
+  });
+  return total;
+}
+function totalDepositsForGender(gender) {
+  return students.filter(s => s.gender === gender).reduce((a, s) => a + totalDepositsFor(s.roll), 0);
+}
+function mealSalesTotalForGender(gender, { dateKey, monthKey } = {}) {
+  return mealOrdersData.filter(o => {
+    if (o.isAdminPersonal) return false;
+    if (o.gender !== gender) return false;
+    if (dateKey && o.businessDate !== dateKey) return false;
+    if (monthKey && !(o.businessDate || '').startsWith(monthKey)) return false;
+    return true;
+  }).reduce((a, o) => a + (o.price || 0), 0);
+}
+function renderHostelAdminFinanceSection(prefix, gender) {
+  const today = todayKey();
+  const month = currentMonthKey();
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set(`hf-${prefix}-today-collection`, `৳${collectionTotalForGender(gender, { dateKey: today }).toFixed(2)}`);
+  set(`hf-${prefix}-today-sales`, `৳${mealSalesTotalForGender(gender, { dateKey: today }).toFixed(2)}`);
+  set(`hf-${prefix}-month-collection`, `৳${collectionTotalForGender(gender, { monthKey: month }).toFixed(2)}`);
+  set(`hf-${prefix}-month-sales`, `৳${mealSalesTotalForGender(gender, { monthKey: month }).toFixed(2)}`);
+  set(`hf-${prefix}-total-collection`, `৳${totalDepositsForGender(gender).toFixed(2)}`);
+  set(`hf-${prefix}-total-sales`, `৳${mealSalesTotalForGender(gender, {}).toFixed(2)}`);
+}
+function renderHostelAdminFinance() {
+  if (!isHostelAdminRole(currentUserRole)) return;
+  const boysSection = document.getElementById('hostel-finance-boys-section');
+  const isBoysAdmin = currentUserRole === 'boys_admin';
+  if (boysSection) boysSection.classList.toggle('hidden', !isBoysAdmin);
+  if (isBoysAdmin) renderHostelAdminFinanceSection('boys', 'male');
+  renderHostelAdminFinanceSection('girls', 'female');
+}
+
 function getStudentBalance(roll) {
   const deposits = totalDepositsFor(roll);
   const equalShare = getEqualShareForStudent(roll);
@@ -1575,25 +1664,43 @@ function renderHostelAdminPanel() {
   set('hostel-total-collected', `৳${collected.toFixed(2)}`);
   set('hostel-today-orders', todayCount);
   renderHostelAdminStudentRows();
+  renderHostelAdminFinance();
 }
 
 function renderHostelAdminStudentRows() {
-  // Read-only view for hostel admins.
   const tbody = document.getElementById('hostel-admin-student-body');
   if (!tbody || !isHostelAdminRole(currentUserRole)) return;
   const gender = adminGender(currentUserRole);
   const list = students.filter(s => s.gender === gender);
   tbody.innerHTML = list.map(s => {
-    const hay = `${s.roll} ${s.name || ''}`.toLowerCase();
+    const hay = `${s.roll} ${s.classRoll || ''} ${s.name || ''} ${s.batch || ''} ${s.room || ''}`.toLowerCase();
     const bal = getStudentBalance(s.roll);
     const balClass = bal >= 0 ? 'due-pos' : 'due-neg';
     return `<tr data-hay="${hay}">
-      <td class="num">${s.roll}</td><td>${s.name}</td><td>${s.batch || '-'}</td><td>${s.room || '-'}</td>
+      <td class="num">${s.roll}</td><td class="num">${s.classRoll || '-'}</td><td>${s.name}</td><td>${s.batch || '-'}</td><td>${s.room || '-'}</td>
       <td class="num">৳${totalDepositsFor(s.roll).toFixed(2)}</td>
       <td class="num ${balClass}">৳${bal.toFixed(2)}</td>
+      <td><div style="display:flex;gap:6px;"><input type="number" class="coll-input" id="hostel-pay-${s.roll}" placeholder="৳"><button class="btn btn-primary btn-sm" onclick="addHostelPayment(${s.roll})">যোগ করুন</button></div></td>
     </tr>`;
-  }).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);">কোনো শিক্ষার্থী নেই</td></tr>`;
+  }).join('') || `<tr><td colspan="8" style="text-align:center;color:var(--ink-soft);">কোনো শিক্ষার্থী নেই</td></tr>`;
 }
+
+window.addHostelPayment = async (roll) => {
+  if (!isHostelAdminRole(currentUserRole)) { alert("টাকা জমা যোগ করার অনুমতি নেই।"); return; }
+  const student = students.find(s => s.roll === roll);
+  if (!student || student.gender !== adminGender(currentUserRole)) {
+    alert("আপনি শুধুমাত্র আপনার হোস্টেলের শিক্ষার্থীদের জন্য টাকা জমা যোগ করতে পারবেন।");
+    return;
+  }
+  const input = document.getElementById(`hostel-pay-${roll}`);
+  const amount = Number(input.value);
+  if (!amount || amount <= 0) { alert("সঠিক পরিমাণ দিন।"); return; }
+  try {
+    await addDoc(collection(db, "payments"), { roll, amount, addedBy: currentTreasurerName, addedAt: serverTimestamp() });
+    await addDoc(collection(db, "activity"), { type: 'payment', text: `${student.name} থেকে ৳${amount.toFixed(2)} জমা নেওয়া হয়েছে`, createdAt: serverTimestamp() });
+    input.value = "";
+  } catch (e) { alert("জমা যোগ করা যায়নি: " + (e && e.message ? e.message : e)); }
+};
 
 window.filterHostelAdminStudents = () => {
   const q = document.getElementById('hostel-admin-student-search').value.trim().toLowerCase();
