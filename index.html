@@ -815,7 +815,8 @@ import {
   createUserWithEmailAndPassword, deleteUser
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, doc, setDoc, deleteDoc, updateDoc, collection, onSnapshot, addDoc,
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  doc, setDoc, deleteDoc, updateDoc, collection, onSnapshot, addDoc,
   query, orderBy, limit, serverTimestamp, where, getDocs, getDoc, deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -831,7 +832,14 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+// Persistent local (IndexedDB) cache: on repeat visits/refreshes on the same device,
+// the initial data for every onSnapshot listener is served from this cache instead of
+// the server, and only documents changed since the last sync are actually read from
+// Firestore. This does not change any query, listener, or feature — it only avoids
+// re-downloading (and re-billing as "reads") data the app already has locally.
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+});
 
 const HOSTELS = ["করতোয়া ছাত্রাবাস", "তিস্তা ছাত্রীনিবাস"];
 const MEAL_TYPE_LABEL = { breakfast: "Breakfast (সকালের নাস্তা)", lunch: "Lunch (দুপুরের খাবার)", dinner: "Dinner (রাতের খাবার)" };
