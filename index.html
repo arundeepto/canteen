@@ -1989,36 +1989,79 @@ window.quickServeByRoll = async (inputId, dateElId, mealTypeElId, hostelElId) =>
 };
 
 // ============ PDF / CSV DOWNLOADS ============
+// One PDF file, but each Hostel(=Gender) + Batch combination gets its own page/section —
+// so the treasurer can print/hand out each batch's sheet separately without needing
+// separate downloads.
 function buildMealOrdersPDF(list, titleText) {
   const { jsPDF } = window.jspdf;
   const docPdf = new jsPDF();
-  docPdf.setFontSize(15); docPdf.setTextColor(11, 42, 74);
-  docPdf.text("Nilphamari Medical College Canteen", 14, 16);
-  docPdf.setFontSize(11); docPdf.text(titleText, 14, 23);
-  docPdf.setFontSize(9); docPdf.setTextColor(94, 122, 140);
-  docPdf.text(`Generated: ${new Date().toLocaleString()}`, 14, 29);
+  const pageWidth = docPdf.internal.pageSize.getWidth();
+
+  function drawHeader() {
+    docPdf.setFontSize(15); docPdf.setTextColor(11, 42, 74);
+    docPdf.text("Nilphamari Medical College Canteen", 14, 16);
+    docPdf.setFontSize(11); docPdf.text(titleText, 14, 23);
+    docPdf.setFontSize(9); docPdf.setTextColor(94, 122, 140);
+    docPdf.text(`Generated: ${new Date().toLocaleString()}`, 14, 29);
+  }
 
   const groups = groupOrders(list);
-  const body = [];
-  Object.keys(groups).sort().forEach(hostel => {
-    Object.keys(groups[hostel]).sort().forEach(batch => {
-      Object.keys(groups[hostel][batch]).sort().forEach(room => {
-        groups[hostel][batch][room].forEach(o => {
-          body.push([hostel, batch, room, `${o.studentName} (${o.roll})`, `${o.mealItemName} [${o.mealType}]`, `Tk ${(o.price||0).toFixed(2)}`, o.served ? 'YES' : '', '']);
-        });
+  const hostelKeys = Object.keys(groups).sort();
+  let sectionIndex = 0;
+
+  if (!hostelKeys.length) {
+    drawHeader();
+    docPdf.setFontSize(10); docPdf.setTextColor(94, 122, 140);
+    docPdf.text("কোনো মিল অর্ডার পাওয়া যায়নি।", 14, 40);
+    return docPdf;
+  }
+
+  hostelKeys.forEach(hostel => {
+    const batchKeys = Object.keys(groups[hostel]).sort();
+    batchKeys.forEach(batch => {
+      if (sectionIndex > 0) docPdf.addPage();
+      drawHeader();
+
+      // section sub-heading: which hostel (=gender) + batch this page covers
+      docPdf.setFontSize(12); docPdf.setTextColor(11, 42, 74);
+      docPdf.text(`${hostel}  —  Batch ${batch}`, 14, 38);
+      docPdf.setDrawColor(191, 224, 206); docPdf.setLineWidth(0.5);
+      docPdf.line(14, 41, pageWidth - 14, 41);
+
+      // flatten every room's orders for this batch, then sort roll-wise (ascending) so the
+      // sheet reads as a clean roll-number serial list instead of room-grouped clusters
+      const batchOrders = [];
+      Object.keys(groups[hostel][batch]).forEach(room => {
+        groups[hostel][batch][room].forEach(o => batchOrders.push(o));
       });
+      batchOrders.sort((a, b) => (a.roll || 0) - (b.roll || 0));
+
+      const body = [];
+      let sectionTotal = 0, sectionCount = 0;
+      batchOrders.forEach((o, idx) => {
+        body.push([idx + 1, o.roll, o.studentName, o.room || '-', `${o.mealItemName} [${o.mealType}]`, `Tk ${(o.price||0).toFixed(2)}`, o.served ? 'YES' : '', '']);
+        sectionTotal += (o.price || 0);
+        sectionCount++;
+      });
+
+      docPdf.autoTable({
+        startY: 46,
+        head: [["SL", "Roll", "Student Name", "Room", "Meal Item", "Price", "Served", "Tick"]],
+        body,
+        theme: "grid",
+        headStyles: { fillColor: [11, 42, 74] },
+        styles: { fontSize: 9 },
+        columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 16 }, 7: { cellWidth: 14 } }
+      });
+
+      const afterY = docPdf.lastAutoTable.finalY + 8;
+      docPdf.setFontSize(9); docPdf.setTextColor(11, 42, 74);
+      docPdf.text(`Total: ${sectionCount} meals  —  Tk ${sectionTotal.toFixed(2)}`, 14, afterY);
+
+      sectionIndex++;
     });
   });
 
-  docPdf.autoTable({
-    startY: 34,
-    head: [["Hostel", "Batch", "Room", "Student (Roll)", "Meal Item", "Price", "Served", "Tick"]],
-    body,
-    theme: "grid",
-    headStyles: { fillColor: [11, 42, 74] },
-    styles: { fontSize: 8 },
-    columnStyles: { 7: { cellWidth: 12 } }
-  });
   return docPdf;
 }
 
