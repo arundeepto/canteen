@@ -400,7 +400,7 @@
   <!-- ============ SUBSCRIBER: meal ordering ============ -->
   <div class="panel subscriber-only hidden" data-tab="order">
     <h2>🍽️ মিল অর্ডার করুন / Order a Meal</h2>
-    <p class="hint">নিচের নির্দিষ্ট সময়সীমার (order window) মধ্যেই আজকের মিল অর্ডার করা যাবে। অর্ডার করার সাথে সাথেই দাম আপনার হিসাব থেকে কেটে নেওয়া হবে।</p>
+    <p class="hint">প্রতিদিন নির্দিষ্ট সময়ে (নিচে দেখুন) <b>পরদিনের</b> মিলের অর্ডার খোলে — অর্থাৎ আগামীকালের মিল আজ রাতেই অর্ডার করতে হবে। কোন বার কী মেনু, সেটা অটোমেটিক দেখানো হচ্ছে। অর্ডার করার সাথে সাথেই দাম আপনার হিসাব থেকে কেটে নেওয়া হবে।</p>
     <div id="sub-due-block-notice" class="meal-window-notice closed hidden"></div>
     <div id="sub-meal-catalog"></div>
   </div>
@@ -668,6 +668,7 @@
   <!-- meal catalog management -->
   <div class="panel treasurer-only" data-tab="meals">
     <h2>🍽️ মিল আইটেম যোগ/পরিচালনা করুন</h2>
+    <p class="hint">প্রতিটি আইটেমের জন্য একটি নির্দিষ্ট বার (weekday) বেছে দিন — সেই বারেই এই আইটেমটি অর্ডার তালিকায় দেখাবে। "সব বার" রাখলে প্রতিদিন দেখাবে।</p>
     <div class="field-row">
       <div class="field" style="flex:2;"><label>মিলের নাম</label><input type="text" id="new-meal-name" placeholder="e.g. Lunch - Rice & Chicken"></div>
       <div class="field">
@@ -676,6 +677,19 @@
           <option value="breakfast">Breakfast (সকালের নাস্তা)</option>
           <option value="lunch">Lunch (দুপুরের খাবার)</option>
           <option value="dinner">Dinner (রাতের খাবার)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>কোন বার</label>
+        <select id="new-meal-weekday">
+          <option value="all">সব বার</option>
+          <option value="0">রবিবার</option>
+          <option value="1">সোমবার</option>
+          <option value="2">মঙ্গলবার</option>
+          <option value="3">বুধবার</option>
+          <option value="4">বৃহস্পতিবার</option>
+          <option value="5">শুক্রবার</option>
+          <option value="6">শনিবার</option>
         </select>
       </div>
       <div class="field"><label>মূল্য (৳)</label><input type="number" id="new-meal-price" placeholder="60"></div>
@@ -695,17 +709,16 @@
 
     <div class="table-scroll" style="margin-top:16px;">
       <table class="ledger">
-        <thead><tr><th>মিল</th><th>ধরন</th><th>মূল্য</th><th>হোস্টেল</th><th>নোট</th><th>সক্রিয়</th><th></th></tr></thead>
+        <thead><tr><th>মিল</th><th>ধরন</th><th>বার</th><th>মূল্য</th><th>হোস্টেল</th><th>নোট</th><th>সক্রিয়</th><th></th></tr></thead>
         <tbody id="meal-items-body"></tbody>
       </table>
     </div>
 
     <h2 style="margin-top:22px;">⏰ অর্ডারের সময়সীমা ও নিয়ম</h2>
-    <p class="hint">প্রতিটি মিলের অর্ডার নেওয়া বন্ধ হবে নিচের সময়ের পর (২৪ ঘণ্টা ফরম্যাট, স্থানীয় সময়)।</p>
+    <p class="hint">প্রতিদিন সন্ধ্যায় "অর্ডার শুরু" সময় থেকে "অর্ডার শেষ" সময় পর্যন্ত <b>পরদিনের</b> ব্রেকফাস্ট, লাঞ্চ ও ডিনার — সবগুলোর অর্ডার একসাথে নেওয়া হবে (যেমন: রাত ৮টায় শুরু হয়ে রাত ১১টায় বন্ধ হলে, আজ রাতের অর্ডার আগামীকালের মিলের জন্য গণ্য হবে)। "অর্ডার শেষ" সময় "অর্ডার শুরু" সময়ের চেয়ে ছোট বা সমান দিলে সেটা পরদিন ভোর পর্যন্ত খোলা থাকবে বলে ধরা হবে।</p>
     <div class="field-row">
-      <div class="field"><label>Breakfast বন্ধ হবে (ঘণ্টা)</label><input type="number" id="cfg-breakfast-cutoff" min="0" max="23"></div>
-      <div class="field"><label>Lunch বন্ধ হবে (ঘণ্টা)</label><input type="number" id="cfg-lunch-cutoff" min="0" max="23"></div>
-      <div class="field"><label>Dinner বন্ধ হবে (ঘণ্টা)</label><input type="number" id="cfg-dinner-cutoff" min="0" max="23"></div>
+      <div class="field"><label>অর্ডার শুরু হবে</label><input type="time" id="cfg-order-open-time"></div>
+      <div class="field"><label>অর্ডার শেষ হবে</label><input type="time" id="cfg-order-close-time"></div>
       <div class="field"><label>সর্বোচ্চ বকেয়া (৳) — এর বেশি হলে অর্ডার বন্ধ</label><input type="number" id="cfg-due-limit" min="0"></div>
       <div class="field"><label>মাসিক ন্যূনতম খাওয়ার পরিমাণ (৳)</label><input type="number" id="cfg-min-monthly-eat" min="0"></div>
     </div>
@@ -803,7 +816,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   getFirestore, doc, setDoc, deleteDoc, updateDoc, collection, onSnapshot, addDoc,
-  query, orderBy, limit, serverTimestamp, where, getDocs, getDoc
+  query, orderBy, limit, serverTimestamp, where, getDocs, getDoc, deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ============ Firebase Config — replace with your own project's config ============
@@ -840,7 +853,7 @@ let currentUserRole = "pending";   // 'treasurer' | 'teacher' | 'subscriber' | '
 let currentSubscriberRoll = null;
 let currentActiveTab = null;
 
-let orderConfig = { breakfastCutoff: 20, lunchCutoff: 10, dinnerCutoff: 17, dueLimit: 200, monthlyMinSpend: 0 };
+let orderConfig = { orderOpenTime: "20:00", orderCloseTime: "23:00", dueLimit: 200, monthlyMinSpend: 0 };
 
 // ============ date/time helpers ============
 function todayKey() {
@@ -848,24 +861,67 @@ function todayKey() {
   const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
+function dateOnly(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+function addDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function dateKeyFromDate(d) {
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+const WEEKDAY_LABELS_BN = ['রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার', 'শনিবার'];
+function weekdayOfDateKey(dateKey) {
+  if (!dateKey) return null;
+  const [y, m, d] = dateKey.split('-').map(Number);
+  return new Date(y, m - 1, d).getDay();
+}
 function formatDateLabel(key) {
   if (!key) return '-';
   const [y, m, d] = key.split('-').map(Number);
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
 }
-function cutoffHourFor(mealType) {
-  if (mealType === 'breakfast') return Number(orderConfig.breakfastCutoff);
-  if (mealType === 'lunch') return Number(orderConfig.lunchCutoff);
-  return Number(orderConfig.dinnerCutoff);
+function formatDateWithWeekday(key) {
+  if (!key) return '-';
+  return `${WEEKDAY_LABELS_BN[weekdayOfDateKey(key)]}, ${formatDateLabel(key)}`;
 }
-function isMealWindowOpen(mealType) {
-  return new Date().getHours() < cutoffHourFor(mealType);
+function parseHM(hm) {
+  const [h, m] = String(hm || "0:0").split(':').map(Number);
+  return { h: h || 0, m: m || 0 };
 }
-function formatHourLabel(h) {
-  const hour = ((Number(h) % 24) + 24) % 24;
-  const period = hour < 12 ? 'AM' : 'PM';
-  let hour12 = hour % 12; if (hour12 === 0) hour12 = 12;
-  return `${hour12}:00 ${period}`;
+function atTime(date, hm) {
+  const { h, m } = parseHM(hm);
+  const x = new Date(date); x.setHours(h, m, 0, 0); return x;
+}
+function formatHM(hm) {
+  const { h, m } = parseHM(hm);
+  const period = h < 12 ? 'AM' : 'PM';
+  let h12 = h % 12; if (h12 === 0) h12 = 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+}
+
+// The order window: opens every evening at orderConfig.orderOpenTime and closes at
+// orderConfig.orderCloseTime (next calendar day if closeTime <= openTime, i.e. it crosses
+// midnight). Whichever calendar day the window OPENS on, the order is for the NEXT calendar
+// day (breakfast + lunch + dinner together) — "tomorrow's meal, ordered tonight".
+function getOrderWindowState(now = new Date()) {
+  const openTime = orderConfig.orderOpenTime || "20:00";
+  const closeTime = orderConfig.orderCloseTime || "23:00";
+  const o = parseHM(openTime), c = parseHM(closeTime);
+  const crosses = (c.h < o.h) || (c.h === o.h && c.m <= o.m);
+
+  const todayOpen = atTime(now, openTime);
+  const todayClose = crosses ? atTime(addDays(now, 1), closeTime) : atTime(now, closeTime);
+  if (now >= todayOpen && now < todayClose) {
+    return { isOpen: true, targetDateKey: dateKeyFromDate(addDays(dateOnly(now), 1)), opensAt: todayOpen, closesAt: todayClose };
+  }
+  if (crosses) {
+    const yestOpen = atTime(addDays(now, -1), openTime);
+    const yestClose = atTime(now, closeTime);
+    if (now >= yestOpen && now < yestClose) {
+      return { isOpen: true, targetDateKey: dateKeyFromDate(dateOnly(now)), opensAt: yestOpen, closesAt: yestClose };
+    }
+  }
+  const nextOpen = now < todayOpen ? todayOpen : atTime(addDays(now, 1), openTime);
+  const nextTargetDateKey = dateKeyFromDate(addDays(dateOnly(nextOpen), 1));
+  return { isOpen: false, targetDateKey: nextTargetDateKey, opensAt: nextOpen, closesAt: null };
 }
 
 function showAuthError(msg) {
@@ -1150,10 +1206,15 @@ function startListeners() {
   activeUnsubscribes.push(onSnapshot(doc(db, "settings", "orderConfig"), (snap) => {
     if (snap.exists()) {
       const d = snap.data();
+      // Backward-compatible: if this settings doc still has the old per-mealtype cutoff-hour
+      // fields (from before the day-wise menu + single order-window update) and no new
+      // orderOpenTime/orderCloseTime yet, derive a sensible one-time default from the old
+      // dinnerCutoff so existing settings aren't just silently discarded.
+      const legacyOpen = d.orderOpenTime == null && d.dinnerCutoff != null
+        ? `${String(d.dinnerCutoff).padStart(2, '0')}:00` : null;
       orderConfig = {
-        breakfastCutoff: d.breakfastCutoff ?? orderConfig.breakfastCutoff,
-        lunchCutoff: d.lunchCutoff ?? orderConfig.lunchCutoff,
-        dinnerCutoff: d.dinnerCutoff ?? orderConfig.dinnerCutoff,
+        orderOpenTime: d.orderOpenTime ?? legacyOpen ?? orderConfig.orderOpenTime,
+        orderCloseTime: d.orderCloseTime ?? orderConfig.orderCloseTime,
         dueLimit: d.dueLimit ?? orderConfig.dueLimit,
         monthlyMinSpend: d.monthlyMinSpend ?? orderConfig.monthlyMinSpend
       };
@@ -1597,9 +1658,8 @@ function renderSubscriberPanel() {
 }
 
 // ============ MEAL CATALOG (ordering UI — used both for subscribers and hostel-admin personal orders) ============
-function myOrdersToday(roll, isAdminPersonal) {
-  const today = todayKey();
-  return mealOrdersData.filter(o => o.businessDate === today && !!o.isAdminPersonal === !!isAdminPersonal &&
+function myOrdersForDate(roll, isAdminPersonal, dateKey) {
+  return mealOrdersData.filter(o => o.businessDate === dateKey && !!o.isAdminPersonal === !!isAdminPersonal &&
     (isAdminPersonal ? o.orderedByUid === (auth.currentUser && auth.currentUser.uid) : o.roll === roll));
 }
 
@@ -1630,24 +1690,34 @@ function renderMealCatalogForOrdering(containerId, roll, isAdminPersonal) {
     const st = students.find(s => s.roll === roll);
     viewerHostel = st ? st.hostel : null;
   }
-  const active = mealItemsData.filter(m => m.active !== false && (!m.hostel || m.hostel === 'all' || m.hostel === viewerHostel));
-  const todaysOrders = myOrdersToday(roll, isAdminPersonal);
+
+  // The order window decides WHICH date we're ordering for (usually "tomorrow", ordered
+  // tonight). Meal items are also filtered by weekday so each day automatically shows that
+  // day's own menu — no manual switching needed.
+  const win = getOrderWindowState();
+  const targetWeekday = weekdayOfDateKey(win.targetDateKey);
+  const active = mealItemsData.filter(m => m.active !== false &&
+    (!m.hostel || m.hostel === 'all' || m.hostel === viewerHostel) &&
+    (m.weekday == null || m.weekday === 'all' || Number(m.weekday) === targetWeekday));
+  const todaysOrders = myOrdersForDate(roll, isAdminPersonal, win.targetDateKey);
   const orderedTypeSet = new Set(todaysOrders.map(o => o.mealType));
 
-  let html = '';
+  let html = `<div class="meal-window-notice ${win.isOpen ? 'open' : 'closed'}">
+    ${win.isOpen
+      ? `🟢 অর্ডার চলছে — <b>${formatDateWithWeekday(win.targetDateKey)}</b>-এর মিলের জন্য। অর্ডার বন্ধ হবে ${formatHM(orderConfig.orderCloseTime)}-এ।`
+      : `🔴 এই মুহূর্তে অর্ডার বন্ধ। <b>${formatDateWithWeekday(win.targetDateKey)}</b>-এর মিলের অর্ডার শুরু হবে ${dateKeyFromDate(dateOnly(win.opensAt)) === todayKey() ? 'আজ' : 'আগামীকাল'} রাত ${formatHM(orderConfig.orderOpenTime)}-এ।`}
+  </div>`;
+
   MEAL_TYPES.forEach(type => {
     const items = active.filter(m => m.mealType === type);
     if (!items.length) return;
-    const windowOpen = isMealWindowOpen(type);
     const alreadyOrdered = orderedTypeSet.has(type);
     html += `<div class="meal-section">
-      <div class="meal-section-heading">${MEAL_TYPE_LABEL[type]}
-        <span class="badge ${windowOpen ? 'green' : 'red'}">${windowOpen ? 'অর্ডার চলছে' : 'বন্ধ হয়ে গেছে'} — কাটঅফ ${formatHourLabel(cutoffHourFor(type))}</span>
-      </div>
+      <div class="meal-section-heading">${MEAL_TYPE_LABEL[type]}</div>
       <div class="meal-grid">`;
     items.forEach(m => {
       const orderedThisItem = todaysOrders.find(o => o.mealItemId === m.id);
-      const disabled = !windowOpen || alreadyOrdered || dueBlocked;
+      const disabled = !win.isOpen || alreadyOrdered || dueBlocked;
       html += `<div class="meal-card ${orderedThisItem ? 'ordered' : ''} ${disabled && !orderedThisItem ? 'disabled' : ''}">
         <div class="mc-title">${m.name}</div>
         ${m.note ? `<div class="mc-note">${m.note}</div>` : ''}
@@ -1666,7 +1736,14 @@ function renderMealCatalogForOrdering(containerId, roll, isAdminPersonal) {
 window.orderMeal = async (mealItemId, isAdminPersonal) => {
   const item = mealItemsData.find(m => m.id === mealItemId);
   if (!item) return;
-  if (!isMealWindowOpen(item.mealType)) { alert(`⏰ ${MEAL_TYPE_LABEL[item.mealType]} এর অর্ডার সময় (কাটঅফ ${formatHourLabel(cutoffHourFor(item.mealType))}) পার হয়ে গেছে।`); return; }
+  const win = getOrderWindowState();
+  if (!win.isOpen) { alert(`⏰ এই মুহূর্তে অর্ডার বন্ধ। ${formatDateWithWeekday(win.targetDateKey)}-এর মিলের অর্ডার শুরু হবে রাত ${formatHM(orderConfig.orderOpenTime)}-এ।`); return; }
+  // Defensive check: the catalog UI already filters items by weekday, but guard here too in
+  // case of a stale render.
+  if (item.weekday != null && item.weekday !== 'all' && Number(item.weekday) !== weekdayOfDateKey(win.targetDateKey)) {
+    alert("এই আইটেমটি আজকের অর্ডারের বারের মেন্যুতে নেই। পেজ রিফ্রেশ করে আবার চেষ্টা করুন।");
+    return;
+  }
 
   const user = auth.currentUser;
   let roll = null, studentName = currentTreasurerName, batch = '-', hostel = '-', room = '-', gender = 'unspecified';
@@ -1678,23 +1755,23 @@ window.orderMeal = async (mealItemId, isAdminPersonal) => {
       alert(`⛔ আপনার বাকি ৳${Math.abs(Number(orderConfig.dueLimit)||0)} টাকার বেশি হয়ে গেছে — তাই নতুন মিল অর্ডার করা যাচ্ছে না। আগে বকেয়া পরিশোধ করুন।`);
       return;
     }
-    const alreadyOrdered = myOrdersToday(roll, false).some(o => o.mealType === item.mealType);
-    if (alreadyOrdered) { alert(`আজকের জন্য ${MEAL_TYPE_LABEL[item.mealType]} ইতিমধ্যে অর্ডার করা হয়েছে।`); return; }
+    const alreadyOrdered = myOrdersForDate(roll, false, win.targetDateKey).some(o => o.mealType === item.mealType);
+    if (alreadyOrdered) { alert(`${formatDateWithWeekday(win.targetDateKey)}-এর জন্য ${MEAL_TYPE_LABEL[item.mealType]} ইতিমধ্যে অর্ডার করা হয়েছে।`); return; }
     const student = students.find(s => s.roll === roll);
     if (student) { studentName = student.name; batch = student.batch || '-'; hostel = student.hostel || '-'; room = student.room || '-'; gender = student.gender || 'unspecified'; }
   } else {
-    const alreadyOrdered = myOrdersToday(null, true).some(o => o.mealType === item.mealType);
-    if (alreadyOrdered) { alert(`আজকের জন্য ${MEAL_TYPE_LABEL[item.mealType]} ইতিমধ্যে অর্ডার করা হয়েছে।`); return; }
+    const alreadyOrdered = myOrdersForDate(null, true, win.targetDateKey).some(o => o.mealType === item.mealType);
+    if (alreadyOrdered) { alert(`${formatDateWithWeekday(win.targetDateKey)}-এর জন্য ${MEAL_TYPE_LABEL[item.mealType]} ইতিমধ্যে অর্ডার করা হয়েছে।`); return; }
   }
 
-  if (!confirm(`"${item.name}" (৳${(item.price||0).toFixed(2)}) অর্ডার করবেন? ${isAdminPersonal ? '' : 'মূল্য আপনার হিসাব থেকে কাটা হবে।'}`)) return;
+  if (!confirm(`"${item.name}" (৳${(item.price||0).toFixed(2)}) — ${formatDateWithWeekday(win.targetDateKey)}-এর জন্য অর্ডার করবেন? ${isAdminPersonal ? '' : 'মূল্য আপনার হিসাব থেকে কাটা হবে।'}`)) return;
 
   try {
     await addDoc(collection(db, "mealOrders"), {
       roll: isAdminPersonal ? null : roll,
       studentName, batch, hostel, room, gender,
       mealItemId: item.id, mealItemName: item.name, mealType: item.mealType, price: item.price || 0,
-      businessDate: todayKey(),
+      businessDate: win.targetDateKey,
       orderedAt: serverTimestamp(),
       served: false, servedAt: null, servedBy: null,
       isAdminPersonal: !!isAdminPersonal,
@@ -1702,7 +1779,7 @@ window.orderMeal = async (mealItemId, isAdminPersonal) => {
       orderedByUid: user ? user.uid : null
     });
     await addDoc(collection(db, "activity"), {
-      type: 'meal', text: `${studentName} ${MEAL_TYPE_LABEL[item.mealType]} অর্ডার করেছেন — ${item.name}`, createdAt: serverTimestamp()
+      type: 'meal', text: `${studentName} ${MEAL_TYPE_LABEL[item.mealType]} অর্ডার করেছেন (${formatDateLabel(win.targetDateKey)}) — ${item.name}`, createdAt: serverTimestamp()
     });
   } catch (e) {
     alert("মিল অর্ডার করা যায়নি: " + (e && e.message ? e.message : e));
@@ -1996,12 +2073,13 @@ window.downloadHostelMealOrdersCSV = () => {
 window.addMealItem = async () => {
   const name = document.getElementById('new-meal-name').value.trim();
   const mealType = document.getElementById('new-meal-type').value;
+  const weekday = document.getElementById('new-meal-weekday').value; // 'all' or '0'-'6'
   const price = Number(document.getElementById('new-meal-price').value);
   const note = document.getElementById('new-meal-note').value.trim();
   const hostel = document.getElementById('new-meal-hostel').value;
   if (!name || !price || price <= 0) { alert("মিলের নাম ও সঠিক মূল্য দিন।"); return; }
   try {
-    await addDoc(collection(db, "mealItems"), { name, mealType, price, note, hostel, active: true, addedBy: currentTreasurerName, createdAt: serverTimestamp() });
+    await addDoc(collection(db, "mealItems"), { name, mealType, weekday, price, note, hostel, active: true, addedBy: currentTreasurerName, createdAt: serverTimestamp() });
     document.getElementById('new-meal-name').value = "";
     document.getElementById('new-meal-price').value = "";
     document.getElementById('new-meal-note').value = "";
@@ -2019,37 +2097,45 @@ window.deleteMealItem = async (id) => {
   catch (e) { alert("মুছে ফেলা যায়নি: " + (e && e.message ? e.message : e)); }
 };
 
+function weekdayBadgeLabel(weekday) {
+  if (weekday == null || weekday === 'all' || weekday === '') return 'সব বার';
+  return WEEKDAY_LABELS_BN[Number(weekday)] || 'সব বার';
+}
+
 function renderMealItemsAdmin() {
   const tbody = document.getElementById('meal-items-body');
   if (!tbody || currentUserRole !== 'treasurer') return;
   tbody.innerHTML = mealItemsData.map(m => `<tr>
     <td>${m.name}</td>
     <td><span class="badge navy">${MEAL_TYPE_LABEL[m.mealType] || m.mealType}</span></td>
+    <td><span class="badge gold">${weekdayBadgeLabel(m.weekday)}</span></td>
     <td class="num">৳${(m.price||0).toFixed(2)}</td>
     <td>${!m.hostel || m.hostel === 'all' ? 'উভয় হোস্টেল' : m.hostel}</td>
     <td>${m.note || '-'}</td>
     <td><label class="switch"><input type="checkbox" ${m.active !== false ? 'checked' : ''} onchange="toggleMealItemActive('${m.id}', this.checked)"><span class="slider"></span></label></td>
     <td><button class="icon-btn" onclick="deleteMealItem('${m.id}')">মুছুন</button></td>
-  </tr>`).join('') || `<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);">কোনো মিল আইটেম নেই</td></tr>`;
+  </tr>`).join('') || `<tr><td colspan="8" style="text-align:center;color:var(--ink-soft);">কোনো মিল আইটেম নেই</td></tr>`;
 }
 
 function fillOrderConfigForm() {
   const set = (id, v) => { const el = document.getElementById(id); if (el && document.activeElement !== el) el.value = v; };
-  set('cfg-breakfast-cutoff', orderConfig.breakfastCutoff);
-  set('cfg-lunch-cutoff', orderConfig.lunchCutoff);
-  set('cfg-dinner-cutoff', orderConfig.dinnerCutoff);
+  set('cfg-order-open-time', orderConfig.orderOpenTime);
+  set('cfg-order-close-time', orderConfig.orderCloseTime);
   set('cfg-due-limit', orderConfig.dueLimit);
   set('cfg-min-monthly-eat', orderConfig.monthlyMinSpend);
 }
 
 window.saveOrderTimingSettings = async () => {
-  const breakfastCutoff = Number(document.getElementById('cfg-breakfast-cutoff').value);
-  const lunchCutoff = Number(document.getElementById('cfg-lunch-cutoff').value);
-  const dinnerCutoff = Number(document.getElementById('cfg-dinner-cutoff').value);
+  const orderOpenTime = document.getElementById('cfg-order-open-time').value || "20:00";
+  const orderCloseTime = document.getElementById('cfg-order-close-time').value || "23:00";
   const dueLimit = Number(document.getElementById('cfg-due-limit').value);
   const monthlyMinSpend = Number(document.getElementById('cfg-min-monthly-eat').value);
   try {
-    await setDoc(doc(db, "settings", "orderConfig"), { breakfastCutoff, lunchCutoff, dinnerCutoff, dueLimit, monthlyMinSpend }, { merge: true });
+    await setDoc(doc(db, "settings", "orderConfig"), {
+      orderOpenTime, orderCloseTime, dueLimit, monthlyMinSpend,
+      // clear out the old per-mealtype fields so they don't confuse future reads
+      breakfastCutoff: deleteField(), lunchCutoff: deleteField(), dinnerCutoff: deleteField()
+    }, { merge: true });
     alert("সেটিংস সংরক্ষণ করা হয়েছে।");
   } catch (e) { alert("সংরক্ষণ করা যায়নি: " + (e && e.message ? e.message : e)); }
 };
@@ -2281,6 +2367,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) el.addEventListener('change', renderAll);
   });
   fillOrderConfigForm();
+  // Keep the order-window banner (open/closed, target date) accurate without needing a manual
+  // page refresh — re-render once a minute so it flips right at the configured open/close time.
+  setInterval(() => { if (listenersStarted) renderAll(); }, 60000);
 });
 </script>
 </body>
