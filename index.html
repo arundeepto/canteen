@@ -492,7 +492,7 @@
       <div class="field"><label>খুঁজুন (নাম/রোল/রুম)</label><input type="text" id="hostel-orders-search" placeholder="🔍 লিখে খুঁজুন..." oninput="renderMealOrdersTable('hostel-orders-body','hostel-orders-date','hostel-orders-mealtype',null,false,'hostel-orders-search','hostel-orders-count')"></div>
     </div>
     <div class="btn-row" style="margin-top:0;margin-bottom:12px;">
-      <button class="btn btn-primary" onclick="downloadHostelMealOrdersPDF()">📄 PDF ডাউনলোড</button>
+      <button class="btn btn-primary" onclick="downloadHostelMealOrdersPDF(this)">📄 PDF ডাউনলোড</button>
       <button class="btn btn-outline" onclick="downloadHostelMealOrdersCSV()">📥 Excel/CSV ডাউনলোড</button>
     </div>
     <div class="table-scroll">
@@ -551,7 +551,7 @@
     <h2>Reports & Vouchers</h2>
     <p class="hint" style="margin-bottom:6px;">Download the full statement as a PDF, or save an expense voucher as an image.</p>
     <div class="btn-row">
-      <button class="btn btn-primary" onclick="downloadFullReport()">📄 Full PDF Report</button>
+      <button class="btn btn-primary" onclick="downloadFullReport(this)">📄 Full PDF Report</button>
       <button class="btn btn-outline" onclick="openVoucherModal()">🧾 Expense Voucher (PNG)</button>
     </div>
   </div>
@@ -756,7 +756,7 @@
       <div class="field"><label>খুঁজুন (নাম/রোল/রুম)</label><input type="text" id="tr-orders-search" placeholder="🔍 লিখে খুঁজুন..." oninput="renderMealOrdersTable('tr-orders-body','tr-orders-date','tr-orders-mealtype','tr-orders-hostel',true,'tr-orders-search','tr-orders-count')"></div>
     </div>
     <div class="btn-row" style="margin-top:0;margin-bottom:12px;">
-      <button class="btn btn-primary" onclick="downloadTreasurerMealOrdersPDF()">📄 Download Meal Order List (PDF)</button>
+      <button class="btn btn-primary" onclick="downloadTreasurerMealOrdersPDF(this)">📄 Download Meal Order List (PDF)</button>
       <button class="btn btn-outline" onclick="downloadTreasurerMealOrdersCSV()">📥 Download Excel/CSV Summary</button>
     </div>
     <div class="table-scroll">
@@ -844,6 +844,36 @@ const db = initializeFirestore(app, {
 const HOSTELS = ["করতোয়া ছাত্রাবাস", "তিস্তা ছাত্রীনিবাস"];
 const MEAL_TYPE_LABEL = { breakfast: "Breakfast (সকালের নাস্তা)", lunch: "Lunch (দুপুরের খাবার)", dinner: "Dinner (রাতের খাবার)" };
 const MEAL_TYPES = ["breakfast", "lunch", "dinner"];
+
+// ============ BENGALI FONT FOR PDF (jsPDF ships only Latin fonts, so Bengali text
+// renders blank unless we embed a Unicode font that covers Bengali glyphs) ============
+let bengaliFontBase64Cache = null; // fetched once per page-load, reused for every PDF after that
+const BENGALI_FONT_URL = "https://raw.githubusercontent.com/openmaptiles/fonts/master/noto-sans/NotoSansBengali-Regular.ttf";
+const BENGALI_FONT_NAME = "NotoSansBengali";
+
+async function ensureBengaliFont(docPdf) {
+  try {
+    if (!bengaliFontBase64Cache) {
+      const res = await fetch(BENGALI_FONT_URL);
+      if (!res.ok) throw new Error("font fetch failed: " + res.status);
+      const buf = await res.arrayBuffer();
+      let binary = "";
+      const bytes = new Uint8Array(buf);
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      bengaliFontBase64Cache = btoa(binary);
+    }
+    docPdf.addFileToVFS(`${BENGALI_FONT_NAME}.ttf`, bengaliFontBase64Cache);
+    docPdf.addFont(`${BENGALI_FONT_NAME}.ttf`, BENGALI_FONT_NAME, "normal");
+    docPdf.setFont(BENGALI_FONT_NAME);
+    return true;
+  } catch (e) {
+    console.error("Bengali font load failed, PDF will fall back to default font:", e);
+    return false;
+  }
+}
 
 // ============ state ============
 let students = [];          // [{id(=roll as string), roll, name, mobile, email, gender, batch, hostel, room}]
@@ -2000,12 +2030,34 @@ window.quickServeByRoll = async (inputId, dateElId, mealTypeElId, hostelElId) =>
 // One PDF file, but each Hostel(=Gender) + Batch combination gets its own page/section —
 // so the treasurer can print/hand out each batch's sheet separately without needing
 // separate downloads.
-function buildMealOrdersPDF(list, titleText) {
+// groups a flat order list into { male: { total, amount, byType:{type:{count,amount}} }, female: {...} }
+// used to build the boys-hostel / girls-hostel summary page
+function summarizeOrdersByGender(list) {
+  const summary = {
+    male: { total: 0, amount: 0, byType: {} },
+    female: { total: 0, amount: 0, byType: {} }
+  };
+  list.forEach(o => {
+    const g = o.gender === 'female' ? 'female' : 'male';
+    summary[g].total++;
+    summary[g].amount += (o.price || 0);
+    const t = o.mealType || 'other';
+    summary[g].byType[t] = summary[g].byType[t] || { count: 0, amount: 0 };
+    summary[g].byType[t].count++;
+    summary[g].byType[t].amount += (o.price || 0);
+  });
+  return summary;
+}
+
+async function buildMealOrdersPDF(list, titleText) {
   const { jsPDF } = window.jspdf;
   const docPdf = new jsPDF();
   const pageWidth = docPdf.internal.pageSize.getWidth();
+  const fontOk = await ensureBengaliFont(docPdf);
+  const bnFont = fontOk ? BENGALI_FONT_NAME : undefined; // undefined lets autoTable fall back to its default
 
   function drawHeader() {
+    docPdf.setFont(BENGALI_FONT_NAME);
     docPdf.setFontSize(15); docPdf.setTextColor(11, 42, 74);
     docPdf.text("Nilphamari Medical College Canteen", 14, 16);
     docPdf.setFontSize(11); docPdf.text(titleText, 14, 23);
@@ -2013,12 +2065,59 @@ function buildMealOrdersPDF(list, titleText) {
     docPdf.text(`Generated: ${new Date().toLocaleString()}`, 14, 29);
   }
 
+  // ---------- summary page: boys hostel vs girls hostel totals + per-meal-type breakdown ----------
+  function drawSummaryPage() {
+    drawHeader();
+    const summary = summarizeOrdersByGender(list);
+    const overallCount = list.length;
+    const overallAmount = list.reduce((a, o) => a + (o.price || 0), 0);
+
+    docPdf.setFontSize(12); docPdf.setTextColor(11, 42, 74);
+    docPdf.text("সারসংক্ষেপ (Summary)", 14, 38);
+    docPdf.setDrawColor(191, 224, 206); docPdf.setLineWidth(0.5);
+    docPdf.line(14, 41, pageWidth - 14, 41);
+
+    docPdf.autoTable({
+      startY: 46,
+      head: [["হোস্টেল (Hostel)", "মোট মিল (Total Meals)", "মোট টাকা (Total Amount)"]],
+      body: [
+        ["ছেলেদের হোস্টেল (Boys Hostel)", summary.male.total, `Tk ${summary.male.amount.toFixed(2)}`],
+        ["মেয়েদের হোস্টেল (Girls Hostel)", summary.female.total, `Tk ${summary.female.amount.toFixed(2)}`],
+        ["সর্বমোট (Overall Total)", overallCount, `Tk ${overallAmount.toFixed(2)}`]
+      ],
+      theme: "grid",
+      headStyles: { fillColor: [11, 42, 74], font: bnFont },
+      styles: { font: bnFont, fontSize: 10 }
+    });
+
+    [['male', 'ছেলেদের হোস্টেল — মিল অনুযায়ী (Boys Hostel — by Meal Type)'],
+     ['female', 'মেয়েদের হোস্টেল — মিল অনুযায়ী (Girls Hostel — by Meal Type)']].forEach(([g, label]) => {
+      docPdf.setFont(BENGALI_FONT_NAME);
+      docPdf.setFontSize(11); docPdf.setTextColor(11, 42, 74);
+      docPdf.text(label, 14, docPdf.lastAutoTable.finalY + 10);
+      const rows = MEAL_TYPES.filter(t => summary[g].byType[t]).map(t => [
+        MEAL_TYPE_LABEL[t] || t, summary[g].byType[t].count, `Tk ${summary[g].byType[t].amount.toFixed(2)}`
+      ]);
+      docPdf.autoTable({
+        startY: docPdf.lastAutoTable.finalY + 14,
+        head: [["মিলের ধরন (Meal Type)", "সংখ্যা (Count)", "টাকা (Amount)"]],
+        body: rows.length ? rows : [["কোনো তথ্য নেই (No data)", "-", "-"]],
+        theme: "striped",
+        headStyles: { fillColor: [14, 143, 110], font: bnFont },
+        styles: { font: bnFont, fontSize: 9 }
+      });
+    });
+  }
+
   const groups = groupOrders(list);
   const hostelKeys = Object.keys(groups).sort();
-  let sectionIndex = 0;
+
+  drawSummaryPage();
 
   if (!hostelKeys.length) {
+    docPdf.addPage();
     drawHeader();
+    docPdf.setFont(BENGALI_FONT_NAME);
     docPdf.setFontSize(10); docPdf.setTextColor(94, 122, 140);
     docPdf.text("কোনো মিল অর্ডার পাওয়া যায়নি।", 14, 40);
     return docPdf;
@@ -2027,10 +2126,11 @@ function buildMealOrdersPDF(list, titleText) {
   hostelKeys.forEach(hostel => {
     const batchKeys = Object.keys(groups[hostel]).sort();
     batchKeys.forEach(batch => {
-      if (sectionIndex > 0) docPdf.addPage();
+      docPdf.addPage();
       drawHeader();
 
       // section sub-heading: which hostel (=gender) + batch this page covers
+      docPdf.setFont(BENGALI_FONT_NAME);
       docPdf.setFontSize(12); docPdf.setTextColor(11, 42, 74);
       docPdf.text(`${hostel}  —  Batch ${batch}`, 14, 38);
       docPdf.setDrawColor(191, 224, 206); docPdf.setLineWidth(0.5);
@@ -2047,7 +2147,7 @@ function buildMealOrdersPDF(list, titleText) {
       const body = [];
       let sectionTotal = 0, sectionCount = 0;
       batchOrders.forEach((o, idx) => {
-        body.push([idx + 1, o.roll, o.studentName, o.room || '-', `${o.mealItemName} [${o.mealType}]`, `Tk ${(o.price||0).toFixed(2)}`, o.served ? 'YES' : '', '']);
+        body.push([idx + 1, o.roll, o.studentName, o.room || '-', `${o.mealItemName} [${MEAL_TYPE_LABEL[o.mealType] || o.mealType}]`, `Tk ${(o.price||0).toFixed(2)}`, o.served ? 'YES' : '', '']);
         sectionTotal += (o.price || 0);
         sectionCount++;
       });
@@ -2057,16 +2157,15 @@ function buildMealOrdersPDF(list, titleText) {
         head: [["SL", "Roll", "Student Name", "Room", "Meal Item", "Price", "Served", "Tick"]],
         body,
         theme: "grid",
-        headStyles: { fillColor: [11, 42, 74] },
-        styles: { fontSize: 9 },
+        headStyles: { fillColor: [11, 42, 74], font: bnFont },
+        styles: { font: bnFont, fontSize: 9 },
         columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 16 }, 7: { cellWidth: 14 } }
       });
 
       const afterY = docPdf.lastAutoTable.finalY + 8;
+      docPdf.setFont(BENGALI_FONT_NAME);
       docPdf.setFontSize(9); docPdf.setTextColor(11, 42, 74);
       docPdf.text(`Total: ${sectionCount} meals  —  Tk ${sectionTotal.toFixed(2)}`, 14, afterY);
-
-      sectionIndex++;
     });
   });
 
@@ -2099,20 +2198,36 @@ function downloadCSV(list, filenamePrefix) {
   URL.revokeObjectURL(link.href);
 }
 
-window.downloadTreasurerMealOrdersPDF = () => {
-  const list = filteredMealOrdersFor('tr-orders-date', 'tr-orders-mealtype', 'tr-orders-hostel', null);
-  const dateVal = document.getElementById('tr-orders-date').value || 'সব তারিখ';
-  buildMealOrdersPDF(list, `Meal Order List — ${dateVal}`).save(`Meal_Order_List_${todayKey()}.pdf`);
+window.downloadTreasurerMealOrdersPDF = async (btnEl) => {
+  const btn = btnEl instanceof HTMLElement ? btnEl : null;
+  const oldLabel = btn ? btn.textContent : null;
+  if (btn) { btn.disabled = true; btn.textContent = "তৈরি হচ্ছে..."; }
+  try {
+    const list = filteredMealOrdersFor('tr-orders-date', 'tr-orders-mealtype', 'tr-orders-hostel', null);
+    const dateVal = document.getElementById('tr-orders-date').value || 'সব তারিখ';
+    const pdf = await buildMealOrdersPDF(list, `Meal Order List — ${dateVal}`);
+    pdf.save(`Meal_Order_List_${todayKey()}.pdf`);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = oldLabel; }
+  }
 };
 window.downloadTreasurerMealOrdersCSV = () => {
   const list = filteredMealOrdersFor('tr-orders-date', 'tr-orders-mealtype', 'tr-orders-hostel', null);
   downloadCSV(list, 'Meal_Order_Summary');
 };
-window.downloadHostelMealOrdersPDF = () => {
-  const gender = adminGender(currentUserRole);
-  const list = filteredMealOrdersFor('hostel-orders-date', 'hostel-orders-mealtype', null, gender);
-  const dateVal = document.getElementById('hostel-orders-date').value || 'সব তারিখ';
-  buildMealOrdersPDF(list, `Meal Order List — ${dateVal}`).save(`Meal_Order_List_${todayKey()}.pdf`);
+window.downloadHostelMealOrdersPDF = async (btnEl) => {
+  const btn = btnEl instanceof HTMLElement ? btnEl : null;
+  const oldLabel = btn ? btn.textContent : null;
+  if (btn) { btn.disabled = true; btn.textContent = "তৈরি হচ্ছে..."; }
+  try {
+    const gender = adminGender(currentUserRole);
+    const list = filteredMealOrdersFor('hostel-orders-date', 'hostel-orders-mealtype', null, gender);
+    const dateVal = document.getElementById('hostel-orders-date').value || 'সব তারিখ';
+    const pdf = await buildMealOrdersPDF(list, `Meal Order List — ${dateVal}`);
+    pdf.save(`Meal_Order_List_${todayKey()}.pdf`);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = oldLabel; }
+  }
 };
 window.downloadHostelMealOrdersCSV = () => {
   const gender = adminGender(currentUserRole);
@@ -2326,84 +2441,97 @@ window.openVoucherModal = () => {
 };
 
 // ============ FULL PDF REPORT ============
-window.downloadFullReport = () => {
-  const { jsPDF } = window.jspdf;
-  const docPdf = new jsPDF();
-  const totalCollection = students.reduce((a, s) => a + totalDepositsFor(s.roll), 0);
-  const totalDonation = donationsData.reduce((a, d) => a + (d.amount || 0), 0);
-  const totalMeals = mealOrdersData.filter(o => !o.isAdminPersonal).reduce((a, o) => a + (o.price || 0), 0);
-  const totalExpense = expensesData.reduce((a, e) => a + (e.amount || 0), 0) + totalMeals;
-  const balance = totalCollection + totalDonation - totalExpense;
-  const now = new Date();
+window.downloadFullReport = async (btnEl) => {
+  const btn = btnEl instanceof HTMLElement ? btnEl : null;
+  const oldLabel = btn ? btn.textContent : null;
+  if (btn) { btn.disabled = true; btn.textContent = "তৈরি হচ্ছে..."; }
+  try {
+    const { jsPDF } = window.jspdf;
+    const docPdf = new jsPDF();
+    const fontOk = await ensureBengaliFont(docPdf);
+    const bnFont = fontOk ? BENGALI_FONT_NAME : undefined;
+    const totalCollection = students.reduce((a, s) => a + totalDepositsFor(s.roll), 0);
+    const totalDonation = donationsData.reduce((a, d) => a + (d.amount || 0), 0);
+    const totalMeals = mealOrdersData.filter(o => !o.isAdminPersonal).reduce((a, o) => a + (o.price || 0), 0);
+    const totalExpense = expensesData.reduce((a, e) => a + (e.amount || 0), 0) + totalMeals;
+    const balance = totalCollection + totalDonation - totalExpense;
+    const now = new Date();
 
-  docPdf.setFontSize(16); docPdf.setTextColor(11, 42, 74);
-  docPdf.text("Nilphamari Medical College Canteen — Report", 14, 18);
-  docPdf.setFontSize(10); docPdf.setTextColor(94, 122, 140);
-  docPdf.text(`Prepared by: ${currentTreasurerName}   |   Generated: ${now.toLocaleString()}`, 14, 25);
+    docPdf.setFontSize(16); docPdf.setTextColor(11, 42, 74);
+    docPdf.text("Nilphamari Medical College Canteen — Report", 14, 18);
+    docPdf.setFontSize(10); docPdf.setTextColor(94, 122, 140);
+    docPdf.text(`Prepared by: ${currentTreasurerName}   |   Generated: ${now.toLocaleString()}`, 14, 25);
 
-  docPdf.autoTable({
-    startY: 32,
-    head: [["Total Collection", "Total Fund", "Total Expense (incl. Meals)", "Balance in Hand"]],
-    body: [[`Tk ${totalCollection.toFixed(2)}`, `Tk ${totalDonation.toFixed(2)}`, `Tk ${totalExpense.toFixed(2)}`, `Tk ${balance.toFixed(2)}`]],
-    theme: "grid", headStyles: { fillColor: [11, 42, 74] }, styles: { halign: "center", fontSize: 9 }
-  });
+    docPdf.autoTable({
+      startY: 32,
+      head: [["Total Collection", "Total Fund", "Total Expense (incl. Meals)", "Balance in Hand"]],
+      body: [[`Tk ${totalCollection.toFixed(2)}`, `Tk ${totalDonation.toFixed(2)}`, `Tk ${totalExpense.toFixed(2)}`, `Tk ${balance.toFixed(2)}`]],
+      theme: "grid", headStyles: { fillColor: [11, 42, 74], font: bnFont }, styles: { halign: "center", fontSize: 9, font: bnFont }
+    });
 
-  docPdf.setFontSize(12); docPdf.setTextColor(11, 42, 74);
-  docPdf.text("Student Ledger", 14, docPdf.lastAutoTable.finalY + 10);
-  const studentRows = students.map(s => {
-    const amt = totalDepositsFor(s.roll);
-    const bal = getStudentBalance(s.roll);
-    return [s.roll, s.name, s.batch || '-', s.hostel || '-', s.room || '-', `Tk ${amt.toFixed(2)}`, `${bal >= 0 ? "" : "-"}Tk ${Math.abs(bal).toFixed(2)}`];
-  });
-  docPdf.autoTable({
-    startY: docPdf.lastAutoTable.finalY + 14,
-    head: [["Roll", "Name", "Batch", "Hostel", "Room", "Collected", "Balance"]],
-    body: studentRows, theme: "striped", headStyles: { fillColor: [11, 42, 74] }, styles: { fontSize: 8 },
-    didParseCell: (data) => {
-      if (data.section === 'body' && data.column.index === 6) {
-        const txt = data.cell.raw;
-        data.cell.styles.textColor = txt.startsWith('-') ? [209, 67, 67] : [14, 143, 110];
+    docPdf.setFont(BENGALI_FONT_NAME);
+    docPdf.setFontSize(12); docPdf.setTextColor(11, 42, 74);
+    docPdf.text("Student Ledger", 14, docPdf.lastAutoTable.finalY + 10);
+    const studentRows = students.map(s => {
+      const amt = totalDepositsFor(s.roll);
+      const bal = getStudentBalance(s.roll);
+      return [s.roll, s.name, s.batch || '-', s.hostel || '-', s.room || '-', `Tk ${amt.toFixed(2)}`, `${bal >= 0 ? "" : "-"}Tk ${Math.abs(bal).toFixed(2)}`];
+    });
+    docPdf.autoTable({
+      startY: docPdf.lastAutoTable.finalY + 14,
+      head: [["Roll", "Name", "Batch", "Hostel", "Room", "Collected", "Balance"]],
+      body: studentRows, theme: "striped", headStyles: { fillColor: [11, 42, 74], font: bnFont }, styles: { fontSize: 8, font: bnFont },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 6) {
+          const txt = data.cell.raw;
+          data.cell.styles.textColor = txt.startsWith('-') ? [209, 67, 67] : [14, 143, 110];
+        }
       }
+    });
+
+    if (donationsData.length) {
+      docPdf.setFont(BENGALI_FONT_NAME);
+      docPdf.setFontSize(12); docPdf.setTextColor(11, 42, 74);
+      docPdf.text("Fund", 14, docPdf.lastAutoTable.finalY + 10);
+      docPdf.autoTable({
+        startY: docPdf.lastAutoTable.finalY + 14,
+        head: [["Contributor", "Amount", "Note", "Added By"]],
+        body: donationsData.map(d => [d.donorName || "Anonymous", `Tk ${(d.amount||0).toFixed(2)}`, d.note || "-", d.addedBy || "-"]),
+        theme: "grid", headStyles: { fillColor: [200, 144, 31], font: bnFont }, styles: { fontSize: 8, font: bnFont }
+      });
     }
-  });
 
-  if (donationsData.length) {
-    docPdf.setFontSize(12); docPdf.setTextColor(11, 42, 74);
-    docPdf.text("Fund", 14, docPdf.lastAutoTable.finalY + 10);
-    docPdf.autoTable({
-      startY: docPdf.lastAutoTable.finalY + 14,
-      head: [["Contributor", "Amount", "Note", "Added By"]],
-      body: donationsData.map(d => [d.donorName || "Anonymous", `Tk ${(d.amount||0).toFixed(2)}`, d.note || "-", d.addedBy || "-"]),
-      theme: "grid", headStyles: { fillColor: [200, 144, 31] }, styles: { fontSize: 8 }
-    });
+    if (expensesData.length) {
+      docPdf.setFont(BENGALI_FONT_NAME);
+      docPdf.setFontSize(12); docPdf.setTextColor(11, 42, 74);
+      docPdf.text("Expenses", 14, docPdf.lastAutoTable.finalY + 10);
+      docPdf.autoTable({
+        startY: docPdf.lastAutoTable.finalY + 14,
+        head: [["Description", "Amount", "Charged To", "Added By"]],
+        body: expensesData.map(e => [
+          e.description, `Tk ${(e.amount||0).toFixed(2)}`,
+          e.chargeType === 'individual' ? `${e.targetName || 'Roll ' + e.targetRoll} (personal)` : "All (equal split)",
+          e.addedBy || "-"
+        ]),
+        theme: "grid", headStyles: { fillColor: [209, 67, 67], font: bnFont }, styles: { fontSize: 8, font: bnFont }
+      });
+    }
+
+    const finalY = docPdf.lastAutoTable.finalY + 20;
+    docPdf.setDrawColor(11, 42, 74); docPdf.setLineWidth(0.8);
+    docPdf.circle(30, finalY, 12);
+    docPdf.setFont(BENGALI_FONT_NAME);
+    docPdf.setFontSize(9); docPdf.setTextColor(11, 42, 74);
+    docPdf.text("Tk", 27, finalY + 2);
+    docPdf.setFontSize(9); docPdf.setTextColor(11, 42, 74);
+    docPdf.text(`Verified by: ${currentTreasurerName}`, 48, finalY - 2);
+    docPdf.setFontSize(8); docPdf.setTextColor(94, 122, 140);
+    docPdf.text(`Generated on ${now.toLocaleDateString()}`, 48, finalY + 4);
+
+    docPdf.save(`Canteen_Report_${now.toISOString().slice(0,10)}.pdf`);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = oldLabel; }
   }
-
-  if (expensesData.length) {
-    docPdf.setFontSize(12); docPdf.setTextColor(11, 42, 74);
-    docPdf.text("Expenses", 14, docPdf.lastAutoTable.finalY + 10);
-    docPdf.autoTable({
-      startY: docPdf.lastAutoTable.finalY + 14,
-      head: [["Description", "Amount", "Charged To", "Added By"]],
-      body: expensesData.map(e => [
-        e.description, `Tk ${(e.amount||0).toFixed(2)}`,
-        e.chargeType === 'individual' ? `${e.targetName || 'Roll ' + e.targetRoll} (personal)` : "All (equal split)",
-        e.addedBy || "-"
-      ]),
-      theme: "grid", headStyles: { fillColor: [209, 67, 67] }, styles: { fontSize: 8 }
-    });
-  }
-
-  const finalY = docPdf.lastAutoTable.finalY + 20;
-  docPdf.setDrawColor(11, 42, 74); docPdf.setLineWidth(0.8);
-  docPdf.circle(30, finalY, 12);
-  docPdf.setFontSize(9); docPdf.setTextColor(11, 42, 74);
-  docPdf.text("Tk", 27, finalY + 2);
-  docPdf.setFontSize(9); docPdf.setTextColor(11, 42, 74);
-  docPdf.text(`Verified by: ${currentTreasurerName}`, 48, finalY - 2);
-  docPdf.setFontSize(8); docPdf.setTextColor(94, 122, 140);
-  docPdf.text(`Generated on ${now.toLocaleDateString()}`, 48, finalY + 4);
-
-  docPdf.save(`Canteen_Report_${now.toISOString().slice(0,10)}.pdf`);
 };
 
 // ============ INIT DEFAULTS ============
