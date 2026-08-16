@@ -1997,9 +1997,10 @@ window.quickServeByRoll = async (inputId, dateElId, mealTypeElId, hostelElId) =>
 };
 
 // ============ PDF / CSV DOWNLOADS ============
-// One PDF file, but each Hostel(=Gender) + Batch combination gets its own page/section —
-// so the treasurer can print/hand out each batch's sheet separately without needing
-// separate downloads.
+// One PDF file, but each Hostel + Meal Time(বেলা) + Batch combination gets its own
+// page/section — so each batch's breakfast/lunch/dinner sheet can be printed/handed
+// out separately.
+
 // groups a flat order list into { male: { total, amount, byType:{type:{count,amount}} }, female: {...} }
 // used to build the boys-hostel / girls-hostel summary page
 function summarizeOrdersByGender(list) {
@@ -2012,11 +2013,42 @@ function summarizeOrdersByGender(list) {
     summary[g].total++;
     summary[g].amount += (o.price || 0);
     const t = o.mealType || 'other';
-    summary[g].byType[t] = summary[g].byType[t] || { count: 0, amount: 0 };
+    summary[g].byType[t] = summary[g].byType[t] || { count: 0, amount: 0, items: {} };
     summary[g].byType[t].count++;
     summary[g].byType[t].amount += (o.price || 0);
+    const itemName = o.mealItemName || 'অনির্দিষ্ট';
+    summary[g].byType[t].items[itemName] = summary[g].byType[t].items[itemName] || { count: 0, amount: 0 };
+    summary[g].byType[t].items[itemName].count++;
+    summary[g].byType[t].items[itemName].amount += (o.price || 0);
   });
   return summary;
+}
+
+// overall (both hostels combined) totals per meal time (বেলা)
+function summarizeOrdersByMealType(list) {
+  const byType = {};
+  list.forEach(o => {
+    const t = o.mealType || 'other';
+    byType[t] = byType[t] || { count: 0, amount: 0 };
+    byType[t].count++;
+    byType[t].amount += (o.price || 0);
+  });
+  return byType;
+}
+
+// groups a flat order list into hostel -> mealType(বেলা) -> batch -> room -> [orders]
+// so each sheet in the PDF is one hostel + one meal time + one batch
+function groupOrdersForSheets(list) {
+  const groups = {};
+  list.forEach(o => {
+    const h = o.hostel || 'অনির্দিষ্ট', mt = o.mealType || 'other', b = o.batch || 'অনির্দিষ্ট', r = o.room || 'অনির্দিষ্ট';
+    groups[h] = groups[h] || {};
+    groups[h][mt] = groups[h][mt] || {};
+    groups[h][mt][b] = groups[h][mt][b] || {};
+    groups[h][mt][b][r] = groups[h][mt][b][r] || [];
+    groups[h][mt][b][r].push(o);
+  });
+  return groups;
 }
 
 async function buildMealOrdersPDF(list, titleText) {
@@ -2032,10 +2064,12 @@ async function buildMealOrdersPDF(list, titleText) {
     docPdf.text(`Generated: ${new Date().toLocaleString()}`, 14, 29);
   }
 
-  // ---------- summary page: boys hostel vs girls hostel totals + per-meal-type breakdown ----------
+  // ---------- summary page: overall totals, boys/girls hostel totals, meal-time totals,
+  // and meal-time -> item breakdown (e.g. Lunch: Half x, Full y / Dinner: Half x, Full y) ----------
   function drawSummaryPage() {
     drawHeader();
-    const summary = summarizeOrdersByGender(list);
+    const genderSummary = summarizeOrdersByGender(list);
+    const mealTypeSummary = summarizeOrdersByMealType(list);
     const overallCount = list.length;
     const overallAmount = list.reduce((a, o) => a + (o.price || 0), 0);
 
@@ -2044,12 +2078,13 @@ async function buildMealOrdersPDF(list, titleText) {
     docPdf.setDrawColor(191, 224, 206); docPdf.setLineWidth(0.5);
     docPdf.line(14, 41, pageWidth - 14, 41);
 
+    // Table 1: hostel-wise totals
     docPdf.autoTable({
       startY: 46,
       head: [["Hostel", "Total Meals", "Total Amount"]],
       body: [
-        ["Boys Hostel", summary.male.total, `Tk ${summary.male.amount.toFixed(2)}`],
-        ["Girls Hostel", summary.female.total, `Tk ${summary.female.amount.toFixed(2)}`],
+        ["Boys Hostel", genderSummary.male.total, `Tk ${genderSummary.male.amount.toFixed(2)}`],
+        ["Girls Hostel", genderSummary.female.total, `Tk ${genderSummary.female.amount.toFixed(2)}`],
         ["Overall Total", overallCount, `Tk ${overallAmount.toFixed(2)}`]
       ],
       theme: "grid",
@@ -2057,25 +2092,45 @@ async function buildMealOrdersPDF(list, titleText) {
       styles: { fontSize: 10 }
     });
 
-    [['male', 'Boys Hostel — by Meal Type'],
-     ['female', 'Girls Hostel — by Meal Type']].forEach(([g, label]) => {
+    // Table 2: overall meal-time (বেলা) wise totals
+    docPdf.setFontSize(11); docPdf.setTextColor(11, 42, 74);
+    docPdf.text("Meal Time wise Total (বেলা অনুযায়ী মোট)", 14, docPdf.lastAutoTable.finalY + 10);
+    const mtRows = MEAL_TYPES.filter(t => mealTypeSummary[t]).map(t => [
+      MEAL_TYPE_LABEL[t] || t, mealTypeSummary[t].count, `Tk ${mealTypeSummary[t].amount.toFixed(2)}`
+    ]);
+    docPdf.autoTable({
+      startY: docPdf.lastAutoTable.finalY + 14,
+      head: [["Meal Time", "Count", "Amount"]],
+      body: mtRows.length ? mtRows : [["No data", "-", "-"]],
+      theme: "striped",
+      headStyles: { fillColor: [14, 143, 110] },
+      styles: { fontSize: 9 }
+    });
+
+    // Table 3 (per hostel): meal-time -> item breakdown, e.g. Lunch: Half n, Full n / Dinner: Half n, Full n
+    [['male', 'Boys Hostel — Item-wise Breakdown by Meal Time'],
+     ['female', 'Girls Hostel — Item-wise Breakdown by Meal Time']].forEach(([g, label]) => {
       docPdf.setFontSize(11); docPdf.setTextColor(11, 42, 74);
       docPdf.text(label, 14, docPdf.lastAutoTable.finalY + 10);
-      const rows = MEAL_TYPES.filter(t => summary[g].byType[t]).map(t => [
-        MEAL_TYPE_LABEL[t] || t, summary[g].byType[t].count, `Tk ${summary[g].byType[t].amount.toFixed(2)}`
-      ]);
+      const rows = [];
+      MEAL_TYPES.filter(t => genderSummary[g].byType[t]).forEach(t => {
+        Object.keys(genderSummary[g].byType[t].items).sort().forEach(item => {
+          const it = genderSummary[g].byType[t].items[item];
+          rows.push([MEAL_TYPE_LABEL[t] || t, item, it.count, `Tk ${it.amount.toFixed(2)}`]);
+        });
+      });
       docPdf.autoTable({
         startY: docPdf.lastAutoTable.finalY + 14,
-        head: [["Meal Type", "Count", "Amount"]],
-        body: rows.length ? rows : [["No data", "-", "-"]],
-        theme: "striped",
-        headStyles: { fillColor: [14, 143, 110] },
+        head: [["Meal Time", "Item", "Count", "Amount"]],
+        body: rows.length ? rows : [["No data", "-", "-", "-"]],
+        theme: "grid",
+        headStyles: { fillColor: [200, 144, 31] },
         styles: { fontSize: 9 }
       });
     });
   }
 
-  const groups = groupOrders(list);
+  const groups = groupOrdersForSheets(list);
   const hostelKeys = Object.keys(groups).sort();
 
   drawSummaryPage();
@@ -2089,46 +2144,52 @@ async function buildMealOrdersPDF(list, titleText) {
   }
 
   hostelKeys.forEach(hostel => {
-    const batchKeys = Object.keys(groups[hostel]).sort();
-    batchKeys.forEach(batch => {
-      docPdf.addPage();
-      drawHeader();
+    // meal-time order follows MEAL_TYPES (breakfast, lunch, dinner), any unexpected type goes last
+    const mealTypeKeys = MEAL_TYPES.filter(t => groups[hostel][t])
+      .concat(Object.keys(groups[hostel]).filter(t => !MEAL_TYPES.includes(t)).sort());
 
-      // section sub-heading: which hostel (=gender) + batch this page covers
-      docPdf.setFontSize(12); docPdf.setTextColor(11, 42, 74);
-      docPdf.text(`${hostel}  —  Batch ${batch}`, 14, 38);
-      docPdf.setDrawColor(191, 224, 206); docPdf.setLineWidth(0.5);
-      docPdf.line(14, 41, pageWidth - 14, 41);
+    mealTypeKeys.forEach(mealType => {
+      const batchKeys = Object.keys(groups[hostel][mealType]).sort();
+      batchKeys.forEach(batch => {
+        docPdf.addPage();
+        drawHeader();
 
-      // flatten every room's orders for this batch, then sort roll-wise (ascending) so the
-      // sheet reads as a clean roll-number serial list instead of room-grouped clusters
-      const batchOrders = [];
-      Object.keys(groups[hostel][batch]).forEach(room => {
-        groups[hostel][batch][room].forEach(o => batchOrders.push(o));
+        // section sub-heading: which hostel + meal time(বেলা) + batch this sheet covers
+        docPdf.setFontSize(12); docPdf.setTextColor(11, 42, 74);
+        docPdf.text(`${hostel}  —  ${MEAL_TYPE_LABEL[mealType] || mealType}  —  Batch ${batch}`, 14, 38);
+        docPdf.setDrawColor(191, 224, 206); docPdf.setLineWidth(0.5);
+        docPdf.line(14, 41, pageWidth - 14, 41);
+
+        // flatten every room's orders for this batch, then sort roll-wise (ascending) so the
+        // sheet reads as a clean roll-number serial list instead of room-grouped clusters
+        const batchOrders = [];
+        Object.keys(groups[hostel][mealType][batch]).forEach(room => {
+          groups[hostel][mealType][batch][room].forEach(o => batchOrders.push(o));
+        });
+        batchOrders.sort((a, b) => (a.roll || 0) - (b.roll || 0));
+
+        const body = [];
+        let sectionTotal = 0, sectionCount = 0;
+        batchOrders.forEach((o, idx) => {
+          body.push([idx + 1, o.roll, o.studentName, o.room || '-', o.mealItemName, `Tk ${(o.price||0).toFixed(2)}`, o.served ? 'YES' : '', '']);
+          sectionTotal += (o.price || 0);
+          sectionCount++;
+        });
+
+        docPdf.autoTable({
+          startY: 46,
+          head: [["SL", "Roll", "Student Name", "Room", "Meal Item", "Price", "Served", "Tick"]],
+          body,
+          theme: "grid",
+          headStyles: { fillColor: [11, 42, 74] },
+          styles: { fontSize: 9 },
+          columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 16 }, 7: { cellWidth: 14 } }
+        });
+
+        const afterY = docPdf.lastAutoTable.finalY + 8;
+        docPdf.setFontSize(9); docPdf.setTextColor(11, 42, 74);
+        docPdf.text(`Total: ${sectionCount} meals  —  Tk ${sectionTotal.toFixed(2)}`, 14, afterY);
       });
-      batchOrders.sort((a, b) => (a.roll || 0) - (b.roll || 0));
-
-      const body = [];
-      let sectionTotal = 0, sectionCount = 0;
-      batchOrders.forEach((o, idx) => {
-        body.push([idx + 1, o.roll, o.studentName, o.room || '-', `${o.mealItemName} [${o.mealType}]`, `Tk ${(o.price||0).toFixed(2)}`, o.served ? 'YES' : '', '']);
-        sectionTotal += (o.price || 0);
-        sectionCount++;
-      });
-
-      docPdf.autoTable({
-        startY: 46,
-        head: [["SL", "Roll", "Student Name", "Room", "Meal Item", "Price", "Served", "Tick"]],
-        body,
-        theme: "grid",
-        headStyles: { fillColor: [11, 42, 74] },
-        styles: { fontSize: 9 },
-        columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 16 }, 7: { cellWidth: 14 } }
-      });
-
-      const afterY = docPdf.lastAutoTable.finalY + 8;
-      docPdf.setFontSize(9); docPdf.setTextColor(11, 42, 74);
-      docPdf.text(`Total: ${sectionCount} meals  —  Tk ${sectionTotal.toFixed(2)}`, 14, afterY);
     });
   });
 
