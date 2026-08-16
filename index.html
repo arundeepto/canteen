@@ -3,7 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>নীলফামারী মেডিকেল কলেজ ক্যান্টিন — Canteen Management</title>
+<title>NpMC Canteen — নীলফামারী মেডিকেল কলেজ ক্যান্টিন</title>
+
+<!-- ============ PWA: manifest, icons, theme color ============ -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B2A4A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NpMC Canteen">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -2547,6 +2559,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // page refresh — re-render once a minute so it flips right at the configured open/close time.
   setInterval(() => { if (listenersStarted) renderAll(); }, 60000);
 });
+
+// ============ PWA: register service worker for offline app-shell caching ============
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((e) => console.error('SW registration failed:', e));
+  });
+}
 </script>
 </body>
 </html>
