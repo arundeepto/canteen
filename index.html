@@ -297,7 +297,21 @@
         <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter'){doLogin();}">
       </div>
       <button class="btn btn-primary" style="width:100%;" onclick="doLogin()">লগইন / Log In</button>
+      <div class="auth-toggle">
+        <a onclick="showForgotForm()">পাসওয়ার্ড ভুলে গেছেন? / Forgot password?</a>
+      </div>
       <div class="auth-toggle">নতুন শিক্ষার্থী? <a onclick="showRegisterForm()">রেজিস্ট্রেশন করুন / Register</a></div>
+    </div>
+
+    <!-- FORGOT PASSWORD FORM -->
+    <div id="forgot-form" class="hidden">
+      <p class="hint" style="margin:-6px 0 14px;">আপনার অ্যাকাউন্টের ইমেইল দিন — পাসওয়ার্ড রিসেট করার লিংক পাঠানো হবে।</p>
+      <div class="field" style="margin-bottom:16px;">
+        <label>ইমেইল / Email</label>
+        <input type="email" id="forgot-email" placeholder="you@example.com" autocomplete="username" onkeydown="if(event.key==='Enter'){doForgotPassword();}">
+      </div>
+      <button class="btn btn-primary" style="width:100%;" id="forgot-btn" onclick="doForgotPassword()">রিসেট লিংক পাঠান / Send Reset Link</button>
+      <div class="auth-toggle"><a onclick="showLoginForm()">লগইনে ফিরে যান / Back to Login</a></div>
     </div>
 
     <!-- REGISTER FORM (student self-registration with full profile) -->
@@ -824,7 +838,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
-  createUserWithEmailAndPassword, deleteUser
+  createUserWithEmailAndPassword, deleteUser, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
@@ -972,13 +986,40 @@ window.updateRegHostelPreview = () => {
 window.showRegisterForm = () => {
   clearAuthError();
   document.getElementById('login-form').classList.add('hidden');
+  document.getElementById('forgot-form').classList.add('hidden');
   document.getElementById('register-form').classList.remove('hidden');
   updateRegHostelPreview();
 };
 window.showLoginForm = () => {
   clearAuthError();
   document.getElementById('register-form').classList.add('hidden');
+  document.getElementById('forgot-form').classList.add('hidden');
   document.getElementById('login-form').classList.remove('hidden');
+};
+window.showForgotForm = () => {
+  clearAuthError();
+  document.getElementById('login-form').classList.add('hidden');
+  document.getElementById('register-form').classList.add('hidden');
+  document.getElementById('forgot-form').classList.remove('hidden');
+  const loginEmail = document.getElementById('login-email').value.trim();
+  if (loginEmail) document.getElementById('forgot-email').value = loginEmail;
+};
+
+window.doForgotPassword = async () => {
+  clearAuthError();
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email) { showAuthError("ইমেইল দিন।"); return; }
+  const btn = document.getElementById('forgot-btn');
+  if (btn) { btn.disabled = true; btn.textContent = "পাঠানো হচ্ছে..."; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    alert("রিসেট লিংক পাঠানো হয়েছে। আপনার ইমেইল (স্প্যাম ফোল্ডারসহ) চেক করুন।");
+    showLoginForm();
+  } catch (e) {
+    showAuthError(e && e.message ? e.message : "রিসেট লিংক পাঠানো যায়নি।");
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "রিসেট লিংক পাঠান / Send Reset Link"; }
+  }
 };
 
 window.doLogin = async () => {
