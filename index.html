@@ -465,6 +465,19 @@
     </div>
   </div>
 
+  <!-- ============ HOSTEL ADMIN (boys only): view girls database (read-only) ============ -->
+  <div class="panel hidden" id="boys-admin-girls-view-panel" data-tab="payments">
+    <h2>👀 মেয়েদের ডাটাবেস (শুধু দেখার জন্য)</h2>
+    <p class="hint">এখানে মেয়েদের হোস্টেলের শিক্ষার্থীদের তালিকা শুধু দেখা যাবে — এখান থেকে টাকা জমা যোগ করা যাবে না।</p>
+    <input type="text" class="search-box" id="hostel-admin-girls-view-search" placeholder="🔍 আইডি (ID), রোল বা নাম দিয়ে খুঁজুন..." oninput="filterHostelAdminGirlsView()">
+    <div class="table-scroll">
+      <table class="ledger">
+        <thead><tr><th>আইডি (ID)</th><th>রোল</th><th>নাম</th><th>ব্যাচ</th><th>রুম</th><th>মোট জমা (৳)</th><th>ব্যালেন্স</th></tr></thead>
+        <tbody id="hostel-admin-girls-view-body"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- ============ HOSTEL ADMIN: financial accounts (daily/monthly/total) ============ -->
   <div class="panel hostel-admin-only hidden" data-tab="finance">
     <h2>💰 আর্থিক হিসাব</h2>
@@ -1256,6 +1269,8 @@ function applyRoleVisibility() {
   document.querySelectorAll('.subscriber-only').forEach(el => el.classList.toggle('hidden', role !== 'subscriber'));
   document.querySelectorAll('.hostel-admin-only').forEach(el => el.classList.toggle('hidden', !isHostelAdminRole(role)));
   document.querySelectorAll('.teacher-only').forEach(el => el.classList.toggle('hidden', role !== 'teacher'));
+  const girlsViewPanel = document.getElementById('boys-admin-girls-view-panel');
+  if (girlsViewPanel) girlsViewPanel.classList.toggle('hidden', role !== 'boys_admin');
   const title = document.getElementById('hostel-admin-title');
   if (title) title.textContent = role === 'girls_admin' ? 'মেয়েদের হোস্টেল হিসাব — সংক্ষিপ্ত' : 'ছেলেদের হোস্টেল হিসাব — সংক্ষিপ্ত';
   renderNavBar();
@@ -1953,7 +1968,33 @@ function renderHostelAdminPanel() {
   set('hostel-today-orders', todayCount);
   renderHostelAdminStudentRows();
   renderHostelAdminFinance();
+  if (currentUserRole === 'boys_admin') renderHostelAdminGirlsViewRows();
 }
+
+// Boys admin can additionally VIEW (read-only) the girls' student database —
+// no add-money control here; addHostelPayment() still blocks cross-gender writes server-side logic.
+function renderHostelAdminGirlsViewRows() {
+  const tbody = document.getElementById('hostel-admin-girls-view-body');
+  if (!tbody) return;
+  const list = students.filter(s => s.gender === 'female');
+  tbody.innerHTML = list.map(s => {
+    const hay = `${s.roll} ${s.classRoll || ''} ${s.name || ''} ${s.batch || ''} ${s.room || ''}`.toLowerCase();
+    const bal = getStudentBalance(s.roll);
+    const balClass = bal >= 0 ? 'due-pos' : 'due-neg';
+    return `<tr data-hay="${hay}">
+      <td class="num">${s.roll}</td><td class="num">${s.classRoll || '-'}</td><td>${s.name}</td><td>${s.batch || '-'}</td><td>${s.room || '-'}</td>
+      <td class="num">৳${totalDepositsFor(s.roll).toFixed(2)}</td>
+      <td class="num ${balClass}">৳${bal.toFixed(2)}</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);">কোনো শিক্ষার্থী নেই</td></tr>`;
+}
+
+window.filterHostelAdminGirlsView = () => {
+  const q = document.getElementById('hostel-admin-girls-view-search').value.trim().toLowerCase();
+  document.querySelectorAll('#hostel-admin-girls-view-body tr').forEach(tr => {
+    tr.style.display = (tr.dataset.hay || '').includes(q) ? '' : 'none';
+  });
+};
 
 function renderHostelAdminStudentRows() {
   const tbody = document.getElementById('hostel-admin-student-body');
