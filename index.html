@@ -647,10 +647,14 @@
       <div class="field"><label>Note (optional)</label><input type="text" id="donation-note" placeholder="e.g. Eid gift"></div>
     </div>
     <div class="btn-row"><button class="btn btn-gold" onclick="saveDonation()">Save Fund</button></div>
-    <div class="table-scroll" style="margin-top:16px;">
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn btn-outline" onclick="loadDonations()">📂 ফান্ডের তালিকা লোড করুন</button>
+      <button class="btn btn-outline" onclick="loadDonations()">🔄 রিফ্রেশ</button>
+    </div>
+    <div class="table-scroll" style="margin-top:10px;">
       <table class="ledger">
         <thead><tr><th>Date</th><th>Purpose</th><th>Amount</th><th>Note</th><th>Added By</th></tr></thead>
-        <tbody id="donation-list"></tbody>
+        <tbody id="donation-list"><tr><td colspan="5" style="text-align:center;color:var(--ink-soft);">উপরের বাটনে চাপুন তালিকা দেখতে</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -825,7 +829,11 @@
   <!-- activity -->
   <div class="panel treasurer-only" data-tab="activity">
     <h2>সাম্প্রতিক কার্যক্রম</h2>
-    <div id="activity-list"></div>
+    <div class="btn-row" style="margin-bottom:12px;">
+      <button class="btn btn-outline" onclick="loadActivity()">📂 লোড করুন</button>
+      <button class="btn btn-outline" onclick="loadActivity()">🔄 রিফ্রেশ</button>
+    </div>
+    <div id="activity-list"><div style="color:var(--ink-soft);font-size:.85rem;">উপরের বাটনে চাপুন সাম্প্রতিক কার্যক্রম দেখতে</div></div>
   </div>
 
   <!-- ============ TEACHER: shortfall dashboard ============ -->
@@ -1340,31 +1348,57 @@ function startListeners() {
     renderAll();
   }));
 
-  activeUnsubscribes.push(onSnapshot(query(collection(db, "payments"), orderBy("addedAt", "desc")), (snap) => {
-    paymentsData = {};
-    snap.forEach(d => {
-      const p = d.data();
-      const roll = p.roll;
-      if (!paymentsData[roll]) paymentsData[roll] = [];
-      paymentsData[roll].push({ id: d.id, ...p });
-    });
-    renderAll();
-  }));
+  // Reads-cost fix: a subscriber only ever needs their OWN payment records (personal balance).
+  // Previously every subscriber session (~300+ of them) held a live listener on the ENTIRE
+  // payments collection, so every deposit added for ANY student was re-delivered — and billed
+  // as a read — to every other open subscriber session too. Treasurer/hostel-admins/teacher
+  // still need the full ledger (dashboards, per-student tables, PDFs), so only they keep the
+  // unrestricted listener.
+  const needsFullPayments = ['treasurer', 'teacher', 'girls_admin', 'boys_admin'].includes(currentUserRole);
+  if (needsFullPayments) {
+    activeUnsubscribes.push(onSnapshot(query(collection(db, "payments"), orderBy("addedAt", "desc")), (snap) => {
+      paymentsData = {};
+      snap.forEach(d => {
+        const p = d.data();
+        const roll = p.roll;
+        if (!paymentsData[roll]) paymentsData[roll] = [];
+        paymentsData[roll].push({ id: d.id, ...p });
+      });
+      renderAll();
+    }));
+  } else if (currentUserRole === 'subscriber' && currentSubscriberRoll) {
+    activeUnsubscribes.push(onSnapshot(query(collection(db, "payments"), where("roll", "==", currentSubscriberRoll)), (snap) => {
+      paymentsData = {};
+      const arr = [];
+      snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+      paymentsData[currentSubscriberRoll] = arr;
+      renderAll();
+    }));
+  }
 
-  activeUnsubscribes.push(onSnapshot(query(collection(db, "donations"), orderBy("addedAt", "desc")), (snap) => {
+  // Reads-cost fix: donations and the activity log are only ever displayed on the treasurer's
+  // own tabs — every other role was still paying for a live listener on them without ever
+  // showing the data. Now they're treasurer-only, AND load on-demand (button press) instead of
+  // an always-on listener, per Anando's request to cut down unnecessary reads on the Spark plan.
+  window.loadDonations = async () => {
+    const tbody = document.getElementById('donation-list');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);">লোড হচ্ছে...</td></tr>`;
+    const snap = await getDocs(query(collection(db, "donations"), orderBy("addedAt", "desc")));
     donationsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderDonations();
     renderSummary();
-  }));
+  };
+  window.loadActivity = async () => {
+    const box = document.getElementById('activity-list');
+    if (box) box.innerHTML = `<div style="color:var(--ink-soft);font-size:.85rem;">লোড হচ্ছে...</div>`;
+    const snap = await getDocs(query(collection(db, "activity"), orderBy("createdAt", "desc"), limit(30)));
+    activityData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderActivity();
+  };
 
   activeUnsubscribes.push(onSnapshot(query(collection(db, "expenses"), orderBy("addedAt", "desc")), (snap) => {
     expensesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderAll();
-  }));
-
-  activeUnsubscribes.push(onSnapshot(query(collection(db, "activity"), orderBy("createdAt", "desc"), limit(30)), (snap) => {
-    activityData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderActivity();
   }));
 
   activeUnsubscribes.push(onSnapshot(collection(db, "mealItems"), (snap) => {
@@ -1405,7 +1439,6 @@ function renderAll() {
   renderSummary();
   renderGenderSummary();
   renderTodayMealSummary();
-  renderDonations();
   renderExpenses();
   renderSubscriberPanel();
   renderHostelAdminPanel();
@@ -2563,6 +2596,7 @@ window.saveDonation = async () => {
     document.getElementById('donation-name').value = "";
     document.getElementById('donation-amount').value = "";
     document.getElementById('donation-note').value = "";
+    loadDonations(); // refresh the list to reflect what was just added (donations no longer auto-live)
   } catch (e) { alert("সংরক্ষণ করা যায়নি: " + (e && e.message ? e.message : e)); }
 };
 
@@ -2686,7 +2720,10 @@ window.openVoucherModal = () => {
 };
 
 // ============ FULL PDF REPORT ============
-window.downloadFullReport = () => {
+window.downloadFullReport = async () => {
+  // Donations are loaded on-demand now (not a live listener) — make sure the report has the
+  // latest figures rather than whatever was last manually loaded (or nothing, if never loaded).
+  await loadDonations();
   const { jsPDF } = window.jspdf;
   const docPdf = new jsPDF();
   const totalCollection = students.reduce((a, s) => a + totalDepositsFor(s.roll), 0);
