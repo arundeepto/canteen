@@ -1357,10 +1357,27 @@ function startListeners() {
     renderAll();
   }));
 
-  activeUnsubscribes.push(onSnapshot(query(collection(db, "mealOrders"), orderBy("orderedAt", "desc")), (snap) => {
-    mealOrdersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderAll();
-  }));
+  // Reads-cost fix: an ordinary subscriber only ever needs their OWN orders (order-history tab,
+  // "already ordered today?" checks, personal balance) — never everyone else's. Previously every
+  // one of the ~350 users held a live listener on the ENTIRE (ever-growing) mealOrders
+  // collection, so every new order placed was re-delivered — and billed as a read — to every
+  // other open session too. That fan-out (concurrent sessions × new writes), not just the raw
+  // collection size, is what was blowing past a lakh of reads.
+  // Treasurer/teacher/hostel-admins still need the full collection (dashboards, PDFs, reports),
+  // so only they keep the unrestricted listener; a subscriber gets a listener scoped to
+  // where roll == their own roll.
+  const needsFullMealOrders = ['treasurer', 'teacher', 'girls_admin', 'boys_admin'].includes(currentUserRole);
+  if (needsFullMealOrders) {
+    activeUnsubscribes.push(onSnapshot(query(collection(db, "mealOrders"), orderBy("orderedAt", "desc")), (snap) => {
+      mealOrdersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderAll();
+    }));
+  } else if (currentUserRole === 'subscriber' && currentSubscriberRoll) {
+    activeUnsubscribes.push(onSnapshot(query(collection(db, "mealOrders"), where("roll", "==", currentSubscriberRoll)), (snap) => {
+      mealOrdersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderAll();
+    }));
+  }
 }
 function stopListeners() {
   activeUnsubscribes.forEach(fn => { try { fn(); } catch (_) {} });
@@ -1981,6 +1998,27 @@ window.filterHostelAdminStudents = () => {
 };
 
 // ============ MEAL ORDERS TABLE (grouped by Hostel > Batch > Room) — used by both treasurer and hostel admin ============
+
+// Backfills gender/hostel/batch/room on an order from the current `students` list when the
+// order itself was saved with incomplete data (e.g. the student lookup in orderMeal() didn't
+// find a match at order time, so it fell back to gender:'unspecified', hostel:'-'). Without
+// this, such orders silently vanish from hostel-admin PDFs/CSVs because those exports filter
+// strictly by o.gender === 'male'/'female', and 'unspecified' never matches.
+function enrichOrderWithStudentInfo(o) {
+  const genderOk = o.gender && o.gender !== 'unspecified';
+  const hostelOk = o.hostel && o.hostel !== '-';
+  if (genderOk && hostelOk) return o;
+  const student = students.find(s => s.roll === o.roll);
+  if (!student) return o;
+  return {
+    ...o,
+    gender: genderOk ? o.gender : (student.gender || o.gender),
+    hostel: hostelOk ? o.hostel : (student.hostel || o.hostel),
+    batch: (o.batch && o.batch !== '-') ? o.batch : (student.batch || o.batch),
+    room: (o.room && o.room !== '-') ? o.room : (student.room || o.room)
+  };
+}
+
 function filteredMealOrdersFor(dateElId, mealTypeElId, hostelElId, restrictGender) {
   const dateEl = document.getElementById(dateElId);
   const typeEl = document.getElementById(mealTypeElId);
@@ -1989,7 +2027,7 @@ function filteredMealOrdersFor(dateElId, mealTypeElId, hostelElId, restrictGende
   const typeVal = typeEl ? typeEl.value : 'all';
   const hostelVal = hostelEl ? hostelEl.value : 'all';
 
-  let list = mealOrdersData.filter(o => !o.isAdminPersonal);
+  let list = mealOrdersData.filter(o => !o.isAdminPersonal).map(enrichOrderWithStudentInfo);
   if (dateVal) list = list.filter(o => o.businessDate === dateVal);
   if (typeVal && typeVal !== 'all') list = list.filter(o => o.mealType === typeVal);
   if (hostelVal && hostelVal !== 'all') list = list.filter(o => o.hostel === hostelVal);
@@ -2006,7 +2044,7 @@ function mealOrdersForType(dateElId, hostelElId, restrictGender, mealType) {
   const dateVal = dateEl ? dateEl.value : '';
   const hostelVal = hostelEl ? hostelEl.value : 'all';
 
-  let list = mealOrdersData.filter(o => !o.isAdminPersonal && o.mealType === mealType);
+  let list = mealOrdersData.filter(o => !o.isAdminPersonal && o.mealType === mealType).map(enrichOrderWithStudentInfo);
   if (dateVal) list = list.filter(o => o.businessDate === dateVal);
   if (hostelVal && hostelVal !== 'all') list = list.filter(o => o.hostel === hostelVal);
   if (restrictGender) list = list.filter(o => o.gender === restrictGender);
