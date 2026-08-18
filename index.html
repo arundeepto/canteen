@@ -393,6 +393,7 @@
         <div class="role" id="current-user-role">—</div>
       </div>
       <div class="stamp" id="current-user-stamp">?</div>
+      <button class="logout-btn" id="refresh-data-btn" onclick="refreshAllData()" title="সর্বশেষ ডেটা লোড করুন — ডেটা নিজে থেকে রিফ্রেশ হয় না, রিডস বাঁচাতে বাটনে চাপ দিলেই কেবল লোড হবে">🔄 রিফ্রেশ ডেটা</button>
       <button class="logout-btn" onclick="doLogout()">লগ আউট</button>
     </div>
   </div>
@@ -455,7 +456,7 @@
   <!-- ============ HOSTEL ADMIN: student balances + add money ============ -->
   <div class="panel hostel-admin-only hidden" data-tab="payments">
     <h2>শিক্ষার্থীদের জমার হিসাব</h2>
-    <p class="hint">এখানে আপনার হোস্টেলের শিক্ষার্থীদের তালিকা, জমার পরিমাণ ও ব্যালেন্স দেখা যাবে — এখান থেকেই তাদের জন্য টাকা জমা যোগ করা যাবে। তালিকা ব্যাচ অনুযায়ী সাজানো।</p>
+    <p class="hint">এখানে আপনার হোস্টেলের শিক্ষার্থীদের তালিকা, জমার পরিমাণ ও ব্যালেন্স দেখা যাবে — এখান থেকেই তাদের জন্য টাকা জমা যোগ করা যাবে।</p>
     <input type="text" class="search-box" id="hostel-admin-student-search" placeholder="🔍 আইডি (ID), রোল বা নাম দিয়ে খুঁজুন..." oninput="filterHostelAdminStudents()">
     <div class="table-scroll">
       <table class="ledger">
@@ -465,21 +466,16 @@
     </div>
   </div>
 
-  <!-- ============ HOSTEL ADMIN (boys only): view girls database (read-only, on-demand) ============ -->
+  <!-- ============ HOSTEL ADMIN (boys only): view girls database (read-only) ============ -->
   <div class="panel hidden" id="boys-admin-girls-view-panel" data-tab="payments">
-    <div class="btn-row">
-      <button class="btn btn-outline" id="boys-admin-girls-view-toggle-btn" onclick="toggleBoysAdminGirlsView()">👀 মেয়েদের তালিকা দেখুন</button>
-    </div>
-    <div id="boys-admin-girls-view-content" class="hidden">
-      <h2>মেয়েদের ডাটাবেস (শুধু দেখার জন্য)</h2>
-      <p class="hint">এখানে মেয়েদের হোস্টেলের শিক্ষার্থীদের তালিকা শুধু দেখা যাবে — এখান থেকে টাকা জমা যোগ করা যাবে না। তালিকা ব্যাচ অনুযায়ী সাজানো।</p>
-      <input type="text" class="search-box" id="hostel-admin-girls-view-search" placeholder="🔍 আইডি (ID), রোল বা নাম দিয়ে খুঁজুন..." oninput="filterHostelAdminGirlsView()">
-      <div class="table-scroll">
-        <table class="ledger">
-          <thead><tr><th>আইডি (ID)</th><th>রোল</th><th>নাম</th><th>ব্যাচ</th><th>রুম</th><th>মোট জমা (৳)</th><th>ব্যালেন্স</th></tr></thead>
-          <tbody id="hostel-admin-girls-view-body"></tbody>
-        </table>
-      </div>
+    <h2>👀 মেয়েদের ডাটাবেস (শুধু দেখার জন্য)</h2>
+    <p class="hint">এখানে মেয়েদের হোস্টেলের শিক্ষার্থীদের তালিকা শুধু দেখা যাবে — এখান থেকে টাকা জমা যোগ করা যাবে না।</p>
+    <input type="text" class="search-box" id="hostel-admin-girls-view-search" placeholder="🔍 আইডি (ID), রোল বা নাম দিয়ে খুঁজুন..." oninput="filterHostelAdminGirlsView()">
+    <div class="table-scroll">
+      <table class="ledger">
+        <thead><tr><th>আইডি (ID)</th><th>রোল</th><th>নাম</th><th>ব্যাচ</th><th>রুম</th><th>মোট জমা (৳)</th><th>ব্যালেন্স</th></tr></thead>
+        <tbody id="hostel-admin-girls-view-body"></tbody>
+      </table>
     </div>
   </div>
 
@@ -553,19 +549,10 @@
     </div>
   </div>
 
-  <!-- ============ HOSTEL ADMIN: personal meal order (deducted from admin's own linked student balance) ============ -->
+  <!-- ============ HOSTEL ADMIN: personal free meal order ============ -->
   <div class="panel hostel-admin-only hidden" data-tab="myorder">
     <h2>আপনার ব্যক্তিগত মিল অর্ডার</h2>
-    <p class="hint">এটি আপনার নিজের মিল অর্ডার — মূল্য আপনার নিজের (স্টুডেন্ট হিসাবে) ব্যালেন্স থেকে কাটা হবে।</p>
-
-    <div id="admin-own-roll-missing" class="hidden" style="margin-bottom:16px;">
-      <p class="hint" style="color:var(--danger, #d14343);">আপনার অ্যাকাউন্টে এখনো কোনো স্টুডেন্ট আইডি (রোল) লিংক করা হয়নি — তাই মিল অর্ডার করা যাচ্ছে না। নিচে আপনার নিজের রোল নম্বর দিয়ে লিংক করুন (একবারই করতে হবে)।</p>
-      <div class="field-row" style="align-items:flex-end;">
-        <div class="field"><label>আপনার নিজের রোল / আইডি নম্বর</label><input type="number" id="admin-own-roll-input" placeholder="যেমন 866"></div>
-        <button class="btn btn-primary" onclick="linkAdminOwnRoll()">লিংক করুন</button>
-      </div>
-    </div>
-
+    <p class="hint">এটি আপনার (এডমিনের) নিজস্ব মিল অর্ডার — কোনো শিক্ষার্থীর হিসাব থেকে দাম কাটা হবে না।</p>
     <div id="hostel-admin-meal-catalog"></div>
     <h2 style="margin-top:20px;">আপনার অর্ডার ইতিহাস</h2>
     <div class="table-scroll">
@@ -893,7 +880,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-  doc, setDoc, deleteDoc, updateDoc, collection, onSnapshot, addDoc,
+  doc, setDoc, deleteDoc, updateDoc, collection, addDoc,
   query, orderBy, limit, serverTimestamp, where, getDocs, getDoc, deleteField
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -909,11 +896,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-// Persistent local (IndexedDB) cache: on repeat visits/refreshes on the same device,
-// the initial data for every onSnapshot listener is served from this cache instead of
-// the server, and only documents changed since the last sync are actually read from
-// Firestore. This does not change any query, listener, or feature — it only avoids
-// re-downloading (and re-billing as "reads") data the app already has locally.
+// Persistent local (IndexedDB) cache: on repeat visits/refreshes on the same device, Firestore
+// can serve reads from this local cache when possible instead of always hitting the server.
 const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
 });
@@ -1222,7 +1206,7 @@ async function applyLoggedInUser(user) {
     role === 'subscriber' ? 'Student Dashboard' : (role === 'treasurer' ? 'Developer Panel' : (role === 'teacher' ? 'Teacher Dashboard' : 'Hostel Admin Dashboard'));
 
   applyRoleVisibility();
-  startListeners();
+  await loadAllData();
 }
 
 // ============ NAV BAR ============
@@ -1293,10 +1277,6 @@ function applyRoleVisibility() {
   document.querySelectorAll('.teacher-only').forEach(el => el.classList.toggle('hidden', role !== 'teacher'));
   const girlsViewPanel = document.getElementById('boys-admin-girls-view-panel');
   if (girlsViewPanel) girlsViewPanel.classList.toggle('hidden', role !== 'boys_admin');
-  const girlsViewContent = document.getElementById('boys-admin-girls-view-content');
-  const girlsViewBtn = document.getElementById('boys-admin-girls-view-toggle-btn');
-  if (girlsViewContent) girlsViewContent.classList.add('hidden');
-  if (girlsViewBtn) girlsViewBtn.textContent = '👀 মেয়েদের তালিকা দেখুন';
   const title = document.getElementById('hostel-admin-title');
   if (title) title.textContent = role === 'girls_admin' ? 'মেয়েদের হোস্টেল হিসাব — সংক্ষিপ্ত' : 'ছেলেদের হোস্টেল হিসাব — সংক্ষিপ্ত';
   renderNavBar();
@@ -1307,7 +1287,7 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     applyLoggedInUser(user);
   } else {
-    stopListeners();
+    dataLoaded = false;
     document.getElementById('app').classList.add('hidden');
     document.getElementById('pending-screen').classList.add('hidden');
     document.getElementById('auth-screen').classList.remove('hidden');
@@ -1315,142 +1295,177 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
-// ============ FIRESTORE LISTENERS ============
-let listenersStarted = false;
-let activeUnsubscribes = [];
-function startListeners() {
-  if (listenersStarted) return;
-  listenersStarted = true;
+// ============ FIRESTORE DATA LOADING (ONE-TIME READS, NOT REALTIME) ============
+// Reads-cost fix: this app previously kept a live onSnapshot listener open per user, per
+// collection, for the entire session. On the Firestore Spark (free) plan, every one of those
+// listeners re-delivers — and re-bills as a "read" — the WHOLE result set to EVERY open session
+// every time ANY document in that collection changes anywhere. With ~300-400 concurrent
+// subscriber sessions, a single new meal order or payment could fan out into hundreds of billed
+// reads instantly, which is what was blowing through the free quota.
+//
+// Nothing here needs true real-time sync (it's a hostel/canteen ledger, not a chat app), so
+// every collection is now fetched ONCE with getDocs() right after login, cached in the existing
+// local JS variables (students, paymentsData, mealOrdersData, etc.), and all UI (search, tab
+// switching, filtering, PDF generation) reads from those local variables only — no listener,
+// and no new Firestore call is made just because the user typed in a search box or switched tabs.
+// A manual "রিফ্রেশ" button (window.refreshAllData) lets the user re-sync on demand instead of
+// paying for continuous realtime updates nobody is watching every second.
+let dataLoaded = false;
+let dataLoading = false;
 
-  activeUnsubscribes.push(onSnapshot(doc(db, "settings", "orderConfig"), (snap) => {
-    if (snap.exists()) {
-      const d = snap.data();
-      // Backward-compatible: if this settings doc still has the old per-mealtype cutoff-hour
-      // fields (from before the day-wise menu + single order-window update) and no new
-      // orderOpenTime/orderCloseTime yet, derive a sensible one-time default from the old
-      // dinnerCutoff so existing settings aren't just silently discarded.
-      const legacyOpen = d.orderOpenTime == null && d.dinnerCutoff != null
-        ? `${String(d.dinnerCutoff).padStart(2, '0')}:00` : null;
-      // Backward-compatible: if this doc still has the old single shared orderCloseTime (from
-      // before per-mealtype close times) and no new closeTimes map yet, apply that one time to
-      // all three meal types as a one-time migration default.
-      const legacyCloseTimes = d.closeTimes == null && d.orderCloseTime != null
-        ? { breakfast: d.orderCloseTime, lunch: d.orderCloseTime, dinner: d.orderCloseTime } : null;
-      orderConfig = {
-        orderOpenTime: d.orderOpenTime ?? legacyOpen ?? orderConfig.orderOpenTime,
-        closeTimes: d.closeTimes ?? legacyCloseTimes ?? orderConfig.closeTimes,
-        dueLimit: d.dueLimit ?? orderConfig.dueLimit,
-        monthlyMinSpend: d.monthlyMinSpend ?? orderConfig.monthlyMinSpend
-      };
-    }
-    fillOrderConfigForm();
-    renderAll();
-  }));
-
-  activeUnsubscribes.push(onSnapshot(query(collection(db, "students"), orderBy("roll")), (snap) => {
-    students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderAll();
-  }));
-
-  if (currentUserRole === 'treasurer') {
-    activeUnsubscribes.push(onSnapshot(collection(db, "users"), (snap) => {
-      usersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderUsersList();
-      renderNewUserRollOptions();
-    }));
+async function loadOrderConfig() {
+  const snap = await getDoc(doc(db, "settings", "orderConfig"));
+  if (snap.exists()) {
+    const d = snap.data();
+    // Backward-compatible: if this settings doc still has the old per-mealtype cutoff-hour
+    // fields (from before the day-wise menu + single order-window update) and no new
+    // orderOpenTime/orderCloseTime yet, derive a sensible one-time default from the old
+    // dinnerCutoff so existing settings aren't just silently discarded.
+    const legacyOpen = d.orderOpenTime == null && d.dinnerCutoff != null
+      ? `${String(d.dinnerCutoff).padStart(2, '0')}:00` : null;
+    // Backward-compatible: if this doc still has the old single shared orderCloseTime (from
+    // before per-mealtype close times) and no new closeTimes map yet, apply that one time to
+    // all three meal types as a one-time migration default.
+    const legacyCloseTimes = d.closeTimes == null && d.orderCloseTime != null
+      ? { breakfast: d.orderCloseTime, lunch: d.orderCloseTime, dinner: d.orderCloseTime } : null;
+    orderConfig = {
+      orderOpenTime: d.orderOpenTime ?? legacyOpen ?? orderConfig.orderOpenTime,
+      closeTimes: d.closeTimes ?? legacyCloseTimes ?? orderConfig.closeTimes,
+      dueLimit: d.dueLimit ?? orderConfig.dueLimit,
+      monthlyMinSpend: d.monthlyMinSpend ?? orderConfig.monthlyMinSpend
+    };
   }
+  fillOrderConfigForm();
+}
 
-  activeUnsubscribes.push(onSnapshot(collection(db, "collections"), (snap) => {
-    collectionsData = {};
-    snap.forEach(d => { collectionsData[d.id] = (d.data().amount) || 0; });
-    renderAll();
-  }));
+async function loadStudents() {
+  const snap = await getDocs(query(collection(db, "students"), orderBy("roll")));
+  students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
 
-  // Reads-cost fix: a subscriber only ever needs their OWN payment records (personal balance).
-  // Previously every subscriber session (~300+ of them) held a live listener on the ENTIRE
-  // payments collection, so every deposit added for ANY student was re-delivered — and billed
-  // as a read — to every other open subscriber session too. Treasurer/hostel-admins/teacher
-  // still need the full ledger (dashboards, per-student tables, PDFs), so only they keep the
-  // unrestricted listener.
+async function loadUsers() {
+  if (currentUserRole !== 'treasurer') return;
+  const snap = await getDocs(collection(db, "users"));
+  usersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function loadCollectionsData() {
+  const snap = await getDocs(collection(db, "collections"));
+  collectionsData = {};
+  snap.forEach(d => { collectionsData[d.id] = (d.data().amount) || 0; });
+}
+
+// Reads-cost fix: a subscriber only ever needs their OWN payment records (personal balance).
+// Treasurer/hostel-admins/teacher still need the full ledger (dashboards, per-student tables,
+// PDFs), so only they fetch the unrestricted collection; a subscriber's query is scoped
+// server-side to where roll == their own roll, so Firestore only ever bills them for their own
+// documents, not the whole collection.
+async function loadPayments() {
+  paymentsData = {};
   const needsFullPayments = ['treasurer', 'teacher', 'girls_admin', 'boys_admin'].includes(currentUserRole);
   if (needsFullPayments) {
-    activeUnsubscribes.push(onSnapshot(query(collection(db, "payments"), orderBy("addedAt", "desc")), (snap) => {
-      paymentsData = {};
-      snap.forEach(d => {
-        const p = d.data();
-        const roll = p.roll;
-        if (!paymentsData[roll]) paymentsData[roll] = [];
-        paymentsData[roll].push({ id: d.id, ...p });
-      });
-      renderAll();
-    }));
+    const snap = await getDocs(query(collection(db, "payments"), orderBy("addedAt", "desc")));
+    snap.forEach(d => {
+      const p = d.data();
+      const roll = p.roll;
+      if (!paymentsData[roll]) paymentsData[roll] = [];
+      paymentsData[roll].push({ id: d.id, ...p });
+    });
   } else if (currentUserRole === 'subscriber' && currentSubscriberRoll) {
-    activeUnsubscribes.push(onSnapshot(query(collection(db, "payments"), where("roll", "==", currentSubscriberRoll)), (snap) => {
-      paymentsData = {};
-      const arr = [];
-      snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
-      paymentsData[currentSubscriberRoll] = arr;
-      renderAll();
-    }));
+    const snap = await getDocs(query(collection(db, "payments"), where("roll", "==", currentSubscriberRoll)));
+    const arr = [];
+    snap.forEach(d => arr.push({ id: d.id, ...d.data() }));
+    paymentsData[currentSubscriberRoll] = arr;
   }
+}
 
-  // Reads-cost fix: donations and the activity log are only ever displayed on the treasurer's
-  // own tabs — every other role was still paying for a live listener on them without ever
-  // showing the data. Now they're treasurer-only, AND load on-demand (button press) instead of
-  // an always-on listener, per Anando's request to cut down unnecessary reads on the Spark plan.
-  window.loadDonations = async () => {
-    const tbody = document.getElementById('donation-list');
-    if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);">লোড হচ্ছে...</td></tr>`;
-    const snap = await getDocs(query(collection(db, "donations"), orderBy("addedAt", "desc")));
-    donationsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderDonations();
-    renderSummary();
-  };
-  window.loadActivity = async () => {
-    const box = document.getElementById('activity-list');
-    if (box) box.innerHTML = `<div style="color:var(--ink-soft);font-size:.85rem;">লোড হচ্ছে...</div>`;
-    const snap = await getDocs(query(collection(db, "activity"), orderBy("createdAt", "desc"), limit(30)));
-    activityData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderActivity();
-  };
+// Reads-cost fix: donations and the activity log are only ever displayed on the treasurer's own
+// tabs, and load on demand (button press) rather than being fetched for every login, per
+// Anando's request to cut down unnecessary reads on the Spark plan.
+window.loadDonations = async () => {
+  const tbody = document.getElementById('donation-list');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);">লোড হচ্ছে...</td></tr>`;
+  const snap = await getDocs(query(collection(db, "donations"), orderBy("addedAt", "desc"), limit(50)));
+  donationsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderDonations();
+  renderSummary();
+};
+window.loadActivity = async () => {
+  const box = document.getElementById('activity-list');
+  if (box) box.innerHTML = `<div style="color:var(--ink-soft);font-size:.85rem;">লোড হচ্ছে...</div>`;
+  const snap = await getDocs(query(collection(db, "activity"), orderBy("createdAt", "desc"), limit(30)));
+  activityData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderActivity();
+};
 
-  activeUnsubscribes.push(onSnapshot(query(collection(db, "expenses"), orderBy("addedAt", "desc")), (snap) => {
-    expensesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderAll();
-  }));
+async function loadExpenses() {
+  const snap = await getDocs(query(collection(db, "expenses"), orderBy("addedAt", "desc")));
+  expensesData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
 
-  activeUnsubscribes.push(onSnapshot(collection(db, "mealItems"), (snap) => {
-    mealItemsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderAll();
-  }));
+async function loadMealItems() {
+  const snap = await getDocs(collection(db, "mealItems"));
+  mealItemsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
 
-  // Reads-cost fix: an ordinary subscriber only ever needs their OWN orders (order-history tab,
-  // "already ordered today?" checks, personal balance) — never everyone else's. Previously every
-  // one of the ~350 users held a live listener on the ENTIRE (ever-growing) mealOrders
-  // collection, so every new order placed was re-delivered — and billed as a read — to every
-  // other open session too. That fan-out (concurrent sessions × new writes), not just the raw
-  // collection size, is what was blowing past a lakh of reads.
-  // Treasurer/teacher/hostel-admins still need the full collection (dashboards, PDFs, reports),
-  // so only they keep the unrestricted listener; a subscriber gets a listener scoped to
-  // where roll == their own roll.
+// Reads-cost fix: an ordinary subscriber only ever needs their OWN orders (order-history tab,
+// "already ordered today?" checks, personal balance) — never everyone else's, so their query is
+// scoped server-side to where roll == their own roll. Treasurer/teacher/hostel-admins still need
+// the full collection (dashboards, PDFs, reports), so only they fetch it unrestricted.
+async function loadMealOrders() {
   const needsFullMealOrders = ['treasurer', 'teacher', 'girls_admin', 'boys_admin'].includes(currentUserRole);
   if (needsFullMealOrders) {
-    activeUnsubscribes.push(onSnapshot(query(collection(db, "mealOrders"), orderBy("orderedAt", "desc")), (snap) => {
-      mealOrdersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderAll();
-    }));
+    const snap = await getDocs(query(collection(db, "mealOrders"), orderBy("orderedAt", "desc")));
+    mealOrdersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } else if (currentUserRole === 'subscriber' && currentSubscriberRoll) {
-    activeUnsubscribes.push(onSnapshot(query(collection(db, "mealOrders"), where("roll", "==", currentSubscriberRoll)), (snap) => {
-      mealOrdersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderAll();
-    }));
+    const snap = await getDocs(query(collection(db, "mealOrders"), where("roll", "==", currentSubscriberRoll)));
+    mealOrdersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } else {
+    mealOrdersData = [];
   }
 }
-function stopListeners() {
-  activeUnsubscribes.forEach(fn => { try { fn(); } catch (_) {} });
-  activeUnsubscribes = [];
-  listenersStarted = false;
+
+// One-time fetch of every collection the current role needs, run once right after login.
+// All of these run in parallel (Promise.all) so the total wait time is one round-trip, not N.
+async function loadAllData() {
+  if (dataLoading) return;
+  dataLoading = true;
+  setRefreshButtonState(true);
+  try {
+    await Promise.all([
+      loadOrderConfig(),
+      loadStudents(),
+      loadUsers(),
+      loadCollectionsData(),
+      loadPayments(),
+      loadExpenses(),
+      loadMealItems(),
+      loadMealOrders()
+    ]);
+    dataLoaded = true;
+    renderUsersList();
+    renderNewUserRollOptions();
+    renderAll();
+  } catch (e) {
+    alert("ডেটা লোড করতে সমস্যা হয়েছে: " + (e && e.message ? e.message : e));
+  } finally {
+    dataLoading = false;
+    setRefreshButtonState(false);
+  }
 }
+
+function setRefreshButtonState(loading) {
+  const btn = document.getElementById('refresh-data-btn');
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.textContent = loading ? '🔄 লোড হচ্ছে...' : '🔄 রিফ্রেশ ডেটা';
+}
+
+// Manual re-sync — the only way (besides re-login) that the cached local data is re-fetched
+// from Firestore, so reads only happen when the user explicitly asks for the latest state.
+window.refreshAllData = async () => {
+  await loadAllData();
+};
 
 function renderAll() {
   renderStudents();
@@ -1462,7 +1477,7 @@ function renderAll() {
   renderHostelAdminPanel();
   renderMealItemsAdmin();
   renderMealCatalogForOrdering('sub-meal-catalog', currentSubscriberRoll, false);
-  renderMealCatalogForOrdering('hostel-admin-meal-catalog', currentSubscriberRoll, true);
+  renderMealCatalogForOrdering('hostel-admin-meal-catalog', null, true);
   renderMyMealOrders();
   renderHostelAdminMyOrders();
   renderMealOrdersTable('tr-orders-body', 'tr-orders-date', 'tr-orders-mealtype', 'tr-orders-hostel', true, 'tr-orders-search', 'tr-orders-count');
@@ -1485,6 +1500,14 @@ window.addStudent = async () => {
     await setDoc(doc(db, "students", roll.toString()), {
       roll, name, mobile, gender, batch, hostel, room, createdAt: serverTimestamp()
     }, { merge: true });
+    // Reads-cost fix: patch the local cache directly instead of re-fetching the whole
+    // students collection — zero extra Firestore reads for a write we already know the result of.
+    const idx = students.findIndex(s => Number(s.roll) === roll);
+    const patched = { id: roll.toString(), roll, name, mobile, gender, batch, hostel, room };
+    if (idx >= 0) students[idx] = { ...students[idx], ...patched };
+    else students.push(patched);
+    students.sort((a, b) => Number(a.roll) - Number(b.roll));
+    renderAll();
     ['new-student-name','new-student-roll','new-student-mobile','new-student-batch','new-student-room'].forEach(id => {
       document.getElementById(id).value = "";
     });
@@ -1495,7 +1518,11 @@ window.addStudent = async () => {
 
 window.deleteStudent = async (roll) => {
   if (!confirm(`আইডি ${roll} মুছে ফেলতে চান? এই শিক্ষার্থীর হিসাব-সংক্রান্ত রেকর্ডও প্রভাবিত হতে পারে।`)) return;
-  try { await deleteDoc(doc(db, "students", roll.toString())); }
+  try {
+    await deleteDoc(doc(db, "students", roll.toString()));
+    students = students.filter(s => Number(s.roll) !== Number(roll));
+    renderAll();
+  }
   catch (e) { alert("মুছে ফেলা যায়নি: " + (e && e.message ? e.message : e)); }
 };
 
@@ -1529,6 +1556,7 @@ window.deleteOrphanedRegistration = async (roll, name) => {
   if (!confirm(`আইডি ${roll}${name ? ' (' + name + ')' : ''} — এই আটকে যাওয়া রেজিস্ট্রেশনটি মুছে ফেলতে চান? এরপর এই আইডি দিয়ে আবার নতুন করে রেজিস্ট্রেশন করা যাবে।`)) return;
   try {
     await deleteDoc(doc(db, "students", roll.toString()));
+    students = students.filter(s => Number(s.roll) !== Number(roll));
     scanOrphanedRegistrations();
   } catch (e) {
     alert("মুছে ফেলা যায়নি: " + (e && e.message ? e.message : e));
@@ -1565,16 +1593,12 @@ function getIndividualExpenseTotal(roll) {
   return expensesData.filter(e => e.chargeType === 'individual' && e.targetRoll === roll)
     .reduce((a, e) => a + (e.amount || 0), 0);
 }
-// Note: no longer excludes isAdminPersonal orders — a hostel admin's own personal order (once
-// linked to their student roll via linkAdminOwnRoll) is a real charge against their balance,
-// same as any subscriber's order. Old free/unlinked admin orders (roll: null) never match a
-// real roll here, so this stays backward-compatible with historical data.
 function getMealOrdersTotal(roll) {
-  return mealOrdersData.filter(o => o.roll === roll)
+  return mealOrdersData.filter(o => o.roll === roll && !o.isAdminPersonal)
     .reduce((a, o) => a + (o.price || 0), 0);
 }
 function getMealOrdersTotalForMonth(roll, monthKey) {
-  return mealOrdersData.filter(o => o.roll === roll && (o.businessDate || '').startsWith(monthKey))
+  return mealOrdersData.filter(o => o.roll === roll && !o.isAdminPersonal && (o.businessDate || '').startsWith(monthKey))
     .reduce((a, o) => a + (o.price || 0), 0);
 }
 function currentMonthKey() {
@@ -1654,16 +1678,6 @@ function isOrderBlockedByDue(roll) {
   return getStudentBalance(roll) < -Math.abs(Number(orderConfig.dueLimit) || 0);
 }
 
-// Looks up whether a given roll is linked to a hostel-admin account (via users/{uid}.roll),
-// so their name can be flagged in student lists. Only meaningful where usersData is loaded
-// (treasurer role) — returns null elsewhere, which callers treat as "no badge".
-function adminRoleLabelForRoll(roll) {
-  if (!usersData || !usersData.length) return null;
-  const match = usersData.find(u => u.roll === roll && (u.role === 'boys_admin' || u.role === 'girls_admin'));
-  if (!match) return null;
-  return match.role === 'boys_admin' ? 'ছেলেদের এডমিন' : 'মেয়েদের এডমিন';
-}
-
 function renderStudents() {
   const tbody = document.getElementById('students-body');
   if (!tbody) return;
@@ -1671,11 +1685,9 @@ function renderStudents() {
     const bal = getStudentBalance(s.roll);
     const balClass = bal >= 0 ? 'due-pos' : 'due-neg';
     const hay = `${s.roll} ${s.name || ''} ${s.batch || ''} ${s.room || ''}`.toLowerCase();
-    const adminLabel = adminRoleLabelForRoll(s.roll);
-    const nameHtml = `${s.name || ''}${adminLabel ? ` <span class="badge gold" style="font-size:.68rem;">👑 ${adminLabel}</span>` : ''}`;
     return `<tr data-hay="${hay}">
       <td class="num">${s.roll}</td>
-      <td>${nameHtml}</td>
+      <td>${s.name || ''}</td>
       <td>${s.batch || '-'}</td>
       <td>${s.hostel || '-'}</td>
       <td>${s.room || '-'}</td>
@@ -1851,7 +1863,7 @@ function renderMealCatalogForOrdering(containerId, roll, isAdminPersonal) {
   if (isAdminPersonal && !isHostelAdminRole(currentUserRole)) { box.innerHTML = ''; return; }
   if (!isAdminPersonal && currentUserRole !== 'subscriber') { box.innerHTML = ''; return; }
 
-  const dueBlocked = roll && isOrderBlockedByDue(roll);
+  const dueBlocked = !isAdminPersonal && roll && isOrderBlockedByDue(roll);
   const dueNoticeId = containerId === 'sub-meal-catalog' ? 'sub-due-block-notice' : null;
   if (dueNoticeId) {
     const notice = document.getElementById(dueNoticeId);
@@ -1888,7 +1900,7 @@ function renderMealCatalogForOrdering(containerId, roll, isAdminPersonal) {
     if (!items.length) return;
 
     const orderedThisType = mealOrdersData.find(o => o.businessDate === win.targetDateKey && o.mealType === type &&
-      (isAdminPersonal ? (o.roll === roll && !!o.isAdminPersonal) : (!o.isAdminPersonal && o.roll === roll)));
+      (isAdminPersonal ? (o.isAdminPersonal && o.orderedByUid === uid) : (!o.isAdminPersonal && o.roll === roll)));
 
     html += `<div class="meal-section">
       <div class="meal-section-heading">${MEAL_TYPE_LABEL[type]}</div>
@@ -1931,24 +1943,7 @@ window.orderMeal = async (mealItemId, isAdminPersonal) => {
   const user = auth.currentUser;
   let roll = null, studentName = currentTreasurerName, batch = '-', hostel = '-', room = '-', gender = 'unspecified';
 
-  if (isAdminPersonal) {
-    // Admin's personal order is now deducted from THEIR OWN student balance (they must be
-    // linked to a student roll via linkAdminOwnRoll() first — see the "myorder" tab).
-    roll = currentSubscriberRoll;
-    if (!roll) {
-      alert("আপনার নিজের স্টুডেন্ট আইডি (রোল) এখনো লিংক করা হয়নি। 'আপনার ব্যক্তিগত মিল অর্ডার' ট্যাবে গিয়ে আগে লিংক করুন।");
-      return;
-    }
-    if (isOrderBlockedByDue(roll)) {
-      alert(`⛔ আপনার বকেয়া ৳${Math.abs(Number(orderConfig.dueLimit)||0)} টাকার সীমা অতিক্রম করেছে — তাই নতুন মিল অর্ডার করা যাচ্ছে না। আগে বকেয়া পরিশোধ করুন।`);
-      return;
-    }
-    const alreadyOrdered = mealOrdersData.some(o => o.roll === roll && !!o.isAdminPersonal &&
-      o.businessDate === win.targetDateKey && o.mealType === item.mealType);
-    if (alreadyOrdered) { alert(`${formatDateWithWeekday(win.targetDateKey)}-এর জন্য ${MEAL_TYPE_LABEL[item.mealType]} ইতিমধ্যে অর্ডার করা হয়েছে।`); return; }
-    const student = students.find(s => s.roll === roll);
-    if (student) { studentName = student.name; batch = student.batch || '-'; hostel = student.hostel || '-'; room = student.room || '-'; gender = student.gender || 'unspecified'; }
-  } else {
+  if (!isAdminPersonal) {
     roll = currentSubscriberRoll;
     if (!roll) return;
     if (isOrderBlockedByDue(roll)) {
@@ -1959,13 +1954,16 @@ window.orderMeal = async (mealItemId, isAdminPersonal) => {
     if (alreadyOrdered) { alert(`${formatDateWithWeekday(win.targetDateKey)}-এর জন্য ${MEAL_TYPE_LABEL[item.mealType]} ইতিমধ্যে অর্ডার করা হয়েছে।`); return; }
     const student = students.find(s => s.roll === roll);
     if (student) { studentName = student.name; batch = student.batch || '-'; hostel = student.hostel || '-'; room = student.room || '-'; gender = student.gender || 'unspecified'; }
+  } else {
+    const alreadyOrdered = myOrdersForDate(null, true, win.targetDateKey).some(o => o.mealType === item.mealType);
+    if (alreadyOrdered) { alert(`${formatDateWithWeekday(win.targetDateKey)}-এর জন্য ${MEAL_TYPE_LABEL[item.mealType]} ইতিমধ্যে অর্ডার করা হয়েছে।`); return; }
   }
 
-  if (!confirm(`"${item.name}" (৳${(item.price||0).toFixed(2)}) — ${formatDateWithWeekday(win.targetDateKey)}-এর জন্য অর্ডার করবেন? মূল্য আপনার হিসাব থেকে কাটা হবে।`)) return;
+  if (!confirm(`"${item.name}" (৳${(item.price||0).toFixed(2)}) — ${formatDateWithWeekday(win.targetDateKey)}-এর জন্য অর্ডার করবেন? ${isAdminPersonal ? '' : 'মূল্য আপনার হিসাব থেকে কাটা হবে।'}`)) return;
 
   try {
-    await addDoc(collection(db, "mealOrders"), {
-      roll,
+    const newOrderData = {
+      roll: isAdminPersonal ? null : roll,
       studentName, batch, hostel, room, gender,
       mealItemId: item.id, mealItemName: item.name, mealType: item.mealType, price: item.price || 0,
       businessDate: win.targetDateKey,
@@ -1974,10 +1972,15 @@ window.orderMeal = async (mealItemId, isAdminPersonal) => {
       isAdminPersonal: !!isAdminPersonal,
       addedBy: currentTreasurerName,
       orderedByUid: user ? user.uid : null
-    });
+    };
+    const ref = await addDoc(collection(db, "mealOrders"), newOrderData);
     await addDoc(collection(db, "activity"), {
       type: 'meal', text: `${studentName} ${MEAL_TYPE_LABEL[item.mealType]} অর্ডার করেছেন (${formatDateLabel(win.targetDateKey)}) — ${item.name}`, createdAt: serverTimestamp()
     });
+    // Reads-cost fix: append to the local cache directly (we already know the full document we
+    // just wrote) instead of re-fetching the mealOrders collection.
+    mealOrdersData.unshift({ id: ref.id, ...newOrderData, orderedAt: new Date() });
+    renderAll();
   } catch (e) {
     alert("মিল অর্ডার করা যায়নি: " + (e && e.message ? e.message : e));
   }
@@ -2000,6 +2003,8 @@ window.cancelMealOrder = async (orderId) => {
     await addDoc(collection(db, "activity"), {
       type: 'meal', text: `${order.studentName} ${MEAL_TYPE_LABEL[order.mealType] || order.mealType} অর্ডার বাতিল করেছেন (${formatDateLabel(order.businessDate)}) — ${order.mealItemName}`, createdAt: serverTimestamp()
     });
+    mealOrdersData = mealOrdersData.filter(o => o.id !== orderId);
+    renderAll();
   } catch (e) {
     alert("অর্ডার বাতিল করা যায়নি: " + (e && e.message ? e.message : e));
   }
@@ -2024,8 +2029,6 @@ function renderMyMealOrders() {
 function renderHostelAdminMyOrders() {
   const tbody = document.getElementById('hostel-admin-my-orders-body');
   if (!tbody || !isHostelAdminRole(currentUserRole)) return;
-  const missingBox = document.getElementById('admin-own-roll-missing');
-  if (missingBox) missingBox.classList.toggle('hidden', !!currentSubscriberRoll);
   const uid = auth.currentUser && auth.currentUser.uid;
   const arr = mealOrdersData.filter(o => o.isAdminPersonal && o.orderedByUid === uid);
   tbody.innerHTML = arr.map(o => {
@@ -2036,32 +2039,6 @@ function renderHostelAdminMyOrders() {
       <td>${cancellable ? `<button class="icon-btn" onclick="cancelMealOrder('${o.id}')">✕ বাতিল</button>` : '-'}</td></tr>`;
   }).join('') || `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);">এখনও কোনো অর্ডার নেই</td></tr>`;
 }
-
-// Lets a hostel admin (boys_admin/girls_admin) self-link their own account to their student
-// roll — this is a one-time setup so their personal meal orders can be deducted from their own
-// student balance instead of being untracked/free. Once linked, currentSubscriberRoll (loaded
-// from users/{uid}.roll at login, same field used for regular subscribers) carries it everywhere.
-window.linkAdminOwnRoll = async () => {
-  if (!isHostelAdminRole(currentUserRole)) return;
-  const input = document.getElementById('admin-own-roll-input');
-  const roll = Number(input && input.value);
-  if (!roll) { alert("সঠিক রোল নম্বর দিন।"); return; }
-  const student = students.find(s => s.roll === roll);
-  if (!student) { alert("এই রোল নম্বরে কোনো শিক্ষার্থী পাওয়া যায়নি। আগে শিক্ষার্থী তালিকায় যোগ করুন, তারপর লিংক করুন।"); return; }
-  const expectedGender = adminGender(currentUserRole);
-  if (student.gender !== expectedGender) {
-    if (!confirm(`রোল ${roll} (${student.name}) আপনার হোস্টেলের (${expectedGender === 'male' ? 'ছেলে' : 'মেয়ে'}) শিক্ষার্থী না — তবুও কি এটি লিংক করতে চান?`)) return;
-  }
-  const user = auth.currentUser;
-  if (!user) return;
-  try {
-    await updateDoc(doc(db, "users", user.uid), { roll });
-    currentSubscriberRoll = roll;
-    if (input) input.value = "";
-    alert(`লিংক সম্পন্ন — এখন থেকে আপনার মিল অর্ডারের মূল্য রোল ${roll}-এর ব্যালেন্স থেকে কাটা হবে।`);
-    renderAll();
-  } catch (e) { alert("লিংক করা যায়নি: " + (e && e.message ? e.message : e)); }
-};
 
 // ============ HOSTEL ADMIN PANEL ============
 function renderHostelAdminPanel() {
@@ -2077,36 +2054,15 @@ function renderHostelAdminPanel() {
   set('hostel-today-orders', todayCount);
   renderHostelAdminStudentRows();
   renderHostelAdminFinance();
-  if (currentUserRole === 'boys_admin') {
-    const girlsContent = document.getElementById('boys-admin-girls-view-content');
-    if (girlsContent && !girlsContent.classList.contains('hidden')) renderHostelAdminGirlsViewRows();
-  }
+  if (currentUserRole === 'boys_admin') renderHostelAdminGirlsViewRows();
 }
-
-// Sorts students by batch (natural/numeric-aware order, e.g. "38th" before "39th"), then by roll
-// within the same batch, so admin tables read as neat batch-grouped blocks.
-function sortByBatchThenRoll(a, b) {
-  const batchCompare = String(a.batch || '').localeCompare(String(b.batch || ''), undefined, { numeric: true, sensitivity: 'base' });
-  if (batchCompare !== 0) return batchCompare;
-  return (a.roll || 0) - (b.roll || 0);
-}
-
-window.toggleBoysAdminGirlsView = () => {
-  const content = document.getElementById('boys-admin-girls-view-content');
-  const btn = document.getElementById('boys-admin-girls-view-toggle-btn');
-  if (!content) return;
-  const nowHidden = !content.classList.contains('hidden');
-  content.classList.toggle('hidden', nowHidden);
-  if (btn) btn.textContent = nowHidden ? '👀 মেয়েদের তালিকা দেখুন' : '🙈 মেয়েদের তালিকা লুকান';
-  if (!nowHidden) renderHostelAdminGirlsViewRows(); // (re)render fresh from already-loaded data, no extra reads
-};
 
 // Boys admin can additionally VIEW (read-only) the girls' student database —
 // no add-money control here; addHostelPayment() still blocks cross-gender writes server-side logic.
 function renderHostelAdminGirlsViewRows() {
   const tbody = document.getElementById('hostel-admin-girls-view-body');
   if (!tbody) return;
-  const list = students.filter(s => s.gender === 'female').sort(sortByBatchThenRoll);
+  const list = students.filter(s => s.gender === 'female');
   tbody.innerHTML = list.map(s => {
     const hay = `${s.roll} ${s.classRoll || ''} ${s.name || ''} ${s.batch || ''} ${s.room || ''}`.toLowerCase();
     const bal = getStudentBalance(s.roll);
@@ -2130,15 +2086,13 @@ function renderHostelAdminStudentRows() {
   const tbody = document.getElementById('hostel-admin-student-body');
   if (!tbody || !isHostelAdminRole(currentUserRole)) return;
   const gender = adminGender(currentUserRole);
-  const list = students.filter(s => s.gender === gender).sort(sortByBatchThenRoll);
+  const list = students.filter(s => s.gender === gender);
   tbody.innerHTML = list.map(s => {
     const hay = `${s.roll} ${s.classRoll || ''} ${s.name || ''} ${s.batch || ''} ${s.room || ''}`.toLowerCase();
-    const isSelf = currentSubscriberRoll && s.roll === currentSubscriberRoll;
-    const nameHtml = `${s.name}${isSelf ? ` <span class="badge gold" style="font-size:.68rem;">👑 আপনি (এডমিন)</span>` : ''}`;
     const bal = getStudentBalance(s.roll);
     const balClass = bal >= 0 ? 'due-pos' : 'due-neg';
     return `<tr data-hay="${hay}">
-      <td class="num">${s.roll}</td><td class="num">${s.classRoll || '-'}</td><td>${nameHtml}</td><td>${s.batch || '-'}</td><td>${s.room || '-'}</td>
+      <td class="num">${s.roll}</td><td class="num">${s.classRoll || '-'}</td><td>${s.name}</td><td>${s.batch || '-'}</td><td>${s.room || '-'}</td>
       <td class="num">৳${totalDepositsFor(s.roll).toFixed(2)}</td>
       <td class="num ${balClass}">৳${bal.toFixed(2)}</td>
       <td><div style="display:flex;gap:6px;"><input type="number" class="coll-input" id="hostel-pay-${s.roll}" placeholder="৳"><button class="btn btn-primary btn-sm" onclick="addHostelPayment(${s.roll})">যোগ করুন</button></div></td>
@@ -2157,8 +2111,12 @@ window.addHostelPayment = async (roll) => {
   const amount = Number(input.value);
   if (!amount || amount <= 0) { alert("সঠিক পরিমাণ দিন।"); return; }
   try {
-    await addDoc(collection(db, "payments"), { roll, amount, addedBy: currentTreasurerName, addedAt: serverTimestamp() });
+    const paymentData = { roll, amount, addedBy: currentTreasurerName, addedAt: serverTimestamp() };
+    const ref = await addDoc(collection(db, "payments"), paymentData);
     await addDoc(collection(db, "activity"), { type: 'payment', text: `${student.name} থেকে ৳${amount.toFixed(2)} জমা নেওয়া হয়েছে`, createdAt: serverTimestamp() });
+    if (!paymentsData[roll]) paymentsData[roll] = [];
+    paymentsData[roll].unshift({ id: ref.id, ...paymentData, addedAt: new Date() });
+    renderAll();
     input.value = "";
   } catch (e) { alert("জমা যোগ করা যায়নি: " + (e && e.message ? e.message : e)); }
 };
@@ -2291,6 +2249,11 @@ window.toggleMealServed = async (orderId, checked) => {
     await updateDoc(doc(db, "mealOrders", orderId), {
       served: checked, servedAt: checked ? serverTimestamp() : null, servedBy: checked ? currentTreasurerName : null
     });
+    const o = mealOrdersData.find(x => x.id === orderId);
+    if (o) { o.served = checked; o.servedAt = checked ? new Date() : null; o.servedBy = checked ? currentTreasurerName : null; }
+    renderMealOrdersTable('tr-orders-body', 'tr-orders-date', 'tr-orders-mealtype', 'tr-orders-hostel', true, 'tr-orders-search', 'tr-orders-count');
+    renderMealOrdersTable('hostel-orders-body', 'hostel-orders-date', 'hostel-orders-mealtype', null, false, 'hostel-orders-search', 'hostel-orders-count');
+    renderTodayMealSummary();
   } catch (e) { alert("আপডেট করা যায়নি: " + (e && e.message ? e.message : e)); }
 };
 
@@ -2320,6 +2283,11 @@ window.quickServeByRoll = async (inputId, dateElId, mealTypeElId, hostelElId) =>
     await updateDoc(doc(db, "mealOrders", target.id), {
       served: true, servedAt: serverTimestamp(), servedBy: currentTreasurerName
     });
+    const o = mealOrdersData.find(x => x.id === target.id);
+    if (o) { o.served = true; o.servedAt = new Date(); o.servedBy = currentTreasurerName; }
+    renderMealOrdersTable('tr-orders-body', 'tr-orders-date', 'tr-orders-mealtype', 'tr-orders-hostel', true, 'tr-orders-search', 'tr-orders-count');
+    renderMealOrdersTable('hostel-orders-body', 'hostel-orders-date', 'hostel-orders-mealtype', null, false, 'hostel-orders-search', 'hostel-orders-count');
+    renderTodayMealSummary();
     input.style.background = '#E1F5EC';
     setTimeout(() => { input.style.background = ''; }, 400);
   } catch (e) {
@@ -2616,7 +2584,10 @@ window.addMealItem = async () => {
   const hostel = document.getElementById('new-meal-hostel').value;
   if (!name || !price || price <= 0) { alert("মিলের নাম ও সঠিক মূল্য দিন।"); return; }
   try {
-    await addDoc(collection(db, "mealItems"), { name, mealType, weekday, price, note, hostel, active: true, addedBy: currentTreasurerName, createdAt: serverTimestamp() });
+    const itemData = { name, mealType, weekday, price, note, hostel, active: true, addedBy: currentTreasurerName, createdAt: serverTimestamp() };
+    const ref = await addDoc(collection(db, "mealItems"), itemData);
+    mealItemsData.push({ id: ref.id, ...itemData });
+    renderAll();
     document.getElementById('new-meal-name').value = "";
     document.getElementById('new-meal-price').value = "";
     document.getElementById('new-meal-note').value = "";
@@ -2624,13 +2595,21 @@ window.addMealItem = async () => {
 };
 
 window.toggleMealItemActive = async (id, checked) => {
-  try { await updateDoc(doc(db, "mealItems", id), { active: checked }); }
+  try {
+    await updateDoc(doc(db, "mealItems", id), { active: checked });
+    const m = mealItemsData.find(x => x.id === id);
+    if (m) m.active = checked;
+  }
   catch (e) { alert("আপডেট করা যায়নি: " + (e && e.message ? e.message : e)); }
 };
 
 window.deleteMealItem = async (id) => {
   if (!confirm("এই মিল আইটেমটি মুছে ফেলতে চান?")) return;
-  try { await deleteDoc(doc(db, "mealItems", id)); }
+  try {
+    await deleteDoc(doc(db, "mealItems", id));
+    mealItemsData = mealItemsData.filter(m => m.id !== id);
+    renderAll();
+  }
   catch (e) { alert("মুছে ফেলা যায়নি: " + (e && e.message ? e.message : e)); }
 };
 
@@ -2679,6 +2658,8 @@ window.saveOrderTimingSettings = async () => {
       // clear out the old fields so they don't confuse future reads
       orderCloseTime: deleteField(), breakfastCutoff: deleteField(), lunchCutoff: deleteField(), dinnerCutoff: deleteField()
     }, { merge: true });
+    orderConfig = { orderOpenTime, closeTimes: { breakfast: closeBreakfast, lunch: closeLunch, dinner: closeDinner }, dueLimit, monthlyMinSpend };
+    renderAll();
     alert("সেটিংস সংরক্ষণ করা হয়েছে।");
   } catch (e) { alert("সংরক্ষণ করা যায়নি: " + (e && e.message ? e.message : e)); }
 };
@@ -2718,17 +2699,21 @@ window.saveExpense = async () => {
   const chargeType = document.getElementById('expense-charge-type').value;
   if (!description || !amount || amount <= 0) { alert("বিবরণ ও সঠিক পরিমাণ দিন।"); return; }
   try {
+    let expenseData;
     if (chargeType === 'individual') {
       const roll = Number(document.getElementById('expense-target-roll').value);
       const student = students.find(s => s.roll === roll);
-      await addDoc(collection(db, "expenses"), {
+      expenseData = {
         description, amount, chargeType: 'individual', targetRoll: roll, targetName: student ? student.name : ('Roll ' + roll),
         addedBy: currentTreasurerName, addedAt: serverTimestamp()
-      });
+      };
     } else {
-      await addDoc(collection(db, "expenses"), { description, amount, chargeType: 'all', addedBy: currentTreasurerName, addedAt: serverTimestamp() });
+      expenseData = { description, amount, chargeType: 'all', addedBy: currentTreasurerName, addedAt: serverTimestamp() };
     }
+    const ref = await addDoc(collection(db, "expenses"), expenseData);
     await addDoc(collection(db, "activity"), { type: 'expense', text: `খরচ যোগ হয়েছে: ${description} (৳${amount.toFixed(2)})`, createdAt: serverTimestamp() });
+    expensesData.unshift({ id: ref.id, ...expenseData, addedAt: new Date() });
+    renderAll();
     document.getElementById('expense-desc').value = "";
     document.getElementById('expense-amount').value = "";
   } catch (e) { alert("সংরক্ষণ করা যায়নি: " + (e && e.message ? e.message : e)); }
@@ -2767,10 +2752,12 @@ window.addUserAccount = async () => {
   const secondaryAuth = getAuth(secondaryApp);
   try {
     const cred = await createUserWithEmailAndPassword(secondaryAuth, email, password);
-    await setDoc(doc(db, "users", cred.user.uid), {
-      role, roll: role === 'subscriber' ? roll : null, name, email, createdAt: serverTimestamp(), addedBy: currentTreasurerName
-    });
+    const userData = { role, roll: role === 'subscriber' ? roll : null, name, email, createdAt: serverTimestamp(), addedBy: currentTreasurerName };
+    await setDoc(doc(db, "users", cred.user.uid), userData);
     await signOut(secondaryAuth);
+    usersData.push({ id: cred.user.uid, ...userData });
+    renderUsersList();
+    renderNewUserRollOptions();
     document.getElementById('new-user-name').value = "";
     document.getElementById('new-user-email').value = "";
     document.getElementById('new-user-password').value = "";
@@ -2793,7 +2780,12 @@ function renderUsersList() {
 
 window.revokeUserAccess = async (uid, label) => {
   if (!confirm(`${label} এর অ্যাক্সেস বাতিল করতে চান?`)) return;
-  try { await deleteDoc(doc(db, "users", uid)); }
+  try {
+    await deleteDoc(doc(db, "users", uid));
+    usersData = usersData.filter(u => u.id !== uid);
+    renderUsersList();
+    renderNewUserRollOptions();
+  }
   catch (e) { alert("বাতিল করা যায়নি: " + (e && e.message ? e.message : e)); }
 };
 
@@ -2916,7 +2908,7 @@ document.addEventListener('DOMContentLoaded', () => {
   fillOrderConfigForm();
   // Keep the order-window banner (open/closed, target date) accurate without needing a manual
   // page refresh — re-render once a minute so it flips right at the configured open/close time.
-  setInterval(() => { if (listenersStarted) renderAll(); }, 60000);
+  setInterval(() => { if (dataLoaded) renderAll(); }, 60000);
 });
 
 // ============ PWA: register service worker for offline app-shell caching ============
