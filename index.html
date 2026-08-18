@@ -1957,6 +1957,16 @@ window.orderMeal = async (mealItemId, isAdminPersonal) => {
   } else {
     const alreadyOrdered = myOrdersForDate(null, true, win.targetDateKey).some(o => o.mealType === item.mealType);
     if (alreadyOrdered) { alert(`${formatDateWithWeekday(win.targetDateKey)}-এর জন্য ${MEAL_TYPE_LABEL[item.mealType]} ইতিমধ্যে অর্ডার করা হয়েছে।`); return; }
+    // Fix: previously an admin's personal order was saved with gender:'unspecified' and
+    // hostel/batch/room:'-'. The serving list and hostel-admin table filter by gender ===
+    // adminGender(role) and group rows by hostel/batch/room, so those orders were silently
+    // excluded everywhere except the admin's own "আমার অর্ডার" panel — the admin's meal was
+    // charged but no one serving food could see it. Now it's tagged with the admin's own
+    // hostel/gender so it appears (and can be checked off) in the normal serving list too.
+    gender = adminGender(currentUserRole);
+    hostel = HOSTEL_BY_GENDER[gender] || '-';
+    batch = 'স্টাফ';
+    room = 'এডমিন';
   }
 
   if (!confirm(`"${item.name}" (৳${(item.price||0).toFixed(2)}) — ${formatDateWithWeekday(win.targetDateKey)}-এর জন্য অর্ডার করবেন? ${isAdminPersonal ? '' : 'মূল্য আপনার হিসাব থেকে কাটা হবে।'}`)) return;
@@ -2158,7 +2168,11 @@ function filteredMealOrdersFor(dateElId, mealTypeElId, hostelElId, restrictGende
   const typeVal = typeEl ? typeEl.value : 'all';
   const hostelVal = hostelEl ? hostelEl.value : 'all';
 
-  let list = mealOrdersData.filter(o => !o.isAdminPersonal).map(enrichOrderWithStudentInfo);
+  // Fix: admin-personal orders now carry a real hostel/gender/batch/room (see orderMeal),
+  // so they're included here too — previously they were filtered out entirely, meaning an
+  // admin's own ordered meal never showed up in the serving list or PDF exports even though
+  // it had already been charged/recorded.
+  let list = mealOrdersData.map(enrichOrderWithStudentInfo);
   if (dateVal) list = list.filter(o => o.businessDate === dateVal);
   if (typeVal && typeVal !== 'all') list = list.filter(o => o.mealType === typeVal);
   if (hostelVal && hostelVal !== 'all') list = list.filter(o => o.hostel === hostelVal);
@@ -2175,7 +2189,7 @@ function mealOrdersForType(dateElId, hostelElId, restrictGender, mealType) {
   const dateVal = dateEl ? dateEl.value : '';
   const hostelVal = hostelEl ? hostelEl.value : 'all';
 
-  let list = mealOrdersData.filter(o => !o.isAdminPersonal && o.mealType === mealType).map(enrichOrderWithStudentInfo);
+  let list = mealOrdersData.filter(o => o.mealType === mealType).map(enrichOrderWithStudentInfo);
   if (dateVal) list = list.filter(o => o.businessDate === dateVal);
   if (hostelVal && hostelVal !== 'all') list = list.filter(o => o.hostel === hostelVal);
   if (restrictGender) list = list.filter(o => o.gender === restrictGender);
@@ -2231,7 +2245,7 @@ function renderMealOrdersTable(tbodyId, dateElId, mealTypeElId, hostelElId, rest
             <td onclick="event.stopPropagation()"><input type="checkbox" class="served-check" ${o.served ? 'checked' : ''} onclick="event.stopPropagation()" onchange="toggleMealServed('${o.id}', this.checked)"></td>
             ${isTreasurerView ? `<td>${hostel}</td>` : ''}
             <td>${batch}</td><td>${room}</td>
-            <td>${o.studentName} (${o.roll})</td>
+            <td>${o.studentName}${o.roll ? ' (' + o.roll + ')' : ' (এডমিন)'}</td>
             <td>${o.mealItemName} <span class="badge navy">${MEAL_TYPE_LABEL[o.mealType] || o.mealType}</span></td>
             <td class="num">৳${(o.price||0).toFixed(2)}</td>
           </tr>`);
@@ -2472,7 +2486,7 @@ async function buildMealOrdersPDF(list, titleText) {
         const body = [];
         let sectionTotal = 0, sectionCount = 0;
         batchOrders.forEach((o, idx) => {
-          body.push([idx + 1, o.roll, o.studentName, o.room || '-', o.mealItemName, `Tk ${(o.price||0).toFixed(2)}`, o.served ? 'YES' : '', '']);
+          body.push([idx + 1, o.roll || '-', o.studentName, o.room || '-', o.mealItemName, `Tk ${(o.price||0).toFixed(2)}`, o.served ? 'YES' : '', '']);
           sectionTotal += (o.price || 0);
           sectionCount++;
         });
@@ -2509,7 +2523,7 @@ function downloadCSV(list, filenamePrefix) {
     Object.keys(groups[hostel]).sort().forEach(batch => {
       Object.keys(groups[hostel][batch]).sort().forEach(room => {
         groups[hostel][batch][room].forEach(o => {
-          rows.push([hostel, batch, room, o.roll, o.studentName, o.mealType, o.mealItemName, (o.price||0).toFixed(2), o.served ? 'Yes' : 'No']);
+          rows.push([hostel, batch, room, o.roll || '-', o.studentName, o.mealType, o.mealItemName, (o.price||0).toFixed(2), o.served ? 'Yes' : 'No']);
         });
       });
     });
