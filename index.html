@@ -1349,10 +1349,21 @@ async function loadUsers() {
   usersData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+// Reads-cost fix: a subscriber only ever needs their OWN legacy starting-balance doc (personal
+// balance calculation), never everyone else's, so it's fetched with a single getDoc() instead of
+// reading the whole "collections" collection. Treasurer/teacher/hostel-admins still need every
+// student's legacy balance (dashboards, per-student tables, PDFs), so only they fetch the full
+// collection with getDocs().
 async function loadCollectionsData() {
-  const snap = await getDocs(collection(db, "collections"));
   collectionsData = {};
-  snap.forEach(d => { collectionsData[d.id] = (d.data().amount) || 0; });
+  const needsFullCollections = ['treasurer', 'teacher', 'girls_admin', 'boys_admin'].includes(currentUserRole);
+  if (needsFullCollections) {
+    const snap = await getDocs(collection(db, "collections"));
+    snap.forEach(d => { collectionsData[d.id] = (d.data().amount) || 0; });
+  } else if (currentUserRole === 'subscriber' && currentSubscriberRoll) {
+    const snap = await getDoc(doc(db, "collections", String(currentSubscriberRoll)));
+    if (snap.exists()) collectionsData[currentSubscriberRoll] = snap.data().amount || 0;
+  }
 }
 
 // Reads-cost fix: a subscriber only ever needs their OWN payment records (personal balance).
