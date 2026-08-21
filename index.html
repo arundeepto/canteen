@@ -881,7 +881,7 @@ import {
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   doc, setDoc, deleteDoc, updateDoc, collection, addDoc,
-  query, orderBy, limit, serverTimestamp, where, getDocs, getDoc, deleteField
+  query, orderBy, limit, serverTimestamp, where, getDocs, getDoc, deleteField, increment
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // ============ Firebase Config — replace with your own project's config ============
@@ -908,6 +908,13 @@ const MEAL_TYPES = ["breakfast", "lunch", "dinner"];
 
 // ============ state ============
 let students = [];          // [{id(=roll as string), roll, name, mobile, email, gender, batch, hostel, room}]
+// Reads-cost fix: a subscriber only ever gets THEIR OWN entry in `students` (not the whole
+// roster), so the equal-share divisor can no longer be derived from students.length for them.
+// eligibleStudentCount holds the true total headcount instead — for full-roster roles it's just
+// students.length after a normal load; for a subscriber it comes from the tiny settings/stats
+// doc (see loadStudents / getEqualShareForStudent) so their balance math stays correct without
+// reading the whole "students" collection.
+let eligibleStudentCount = 0;
 let collectionsData = {};   // legacy starting balances: { roll: amount }
 let paymentsData = {};      // { roll: [{id, amount, addedBy, addedAt}] }
 let donationsData = [];
@@ -1338,9 +1345,35 @@ async function loadOrderConfig() {
   fillOrderConfigForm();
 }
 
+// Reads-cost fix: a subscriber's own screens only ever need THEIR OWN student record (name,
+// batch, room, hostel — shown in renderSubscriberPanel) — never the whole roster — so it's
+// fetched with a single getDoc() instead of reading the whole "students" collection. The one
+// real dependency subscribers have on the *rest* of the roster is the equal-share divisor
+// (getEqualShareForStudent needs the total headcount), so that's covered separately via the
+// tiny settings/stats doc instead of the full collection. Treasurer/teacher/hostel-admins still
+// need every student (tables, dashboards, PDFs), so only they fetch the full collection.
 async function loadStudents() {
-  const snap = await getDocs(query(collection(db, "students"), orderBy("roll")));
-  students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const needsFullStudents = ['treasurer', 'teacher', 'girls_admin', 'boys_admin'].includes(currentUserRole);
+  if (needsFullStudents) {
+    const snap = await getDocs(query(collection(db, "students"), orderBy("roll")));
+    students = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    eligibleStudentCount = students.length;
+    // Reads-cost fix: self-heal settings/stats.studentCount whenever a full-roster role loads
+    // anyway (no extra read — this write is fire-and-forget), so it never permanently drifts
+    // even if an increment/decrement above is ever missed, and so it's correctly seeded the
+    // very first time this fix runs on an existing installation.
+    setDoc(doc(db, "settings", "stats"), { studentCount: eligibleStudentCount }, { merge: true }).catch(() => {});
+  } else if (currentUserRole === 'subscriber' && currentSubscriberRoll) {
+    const [ownSnap, statsSnap] = await Promise.all([
+      getDoc(doc(db, "students", String(currentSubscriberRoll))),
+      getDoc(doc(db, "settings", "stats"))
+    ]);
+    students = ownSnap.exists() ? [{ id: ownSnap.id, ...ownSnap.data() }] : [];
+    eligibleStudentCount = statsSnap.exists() ? (statsSnap.data().studentCount || 0) : students.length;
+  } else {
+    students = [];
+    eligibleStudentCount = 0;
+  }
 }
 
 async function loadUsers() {
@@ -1508,12 +1541,20 @@ window.addStudent = async () => {
   const room = document.getElementById('new-student-room').value.trim();
   if (!name || !roll || !batch || !room) { alert("নাম, রোল, ব্যাচ ও রুম নম্বর আবশ্যক।"); return; }
   try {
+    const idxBefore = students.findIndex(s => Number(s.roll) === roll);
+    const isNewStudent = idxBefore < 0;
     await setDoc(doc(db, "students", roll.toString()), {
       roll, name, mobile, gender, batch, hostel, room, createdAt: serverTimestamp()
     }, { merge: true });
+    // Reads-cost fix: keep settings/stats.studentCount in sync on every genuinely-new student so
+    // subscribers' equal-share divisor (loaded from this doc, not the full roster) stays correct
+    // without them ever having to read the "students" collection.
+    if (isNewStudent) {
+      await setDoc(doc(db, "settings", "stats"), { studentCount: increment(1) }, { merge: true });
+    }
     // Reads-cost fix: patch the local cache directly instead of re-fetching the whole
     // students collection — zero extra Firestore reads for a write we already know the result of.
-    const idx = students.findIndex(s => Number(s.roll) === roll);
+    const idx = idxBefore;
     const patched = { id: roll.toString(), roll, name, mobile, gender, batch, hostel, room };
     if (idx >= 0) students[idx] = { ...students[idx], ...patched };
     else students.push(patched);
@@ -1531,6 +1572,9 @@ window.deleteStudent = async (roll) => {
   if (!confirm(`আইডি ${roll} মুছে ফেলতে চান? এই শিক্ষার্থীর হিসাব-সংক্রান্ত রেকর্ডও প্রভাবিত হতে পারে।`)) return;
   try {
     await deleteDoc(doc(db, "students", roll.toString()));
+    // Reads-cost fix: mirror the increment in addStudent — keep settings/stats.studentCount
+    // accurate on removal too, so subscribers' equal-share divisor never drifts.
+    await setDoc(doc(db, "settings", "stats"), { studentCount: increment(-1) }, { merge: true });
     students = students.filter(s => Number(s.roll) !== Number(roll));
     renderAll();
   }
@@ -1567,6 +1611,9 @@ window.deleteOrphanedRegistration = async (roll, name) => {
   if (!confirm(`আইডি ${roll}${name ? ' (' + name + ')' : ''} — এই আটকে যাওয়া রেজিস্ট্রেশনটি মুছে ফেলতে চান? এরপর এই আইডি দিয়ে আবার নতুন করে রেজিস্ট্রেশন করা যাবে।`)) return;
   try {
     await deleteDoc(doc(db, "students", roll.toString()));
+    // Reads-cost fix: mirror the increment in addStudent — an orphaned registration still
+    // occupied a "students" doc, so removing it must decrement settings/stats.studentCount too.
+    await setDoc(doc(db, "settings", "stats"), { studentCount: increment(-1) }, { merge: true });
     students = students.filter(s => Number(s.roll) !== Number(roll));
     scanOrphanedRegistrations();
   } catch (e) {
@@ -1597,7 +1644,11 @@ function getEqualShareExpensesTotal() {
 }
 function getEqualShareForStudent(roll) {
   const total = getEqualShareExpensesTotal();
-  const n = eligibleStudentRolls().length || 1;
+  // Reads-cost fix: use eligibleStudentCount (kept correct for every role in loadStudents(),
+  // including subscribers who never load the full roster) instead of
+  // eligibleStudentRolls().length, which would silently collapse to 1 for a subscriber now that
+  // `students` only holds their own record.
+  const n = eligibleStudentCount || 1;
   return total / n;
 }
 function getIndividualExpenseTotal(roll) {
